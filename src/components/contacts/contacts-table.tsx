@@ -71,7 +71,11 @@ export function ContactsTable({
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search contacts…" className="h-8 pl-8 text-sm" />
         </div>
-        <Select value={relationshipFilter} onValueChange={(v) => setRelationshipFilter(v ?? ALL)}>
+        <Select
+          items={[{ value: ALL, label: "All relationships" }, ...RELATIONSHIP_TYPES]}
+          value={relationshipFilter}
+          onValueChange={(v) => setRelationshipFilter(v ?? ALL)}
+        >
           <SelectTrigger className="h-8 w-[170px] text-xs"><SelectValue placeholder="Relationship" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All relationships</SelectItem>

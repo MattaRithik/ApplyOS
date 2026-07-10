@@ -1,4 +1,3 @@
-import { ListChecks } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getFollowUpItems } from "@/lib/data/follow-ups";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -17,7 +16,7 @@ export default async function FollowUpsPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={ListChecks}
+          iconName="listChecks"
           title="Nothing to follow up on"
           description="Follow-ups from applications, cold outreach, contacts, and interviews will show up here automatically as their dates come due."
         />

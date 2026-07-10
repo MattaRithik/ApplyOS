@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, Search, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import { Menu, Search, LogOut, User as UserIcon, Settings as SettingsIcon, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -70,9 +71,14 @@ export function Topbar({
           {pageTitle}
         </h1>
 
+        <Button render={<Link href="/applications/add" />} size="sm" className="ml-auto shrink-0 gap-1.5">
+          <PlusCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">Add Application</span>
+        </Button>
+
         <button
           onClick={openCommandPalette}
-          className="ml-auto flex flex-1 items-center gap-2 rounded-xl border border-border/60 bg-background/40 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-background/70 sm:max-w-xs"
+          className="flex flex-1 items-center gap-2 rounded-xl border border-border/60 bg-background/40 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-background/70 sm:max-w-xs"
         >
           <Search className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Search ApplyOS…</span>

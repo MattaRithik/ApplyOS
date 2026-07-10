@@ -17,7 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { createOutreach, updateOutreach, type OutreachInput } from "@/app/(app)/outreach/actions";
-import { OUTREACH_TYPES, type Outreach } from "@/lib/types/database";
+import { OUTREACH_TYPES, RESPONSE_STATUSES, type Outreach } from "@/lib/types/database";
 import { format } from "date-fns";
 
 const NONE = "__none__";
@@ -135,7 +135,11 @@ export function OutreachFormDialog({
         <div className="space-y-3">
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Existing contact</Label>
-            <Select value={values.contact_id ?? NONE} onValueChange={(v) => handleContactSelect(v ?? NONE)}>
+            <Select
+              items={[{ value: NONE, label: "New / one-off contact" }, ...contactOptions.map((c) => ({ value: c.id, label: c.company_name ? `${c.name} · ${c.company_name}` : c.name }))]}
+              value={values.contact_id ?? NONE}
+              onValueChange={(v) => handleContactSelect(v ?? NONE)}
+            >
               <SelectTrigger><SelectValue placeholder="Pick a saved contact (optional)" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>New / one-off contact</SelectItem>
@@ -154,6 +158,7 @@ export function OutreachFormDialog({
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Company</Label>
               <Select
+                items={[{ value: NONE, label: "—" }, ...companyOptions.map((c) => ({ value: c.id, label: c.name }))]}
                 value={values.company_id ?? NONE}
                 onValueChange={(v) => {
                   const c = companyOptions.find((co) => co.id === v);
@@ -186,7 +191,11 @@ export function OutreachFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Outreach type</Label>
-              <Select value={values.outreach_type} onValueChange={(v) => set("outreach_type", (v ?? "cold_email") as OutreachInput["outreach_type"])}>
+              <Select
+                items={OUTREACH_TYPES}
+                value={values.outreach_type}
+                onValueChange={(v) => set("outreach_type", (v ?? "cold_email") as OutreachInput["outreach_type"])}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {OUTREACH_TYPES.map((t) => (
@@ -197,7 +206,11 @@ export function OutreachFormDialog({
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Template used</Label>
-              <Select value={values.template_id ?? NONE} onValueChange={(v) => set("template_id", v === NONE ? null : v)}>
+              <Select
+                items={[{ value: NONE, label: "—" }, ...templateOptions.map((t) => ({ value: t.id, label: t.name }))]}
+                value={values.template_id ?? NONE}
+                onValueChange={(v) => set("template_id", v === NONE ? null : v)}
+              >
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>—</SelectItem>
@@ -239,15 +252,16 @@ export function OutreachFormDialog({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="mb-1.5 block text-xs text-muted-foreground">Response type</Label>
-                <Select value={values.response_type ?? "opened"} onValueChange={(v) => set("response_type", (v ?? "opened") as OutreachInput["response_type"])}>
+                <Select
+                  items={RESPONSE_STATUSES.filter((r) => r.value !== "no_response")}
+                  value={values.response_type ?? "opened"}
+                  onValueChange={(v) => set("response_type", (v ?? "opened") as OutreachInput["response_type"])}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="opened">Opened</SelectItem>
-                    <SelectItem value="replied_positive">Replied — positive</SelectItem>
-                    <SelectItem value="replied_negative">Replied — negative</SelectItem>
-                    <SelectItem value="referred">Referred</SelectItem>
-                    <SelectItem value="meeting_scheduled">Meeting scheduled</SelectItem>
-                    <SelectItem value="declined">Declined</SelectItem>
+                    {RESPONSE_STATUSES.filter((r) => r.value !== "no_response").map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

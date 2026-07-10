@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { primaryNav, secondaryNav } from "@/components/nav/nav-config";
 import { Badge } from "@/components/ui/badge";
+import { LogoMark } from "@/components/shared/logo-mark";
 
 interface SidebarNavProps {
   followUpsDueCount?: number;
@@ -67,11 +67,11 @@ export function SidebarNav({ followUpsDueCount, onNavigate }: SidebarNavProps) {
     <div className="flex h-full flex-col gap-6 p-4">
       <Link href="/dashboard" className="flex items-center gap-2.5 px-2 pt-1">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--blue-accent)] via-[var(--cyan-accent)] to-[var(--emerald-accent)] text-white shadow-md">
-          <Sparkles className="h-4.5 w-4.5" />
+          <LogoMark className="h-5 w-5" />
         </span>
         <div className="leading-tight">
           <p className="text-sm font-semibold tracking-tight">ApplyOS</p>
-          <p className="text-[11px] text-muted-foreground">Job Search OS</p>
+          <p className="text-[11px] text-muted-foreground">Application Tracker</p>
         </div>
       </Link>
 

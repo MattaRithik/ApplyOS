@@ -6,12 +6,13 @@ import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { FloatingDrawer } from "@/components/shared/floating-drawer";
 import { ApplicationForm, type ApplicationFormValues } from "@/components/applications/application-form";
-import { ParserDrawerContent } from "@/components/applications/parser/parser-drawer-content";
-import { createApplication, saveParsedJobDetails } from "@/app/(app)/applications/actions";
-import { applyParsedFieldsToForm } from "@/lib/parser/apply-to-form";
-import type { ParsedJobResult } from "@/lib/parser/types";
+import { JobIntelligenceLayout } from "@/components/applications/parser/job-intelligence-layout";
+import { JobIntelligencePanel } from "@/components/applications/parser/job-intelligence-panel";
+import { createApplication, saveParsedJobDetails, updateCompanyMetaIfEmpty } from "@/app/(app)/applications/actions";
+import { saveApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
+import { applyExtractionFieldsToForm, type AcceptableFieldKey } from "@/lib/parser/apply-to-form";
+import type { JobExtraction, JobIntelligenceResult } from "@/lib/parser/schema";
 
 const DEFAULT_VALUES: ApplicationFormValues = {
   company_name: "",
@@ -25,22 +26,22 @@ const DEFAULT_VALUES: ApplicationFormValues = {
   salary_max: null,
   salary_currency: "USD",
   visa_sponsorship_notes: "",
+  visa_sponsorship_status: "not_mentioned",
   date_applied: "",
   status: "saved",
   priority_score: 50,
   resume_id: null,
   cover_letter_used: "",
   referral_person: "",
-  recruiter_name: "",
-  hr_email: "",
-  recruiter_linkedin_url: "",
-  hiring_manager_linkedin_url: "",
+  referral_email: "",
+  referral_phone: "",
   notes: "",
   follow_up_date: "",
   source: "",
   keywords: [],
   required_skills: [],
   preferred_skills: [],
+  hrContacts: [],
 };
 
 export function AddApplicationClient({
@@ -54,11 +55,23 @@ export function AddApplicationClient({
   const [jobDescription, setJobDescription] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [mobileParserOpen, setMobileParserOpen] = React.useState(false);
-  const [lastParsed, setLastParsed] = React.useState<ParsedJobResult | null>(null);
+  const [lastParsed, setLastParsed] = React.useState<JobIntelligenceResult | null>(null);
 
-  const handleApplyParsedFields = (parsed: ParsedJobResult, accepted: Set<keyof ParsedJobResult>) => {
-    setValues((prev) => applyParsedFieldsToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, parsed, accepted));
-    setLastParsed(parsed);
+  const handleApplyExtractedFields = (
+    extraction: JobExtraction,
+    suggestedFollowUpDate: string | undefined,
+    priorityScore: number | undefined,
+    accepted: Set<AcceptableFieldKey>
+  ) => {
+    setValues((prev) =>
+      applyExtractionFieldsToForm(
+        { ...prev, job_url: jobUrl, job_description: jobDescription },
+        extraction,
+        suggestedFollowUpDate,
+        priorityScore,
+        accepted
+      )
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,8 +82,10 @@ export function AddApplicationClient({
     }
     setSubmitting(true);
     try {
+      const { hrContacts, ...applicationFields } = values;
+
       const app = await createApplication({
-        ...values,
+        ...applicationFields,
         job_url: values.job_url || jobUrl || null,
         job_description: values.job_description || jobDescription || null,
         salary_min: values.salary_min || null,
@@ -81,7 +96,15 @@ export function AddApplicationClient({
       });
 
       if (lastParsed) {
-        await saveParsedJobDetails(app.id, jobUrl || null, jobDescription, lastParsed as never);
+        await saveParsedJobDetails(app.id, jobUrl || null, jobDescription, lastParsed);
+        await updateCompanyMetaIfEmpty(app.company_id, {
+          website: lastParsed.extraction.companyWebsite?.value,
+          linkedinUrl: lastParsed.extraction.companyLinkedInUrl?.value,
+        });
+      }
+
+      if (hrContacts.some((c) => c.name.trim())) {
+        await saveApplicationHrContacts(app.id, app.company_id, app.company_name, hrContacts);
       }
 
       toast.success("Application added.");
@@ -94,8 +117,8 @@ export function AddApplicationClient({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      <GlassPanel className="p-5 sm:p-6">
+    <div className="flex gap-6">
+      <GlassPanel className="min-w-0 flex-1 p-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} />
           <div className="flex items-center justify-end gap-2 border-t border-border/50 pt-4">
@@ -105,7 +128,7 @@ export function AddApplicationClient({
               className="lg:hidden gap-2"
               onClick={() => setMobileParserOpen(true)}
             >
-              <Sparkles className="h-4 w-4" /> Open Parser
+              <Sparkles className="h-4 w-4" /> Open AI Assistant
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save Application"}
@@ -114,20 +137,28 @@ export function AddApplicationClient({
         </form>
       </GlassPanel>
 
-      <FloatingDrawer
-        title="AI Job Parser"
-        subtitle="Paste a posting to auto-fill the form"
+      <JobIntelligenceLayout
+        title="AI Job Intelligence"
+        subtitle="Paste a posting to analyze it"
+        icon={
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--cyan-accent)] to-[var(--blue-accent)] text-white">
+            <Sparkles className="h-4 w-4" />
+          </span>
+        }
         mobileOpen={mobileParserOpen}
         onMobileOpenChange={setMobileParserOpen}
       >
-        <ParserDrawerContent
+        <JobIntelligencePanel
           jobUrl={jobUrl}
           jobDescription={jobDescription}
+          resumeOptions={resumeOptions}
+          formResumeId={values.resume_id}
           onJobUrlChange={setJobUrl}
           onJobDescriptionChange={setJobDescription}
-          onApply={handleApplyParsedFields}
+          onParsed={setLastParsed}
+          onApply={handleApplyExtractedFields}
         />
-      </FloatingDrawer>
+      </JobIntelligenceLayout>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { TemplatesGrid } from "@/components/templates/templates-grid";
@@ -22,7 +21,7 @@ export default async function TemplatesPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={Mail}
+          iconName="mail"
           title="No templates yet"
           description="Load a set of proven templates for recruiter outreach, referrals, and follow-ups — or write your own from scratch."
         />

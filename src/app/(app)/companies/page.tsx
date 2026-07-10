@@ -1,4 +1,3 @@
-import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CompaniesGrid } from "@/components/companies/companies-grid";
@@ -27,7 +26,7 @@ export default async function CompaniesPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={Building2}
+          iconName="building2"
           title="No companies yet"
           description="Companies are created automatically when you add an application, or you can add one directly to start researching."
         />

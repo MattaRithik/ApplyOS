@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ApplyOS — Your Job Search, Operationalized",
+  title: "ApplyOS",
   description:
-    "A futuristic job-search CRM and application operating system: applications, outreach, contacts, resumes, interviews, and analytics in one command center.",
+    "ApplyOS Application Tracker: applications, outreach, contacts, resumes, interviews, and analytics in one place.",
 };
 
 export default function RootLayout({

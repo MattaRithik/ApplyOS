@@ -1,4 +1,4 @@
-import { Send, Reply, Percent, ListChecks, Trophy, Building2, AlertTriangle } from "lucide-react";
+import { Trophy, Building2, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatTile } from "@/components/dashboard/stat-tile";
@@ -25,7 +25,7 @@ export default async function OutreachPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={Send}
+          iconName="send"
           title="No outreach logged yet"
           description="Track every cold email and LinkedIn message you send — replies, follow-ups, and which templates actually work."
         />
@@ -76,10 +76,10 @@ export default async function OutreachPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile label="Emails Sent" value={totalSent} icon={Send} accent="blue" />
-        <StatTile label="Replies Received" value={replied} icon={Reply} accent="emerald" />
-        <StatTile label="Reply Rate" value={`${replyRate}%`} icon={Percent} accent="cyan" />
-        <StatTile label="Follow-ups Pending" value={followUpsPending} icon={ListChecks} accent="amber" />
+        <StatTile label="Emails Sent" value={totalSent} iconName="send" accent="blue" />
+        <StatTile label="Replies Received" value={replied} iconName="reply" accent="emerald" />
+        <StatTile label="Reply Rate" value={`${replyRate}%`} iconName="percent" accent="cyan" />
+        <StatTile label="Follow-ups Pending" value={followUpsPending} iconName="listChecks" accent="amber" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

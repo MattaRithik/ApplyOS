@@ -30,6 +30,13 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
+  create type visa_sponsorship_status as enum (
+    'no_sponsorship', 'opt_accepted', 'cpt_accepted', 'h1b_available',
+    'future_possible', 'requires_existing_auth', 'not_mentioned'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
   create type relationship_type as enum (
     'recruiter', 'hiring_manager', 'hr', 'alumni', 'referral',
     'employee', 'professor', 'career_fair', 'other'
@@ -255,12 +262,15 @@ create table if not exists applications (
   salary_max numeric,
   salary_currency text default 'USD',
   visa_sponsorship_notes text,
+  visa_sponsorship_status visa_sponsorship_status not null default 'not_mentioned',
   date_applied date,
   status application_status not null default 'saved',
   priority_score numeric default 0 check (priority_score >= 0 and priority_score <= 100),
   resume_id uuid references resumes(id) on delete set null,
   cover_letter_used text,
   referral_person text,
+  referral_email text,
+  referral_phone text,
   recruiter_name text,
   hr_email text,
   recruiter_linkedin_url text,
@@ -277,6 +287,13 @@ create table if not exists applications (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Upgrade path for installs created before referral email/phone were added.
+alter table applications add column if not exists referral_email text;
+alter table applications add column if not exists referral_phone text;
+
+-- Upgrade path for installs created before the structured visa sponsorship field was added.
+alter table applications add column if not exists visa_sponsorship_status visa_sponsorship_status not null default 'not_mentioned';
 
 create index if not exists idx_applications_user on applications(user_id);
 create index if not exists idx_applications_company on applications(company_id);
@@ -353,10 +370,46 @@ create table if not exists parsed_job_details (
   suggested_follow_up_date date,
   priority_score numeric,
   field_confidence jsonb default '{}'::jsonb,
+  -- AI Job Intelligence Engine (v2) additions — full structured result plus provenance.
+  model_used text,
+  parser_version text,
+  description_hash text,
+  processing_time_ms integer,
+  warnings jsonb default '[]'::jsonb,
+  full_result jsonb,
   created_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs created before the AI Job Intelligence Engine.
+alter table parsed_job_details add column if not exists model_used text;
+alter table parsed_job_details add column if not exists parser_version text;
+alter table parsed_job_details add column if not exists description_hash text;
+alter table parsed_job_details add column if not exists processing_time_ms integer;
+alter table parsed_job_details add column if not exists warnings jsonb default '[]'::jsonb;
+alter table parsed_job_details add column if not exists full_result jsonb;
+
 create index if not exists idx_parsed_job_details_application on parsed_job_details(application_id);
+
+-- ---------------------------------------------------------------------
+-- job_parse_cache — caches parser output by a hash of the raw description
+-- so re-pasting (or re-parsing) the same posting skips the AI call.
+-- ---------------------------------------------------------------------
+
+create table if not exists job_parse_cache (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  description_hash text not null,
+  result jsonb not null,
+  model_used text not null,
+  parser_version text not null,
+  processing_time_ms integer not null default 0,
+  warnings jsonb not null default '[]'::jsonb,
+  confidence numeric,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists uniq_job_parse_cache_user_hash on job_parse_cache(user_id, description_hash);
+create index if not exists idx_job_parse_cache_user on job_parse_cache(user_id);
 
 -- ---------------------------------------------------------------------
 -- contacts
@@ -578,6 +631,7 @@ alter table interview_rounds enable row level security;
 alter table follow_ups enable row level security;
 alter table notes enable row level security;
 alter table exports enable row level security;
+alter table job_parse_cache enable row level security;
 
 drop policy if exists "profiles_select_own" on profiles;
 create policy "profiles_select_own" on profiles for select using (auth.uid() = id);
@@ -591,7 +645,7 @@ begin
   foreach t in array array[
     'companies', 'resumes', 'applications', 'application_status_history',
     'parsed_job_details', 'contacts', 'email_templates', 'outreach',
-    'interview_rounds', 'follow_ups', 'notes', 'exports'
+    'interview_rounds', 'follow_ups', 'notes', 'exports', 'job_parse_cache'
   ]
   loop
     execute format('drop policy if exists "%1$s_select_own" on %1$s', t);

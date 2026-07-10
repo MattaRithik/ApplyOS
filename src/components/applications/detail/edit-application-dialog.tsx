@@ -13,15 +13,18 @@ import {
 } from "@/components/ui/dialog";
 import { ApplicationForm, type ApplicationFormValues } from "@/components/applications/application-form";
 import { updateApplication } from "@/app/(app)/applications/actions";
-import type { ApplicationWithResume } from "@/components/applications/types";
+import { saveApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
+import type { ApplicationWithResume, HrContactDraft } from "@/components/applications/types";
 
 export function EditApplicationDialog({
   application,
   resumeOptions,
+  initialHrContacts,
   onSaved,
 }: {
   application: ApplicationWithResume;
   resumeOptions: { id: string; display_name: string }[];
+  initialHrContacts: HrContactDraft[];
   onSaved: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -38,28 +41,32 @@ export function EditApplicationDialog({
     salary_max: application.salary_max,
     salary_currency: application.salary_currency,
     visa_sponsorship_notes: application.visa_sponsorship_notes,
+    visa_sponsorship_status: application.visa_sponsorship_status,
     date_applied: application.date_applied,
     status: application.status,
     priority_score: application.priority_score,
     resume_id: application.resume_id,
     cover_letter_used: application.cover_letter_used,
     referral_person: application.referral_person,
-    recruiter_name: application.recruiter_name,
-    hr_email: application.hr_email,
-    recruiter_linkedin_url: application.recruiter_linkedin_url,
-    hiring_manager_linkedin_url: application.hiring_manager_linkedin_url,
+    referral_email: application.referral_email,
+    referral_phone: application.referral_phone,
     notes: application.notes,
     follow_up_date: application.follow_up_date,
     source: application.source,
     keywords: application.keywords,
     required_skills: application.required_skills,
     preferred_skills: application.preferred_skills,
+    hrContacts: initialHrContacts,
   }));
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateApplication(application.id, values);
+      const { hrContacts, ...applicationFields } = values;
+
+      const updated = await updateApplication(application.id, applicationFields);
+      await saveApplicationHrContacts(application.id, updated.company_id, updated.company_name, hrContacts);
+
       toast.success("Application updated.");
       setOpen(false);
       onSaved();

@@ -1,4 +1,3 @@
-import { FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ResumesGrid } from "@/components/resumes/resumes-grid";
@@ -31,7 +30,7 @@ export default async function ResumesPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={FileText}
+          iconName="fileText"
           title="No resumes yet"
           description="Upload PDF, DOC, or DOCX resumes and link versions to applications to track which one performs best."
         />

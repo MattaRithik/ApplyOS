@@ -1,4 +1,3 @@
-import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { InterviewsList } from "@/components/interviews/interviews-list";
@@ -20,7 +19,7 @@ export default async function InterviewsPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={CalendarClock}
+          iconName="calendarClock"
           title="No interviews yet"
           description="Interview rounds you add on an application's detail page show up here — prep notes, interviewers, results, and thank-you tracking all in one place."
         />

@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { INTERVIEW_ROUND_TYPES, type InterviewRound, type InterviewResult } from "@/lib/types/database";
+import { INTERVIEW_ROUND_TYPES, INTERVIEW_RESULTS, type InterviewRound, type InterviewResult } from "@/lib/types/database";
 import { addInterviewRound, deleteInterviewRound, updateInterviewRound } from "@/app/(app)/applications/[id]/actions";
 
 const RESULT_STYLES: Record<InterviewResult, string> = {
@@ -127,7 +127,11 @@ export function InterviewRoundsSection({
                 </div>
                 <div>
                   <Label className="mb-1.5 block text-xs text-muted-foreground">Round type</Label>
-                  <Select value={form.round_type} onValueChange={(v) => setForm({ ...form, round_type: (v ?? "other") as typeof form.round_type })}>
+                  <Select
+                    items={INTERVIEW_ROUND_TYPES}
+                    value={form.round_type}
+                    onValueChange={(v) => setForm({ ...form, round_type: (v ?? "other") as typeof form.round_type })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {INTERVIEW_ROUND_TYPES.map((t) => (
@@ -197,16 +201,18 @@ export function InterviewRoundsSection({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select value={round.result} onValueChange={(v) => handleResultChange(round.id, (v ?? "pending") as InterviewResult)}>
+                  <Select
+                    items={INTERVIEW_RESULTS}
+                    value={round.result}
+                    onValueChange={(v) => handleResultChange(round.id, (v ?? "pending") as InterviewResult)}
+                  >
                     <SelectTrigger className={`h-7 w-28 text-xs ${RESULT_STYLES[round.result]}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="passed">Passed</SelectItem>
-                      <SelectItem value="failed">Failed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="no_show">No-show</SelectItem>
+                      {INTERVIEW_RESULTS.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(round.id)}>

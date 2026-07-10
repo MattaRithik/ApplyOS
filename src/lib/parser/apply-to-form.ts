@@ -1,81 +1,130 @@
-import type { ParsedJobResult } from "@/lib/parser/types";
+import type { JobExtraction } from "@/lib/parser/schema";
 import type { ApplicationFormValues } from "@/components/applications/application-form";
+import { EMPTY_HR_CONTACT } from "@/components/applications/types";
 
-export const PARSER_FIELD_LABELS: Record<keyof ParsedJobResult, string> = {
-  company: "Company",
+export type AcceptableFieldKey = keyof JobExtraction | "suggestedFollowUpDate" | "priorityScore";
+
+export const EXTRACTION_FIELD_LABELS: Record<keyof JobExtraction, string> = {
+  companyName: "Company Name",
+  companyWebsite: "Company Website",
+  companyLinkedInUrl: "LinkedIn Company URL",
   jobTitle: "Job Title",
-  roleType: "Role Type",
-  location: "Location",
-  workMode: "Work Mode",
+  department: "Department",
+  roleCategory: "Role Category",
   employmentType: "Employment Type",
-  salaryRange: "Salary Range",
+  workMode: "Work Mode",
+  locations: "Locations",
+  salaryMin: "Salary Min",
+  salaryMax: "Salary Max",
+  currency: "Currency",
+  experience: "Experience",
+  education: "Education",
   requiredSkills: "Required Skills",
   preferredSkills: "Preferred Skills",
-  education: "Education",
-  yearsExperience: "Years of Experience",
-  visaNotes: "Visa / Work Authorization",
-  deadline: "Application Deadline",
-  recruiterInfo: "Recruiter / HR Info",
+  programmingLanguages: "Programming Languages",
+  technologies: "Technologies",
+  financeSkills: "Finance Skills",
+  softSkills: "Soft Skills",
   keywords: "Keywords",
+  responsibilities: "Responsibilities",
+  qualifications: "Qualifications",
+  preferredQualifications: "Preferred Qualifications",
+  deadline: "Deadline",
+  jobId: "Job ID",
+  recruiterName: "Recruiter Name",
+  recruiterEmail: "Recruiter Email",
   jobSummary: "Job Summary",
-  resumeMatchScore: "Resume Match Score",
-  missingSkills: "Missing Skills",
-  suggestedResumeVersion: "Suggested Resume Version",
-  suggestedColdEmailAngle: "Suggested Cold Email Angle",
-  suggestedFollowUpDate: "Suggested Follow-up Date",
-  priorityScore: "Priority Score",
+  jobBoard: "Job Board",
+  visaStatus: "Visa Sponsorship",
 };
 
-// Fields that map directly onto an Application column.
-const DIRECT_MAP: Partial<Record<keyof ParsedJobResult, keyof ApplicationFormValues>> = {
-  company: "company_name",
+/** Extraction fields that map directly onto an Application form column. */
+const DIRECT_MAP: Partial<Record<keyof JobExtraction, keyof ApplicationFormValues>> = {
+  companyName: "company_name",
   jobTitle: "job_title",
-  location: "location",
   workMode: "work_mode",
   employmentType: "employment_type",
-  visaNotes: "visa_sponsorship_notes",
+  currency: "salary_currency",
+  visaStatus: "visa_sponsorship_status",
   keywords: "keywords",
   requiredSkills: "required_skills",
   preferredSkills: "preferred_skills",
-  suggestedFollowUpDate: "follow_up_date",
-  priorityScore: "priority_score",
 };
 
-// Fields with no dedicated column — folded into the notes block instead.
-const NOTES_FIELDS: (keyof ParsedJobResult)[] = [
-  "roleType",
-  "salaryRange",
+/** Fields with no dedicated column — folded into the notes block instead. */
+const NOTES_FIELDS: (keyof JobExtraction)[] = [
+  "department",
+  "roleCategory",
   "education",
-  "yearsExperience",
+  "experience",
+  "programmingLanguages",
+  "technologies",
+  "financeSkills",
+  "softSkills",
+  "responsibilities",
+  "qualifications",
+  "preferredQualifications",
   "deadline",
+  "jobId",
   "jobSummary",
-  "missingSkills",
-  "suggestedResumeVersion",
-  "suggestedColdEmailAngle",
+  "jobBoard",
 ];
 
-function formatFieldForNotes(key: keyof ParsedJobResult, value: unknown): string {
-  const label = PARSER_FIELD_LABELS[key];
+function formatFieldForNotes(key: keyof JobExtraction, value: unknown): string {
+  const label = EXTRACTION_FIELD_LABELS[key];
   const text = Array.isArray(value) ? value.join(", ") : String(value);
   return `${label}: ${text}`;
 }
 
-export function applyParsedFieldsToForm(
+export function applyExtractionFieldsToForm(
   current: ApplicationFormValues,
-  parsed: ParsedJobResult,
-  acceptedKeys: Set<keyof ParsedJobResult>
+  extraction: JobExtraction,
+  suggestedFollowUpDate: string | undefined,
+  priorityScore: number | undefined,
+  acceptedKeys: Set<AcceptableFieldKey>
 ): ApplicationFormValues {
   const next: ApplicationFormValues = { ...current };
   const notesLines: string[] = [];
+  let addedHrContact = false;
 
   for (const key of acceptedKeys) {
-    const field = parsed[key];
+    if (key === "suggestedFollowUpDate") {
+      if (suggestedFollowUpDate) next.follow_up_date = suggestedFollowUpDate;
+      continue;
+    }
+    if (key === "priorityScore") {
+      if (typeof priorityScore === "number") next.priority_score = priorityScore;
+      continue;
+    }
+
+    const field = extraction[key];
     if (!field) continue;
 
-    if (key === "recruiterInfo") {
-      const value = String(field.value);
-      if (value.includes("@")) next.hr_email = value;
-      else next.recruiter_name = value;
+    if (key === "locations") {
+      next.location = (field.value as string[]).join(", ");
+      continue;
+    }
+    if (key === "salaryMin") {
+      next.salary_min = field.value as number;
+      continue;
+    }
+    if (key === "salaryMax") {
+      next.salary_max = field.value as number;
+      continue;
+    }
+    if (key === "recruiterName" || key === "recruiterEmail") {
+      if (!addedHrContact) {
+        next.hrContacts = [
+          ...next.hrContacts,
+          {
+            ...EMPTY_HR_CONTACT,
+            name: extraction.recruiterName?.value ?? "",
+            email: extraction.recruiterEmail?.value ?? "",
+            relationship_type: "recruiter",
+          },
+        ];
+        addedHrContact = true;
+      }
       continue;
     }
 
@@ -88,9 +137,7 @@ export function applyParsedFieldsToForm(
   }
 
   if (notesLines.length > 0) {
-    next.notes = [current.notes, "— Parsed from job description —", ...notesLines]
-      .filter(Boolean)
-      .join("\n");
+    next.notes = [current.notes, "— Parsed from job description —", ...notesLines].filter(Boolean).join("\n");
   }
 
   return next;

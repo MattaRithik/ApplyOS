@@ -77,7 +77,11 @@ export function TemplateFormDialog({
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Category</Label>
-            <Select value={values.category} onValueChange={(v) => set("category", (v ?? "custom") as TemplateInput["category"])}>
+            <Select
+              items={TEMPLATE_CATEGORIES}
+              value={values.category}
+              onValueChange={(v) => set("category", (v ?? "custom") as TemplateInput["category"])}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {TEMPLATE_CATEGORIES.map((c) => (

@@ -27,7 +27,7 @@ export default async function ApplicationsPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={Sparkles}
+          iconName="sparkles"
           title="No applications yet"
           description="Track every role you apply to — status, contacts, interviews, and follow-ups all in one place."
           actionLabel="Add your first application"

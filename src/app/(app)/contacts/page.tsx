@@ -1,4 +1,3 @@
-import { Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ContactsTable } from "@/components/contacts/contacts-table";
@@ -22,7 +21,7 @@ export default async function ContactsPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={Users}
+          iconName="users"
           title="No contacts yet"
           description="Track recruiters, hiring managers, alumni, and referrals — every relationship that moves an application forward."
         />

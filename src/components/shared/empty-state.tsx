@@ -2,12 +2,43 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
+import {
+  Sparkles,
+  Users,
+  FileText,
+  Mail,
+  CalendarClock,
+  ListChecks,
+  Send,
+  Building2,
+  BarChart3,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 
+/**
+ * Server Components can't pass functions (like a Lucide icon component)
+ * as props to a Client Component — React can only serialize plain data
+ * across that boundary. So callers pass a string key instead, and the
+ * actual icon component is looked up here, inside the client bundle.
+ */
+const icons = {
+  sparkles: Sparkles,
+  users: Users,
+  fileText: FileText,
+  mail: Mail,
+  calendarClock: CalendarClock,
+  listChecks: ListChecks,
+  send: Send,
+  building2: Building2,
+  barChart3: BarChart3,
+} satisfies Record<string, LucideIcon>;
+
+export type EmptyStateIconName = keyof typeof icons;
+
 interface EmptyStateProps {
-  icon: LucideIcon;
+  iconName: EmptyStateIconName;
   title: string;
   description: string;
   actionLabel?: string;
@@ -16,13 +47,15 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  icon: Icon,
+  iconName,
   title,
   description,
   actionLabel,
   actionHref,
   onAction,
 }: EmptyStateProps) {
+  const Icon = icons[iconName];
+
   return (
     <GlassPanel className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
       <motion.span

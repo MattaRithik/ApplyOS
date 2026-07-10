@@ -22,7 +22,7 @@ export function FilteredApplicationsExport() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Select value={status} onValueChange={(v) => setStatus(v ?? status)}>
+        <Select items={APPLICATION_STATUSES} value={status} onValueChange={(v) => setStatus(v ?? status)}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             {APPLICATION_STATUSES.map((s) => (

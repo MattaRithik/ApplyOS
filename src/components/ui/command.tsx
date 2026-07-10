@@ -25,7 +25,7 @@ function Command({
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        "flex size-full flex-col overflow-hidden rounded-xl! bg-popover p-1 text-popover-foreground",
+        "glass-panel-strong flex size-full flex-col overflow-hidden rounded-xl! p-1 text-popover-foreground",
         className
       )}
       {...props}
@@ -60,7 +60,9 @@ function CommandDialog({
         )}
         showCloseButton={showCloseButton}
       >
-        {children}
+        <Command className="[&_[data-slot=command-input-wrapper]]:h-auto">
+          {children}
+        </Command>
       </DialogContent>
     </Dialog>
   )

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ApplicationDetailClient } from "@/components/applications/detail/application-detail-client";
+import { getApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
 
 export default async function ApplicationDetailPage({
   params,
@@ -14,7 +15,7 @@ export default async function ApplicationDetailPage({
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: application }, { data: resumes }, { data: interviewRounds }, { data: statusHistory }, { data: notes }] =
+  const [{ data: application }, { data: resumes }, { data: interviewRounds }, { data: statusHistory }, { data: notes }, hrContacts] =
     await Promise.all([
       supabase
         .from("applications")
@@ -42,6 +43,7 @@ export default async function ApplicationDetailPage({
         .eq("entity_id", id)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
+      getApplicationHrContacts(id),
     ]);
 
   if (!application) notFound();
@@ -53,6 +55,7 @@ export default async function ApplicationDetailPage({
       interviewRounds={interviewRounds ?? []}
       statusHistory={statusHistory ?? []}
       notes={notes ?? []}
+      hrContacts={hrContacts}
     />
   );
 }

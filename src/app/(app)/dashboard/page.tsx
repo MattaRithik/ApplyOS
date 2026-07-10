@@ -1,19 +1,5 @@
 import Link from "next/link";
-import {
-  Briefcase,
-  Flame,
-  XCircle,
-  Trophy,
-  CalendarClock,
-  ListChecks,
-  Send,
-  Reply,
-  TrendingUp,
-  Timer,
-  Building2,
-  ArrowUpRight,
-  Sparkles,
-} from "lucide-react";
+import { CalendarClock, ListChecks, Building2, ArrowUpRight, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { StatTile } from "@/components/dashboard/stat-tile";
@@ -40,7 +26,7 @@ export default async function DashboardPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={Sparkles}
+          iconName="sparkles"
           title="Welcome to ApplyOS"
           description="Your command center is ready. Add your first application to start tracking outreach, interviews, and offers in one place."
           actionLabel="Add your first application"
@@ -55,7 +41,6 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Your job search, at a glance.</p>
         </div>
         <Button render={<Link href="/applications/add" />} className="gap-2">
           <Sparkles className="h-4 w-4" /> Add Application
@@ -63,19 +48,19 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        <StatTile label="Total Applications" value={data.totalApplications} icon={Briefcase} accent="blue" delay={0.0} />
-        <StatTile label="Active" value={data.activeApplications} icon={Flame} accent="cyan" delay={0.02} />
-        <StatTile label="Rejections" value={data.rejections} icon={XCircle} accent="silver" delay={0.04} />
-        <StatTile label="Offers" value={data.offers} icon={Trophy} accent="emerald" delay={0.06} />
-        <StatTile label="Interviews Scheduled" value={data.interviewsScheduledCount} icon={CalendarClock} accent="amber" delay={0.08} />
-        <StatTile label="Follow-ups Due" value={data.followUpsDueCount} icon={ListChecks} accent="cyan" delay={0.1} />
-        <StatTile label="Cold Emails Sent" value={data.coldEmailsSent} icon={Send} accent="blue" delay={0.12} />
-        <StatTile label="Reply Rate" value={`${data.replyRate}%`} icon={Reply} accent="emerald" delay={0.14} />
-        <StatTile label="This Week" value={data.applicationsThisWeek} icon={TrendingUp} accent="cyan" delay={0.16} />
+        <StatTile label="Total Applications" value={data.totalApplications} iconName="briefcase" accent="blue" delay={0.0} />
+        <StatTile label="Active" value={data.activeApplications} iconName="flame" accent="cyan" delay={0.02} />
+        <StatTile label="Rejections" value={data.rejections} iconName="xCircle" accent="silver" delay={0.04} />
+        <StatTile label="Offers" value={data.offers} iconName="trophy" accent="emerald" delay={0.06} />
+        <StatTile label="Interviews Scheduled" value={data.interviewsScheduledCount} iconName="calendarClock" accent="amber" delay={0.08} />
+        <StatTile label="Follow-ups Due" value={data.followUpsDueCount} iconName="listChecks" accent="cyan" delay={0.1} />
+        <StatTile label="Cold Emails Sent" value={data.coldEmailsSent} iconName="send" accent="blue" delay={0.12} />
+        <StatTile label="Reply Rate" value={`${data.replyRate}%`} iconName="reply" accent="emerald" delay={0.14} />
+        <StatTile label="This Week" value={data.applicationsThisWeek} iconName="trendingUp" accent="cyan" delay={0.16} />
         <StatTile
           label="Avg Response Time"
           value={data.avgResponseTimeDays !== null ? `${data.avgResponseTimeDays}d` : "—"}
-          icon={Timer}
+          iconName="timer"
           accent="silver"
           delay={0.18}
         />

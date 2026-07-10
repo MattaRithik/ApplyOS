@@ -12,7 +12,6 @@ import {
   BarChart3,
   Download,
   Settings,
-  PlusCircle,
 } from "lucide-react";
 
 export interface NavItem {
@@ -25,7 +24,6 @@ export interface NavItem {
 export const primaryNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Applications", href: "/applications", icon: Briefcase },
-  { label: "Add Application", href: "/applications/add", icon: PlusCircle },
   { label: "Companies", href: "/companies", icon: Building2 },
   { label: "Contacts", href: "/contacts", icon: Users },
   { label: "Cold Outreach", href: "/outreach", icon: Send },

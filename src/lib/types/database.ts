@@ -21,6 +21,14 @@ export type ApplicationStatus =
 
 export type WorkMode = "remote" | "hybrid" | "onsite";
 export type EmploymentType = "full_time" | "part_time" | "internship" | "contract" | "temporary";
+export type VisaSponsorshipStatus =
+  | "no_sponsorship"
+  | "opt_accepted"
+  | "cpt_accepted"
+  | "h1b_available"
+  | "future_possible"
+  | "requires_existing_auth"
+  | "not_mentioned";
 export type RelationshipType =
   | "recruiter"
   | "hiring_manager"
@@ -153,12 +161,15 @@ export interface Application {
   salary_max: number | null;
   salary_currency: string | null;
   visa_sponsorship_notes: string | null;
+  visa_sponsorship_status: VisaSponsorshipStatus;
   date_applied: string | null;
   status: ApplicationStatus;
   priority_score: number;
   resume_id: string | null;
   cover_letter_used: string | null;
   referral_person: string | null;
+  referral_email: string | null;
+  referral_phone: string | null;
   recruiter_name: string | null;
   hr_email: string | null;
   recruiter_linkedin_url: string | null;
@@ -215,6 +226,25 @@ export interface ParsedJobDetails {
   suggested_follow_up_date: string | null;
   priority_score: number | null;
   field_confidence: Record<string, number>;
+  model_used: string | null;
+  parser_version: string | null;
+  description_hash: string | null;
+  processing_time_ms: number | null;
+  warnings: string[];
+  full_result: unknown | null;
+  created_at: string;
+}
+
+export interface JobParseCache {
+  id: string;
+  user_id: string;
+  description_hash: string;
+  result: unknown;
+  model_used: string;
+  parser_version: string;
+  processing_time_ms: number;
+  warnings: string[];
+  confidence: number | null;
   created_at: string;
 }
 
@@ -387,6 +417,55 @@ export const INTERVIEW_ROUND_TYPES: { value: InterviewRoundType; label: string }
   { value: "superday", label: "Superday" },
   { value: "final_round", label: "Final Round" },
   { value: "other", label: "Other" },
+];
+
+export const WORK_MODES: { value: WorkMode; label: string }[] = [
+  { value: "remote", label: "Remote" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "onsite", label: "Onsite" },
+];
+
+export const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
+  { value: "full_time", label: "Full-time" },
+  { value: "part_time", label: "Part-time" },
+  { value: "internship", label: "Internship" },
+  { value: "contract", label: "Contract" },
+  { value: "temporary", label: "Temporary" },
+];
+
+export const VISA_SPONSORSHIP_STATUSES: { value: VisaSponsorshipStatus; label: string }[] = [
+  { value: "no_sponsorship", label: "No Sponsorship" },
+  { value: "opt_accepted", label: "OPT Accepted" },
+  { value: "cpt_accepted", label: "CPT Accepted" },
+  { value: "h1b_available", label: "H-1B Sponsorship Available" },
+  { value: "future_possible", label: "Future Sponsorship Possible" },
+  { value: "requires_existing_auth", label: "Requires Existing Work Authorization" },
+  { value: "not_mentioned", label: "Not Mentioned" },
+];
+
+export const RESPONSE_STATUSES: { value: ResponseStatus; label: string }[] = [
+  { value: "no_response", label: "No response" },
+  { value: "opened", label: "Opened" },
+  { value: "replied_positive", label: "Replied — positive" },
+  { value: "replied_negative", label: "Replied — negative" },
+  { value: "referred", label: "Referred" },
+  { value: "meeting_scheduled", label: "Meeting scheduled" },
+  { value: "declined", label: "Declined" },
+];
+
+export const INTERVIEW_RESULTS: { value: InterviewResult; label: string }[] = [
+  { value: "pending", label: "Pending" },
+  { value: "passed", label: "Passed" },
+  { value: "failed", label: "Failed" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "no_show", label: "No-show" },
+];
+
+/** HR-side relationship types selectable when adding contacts to an application. */
+export const HR_CONTACT_RELATIONSHIP_TYPES: { value: RelationshipType; label: string }[] = [
+  { value: "recruiter", label: "Recruiter" },
+  { value: "hr", label: "HR" },
+  { value: "hiring_manager", label: "Hiring Manager" },
 ];
 
 export const TEMPLATE_CATEGORIES: { value: TemplateCategory; label: string }[] = [

@@ -14,8 +14,6 @@ import {
   DollarSign,
   FileText,
   User,
-  Mail,
-  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
@@ -34,9 +32,11 @@ import { APPLICATION_STATUSES, type ApplicationStatus, type InterviewRound, type
 import { deleteApplication, updateApplicationStatus } from "@/app/(app)/applications/actions";
 import { EditApplicationDialog } from "@/components/applications/detail/edit-application-dialog";
 import { InterviewRoundsSection } from "@/components/applications/detail/interview-rounds-section";
+import { HrContactsCard } from "@/components/applications/detail/hr-contacts-card";
+import { VisaSponsorshipBadge } from "@/components/shared/visa-sponsorship-badge";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { StatusHistorySection } from "@/components/applications/detail/status-history-section";
-import type { ApplicationWithResume } from "@/components/applications/types";
+import type { ApplicationWithResume, HrContactDraft } from "@/components/applications/types";
 
 interface Props {
   application: ApplicationWithResume;
@@ -44,6 +44,7 @@ interface Props {
   interviewRounds: InterviewRound[];
   statusHistory: ApplicationStatusHistory[];
   notes: Note[];
+  hrContacts: HrContactDraft[];
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
@@ -65,6 +66,7 @@ export function ApplicationDetailClient({
   interviewRounds,
   statusHistory,
   notes,
+  hrContacts,
 }: Props) {
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -97,6 +99,10 @@ export function ApplicationDetailClient({
       ? `${application.salary_currency ?? "USD"} ${application.salary_min?.toLocaleString() ?? "?"} – ${application.salary_max?.toLocaleString() ?? "?"}`
       : null;
 
+  const referral = [application.referral_person, application.referral_email, application.referral_phone]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div className="space-y-5 py-6">
       <Link href="/applications" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -119,7 +125,11 @@ export function ApplicationDetailClient({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={status} onValueChange={(v) => handleStatusChange((v ?? status) as ApplicationStatus)}>
+            <Select
+              items={APPLICATION_STATUSES}
+              value={status}
+              onValueChange={(v) => handleStatusChange((v ?? status) as ApplicationStatus)}
+            >
               <SelectTrigger className="h-8 w-[190px] text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {APPLICATION_STATUSES.map((s) => (
@@ -127,7 +137,12 @@ export function ApplicationDetailClient({
                 ))}
               </SelectContent>
             </Select>
-            <EditApplicationDialog application={application} resumeOptions={resumeOptions} onSaved={() => router.refresh()} />
+            <EditApplicationDialog
+              application={application}
+              resumeOptions={resumeOptions}
+              initialHrContacts={hrContacts}
+              onSaved={() => router.refresh()}
+            />
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
                 <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -154,31 +169,15 @@ export function ApplicationDetailClient({
           <InfoRow icon={MapPin} label="Location" value={[application.location, application.work_mode].filter(Boolean).join(" · ")} />
           <InfoRow icon={FileText} label="Resume" value={application.resume?.display_name} />
           <InfoRow icon={DollarSign} label="Salary" value={salary} />
-          <InfoRow icon={User} label="Referral" value={application.referral_person} />
-          <InfoRow icon={User} label="Recruiter" value={application.recruiter_name} />
-          <InfoRow icon={Mail} label="HR email" value={application.hr_email} />
-          <InfoRow
-            icon={Link2}
-            label="Recruiter LinkedIn"
-            value={application.recruiter_linkedin_url && (
-              <a href={application.recruiter_linkedin_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                View profile
-              </a>
-            )}
-          />
-          <InfoRow
-            icon={Link2}
-            label="Hiring manager"
-            value={application.hiring_manager_linkedin_url && (
-              <a href={application.hiring_manager_linkedin_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                View profile
-              </a>
-            )}
-          />
+          <InfoRow icon={User} label="Referral" value={referral || null} />
           <InfoRow icon={FileText} label="Date applied" value={application.date_applied && format(new Date(application.date_applied), "MMM d, yyyy")} />
           <InfoRow icon={FileText} label="Follow-up" value={application.follow_up_date && format(new Date(application.follow_up_date), "MMM d, yyyy")} />
           <InfoRow icon={FileText} label="Priority" value={`${application.priority_score}/100`} />
-          <InfoRow icon={FileText} label="Visa notes" value={application.visa_sponsorship_notes} />
+          <InfoRow
+            icon={FileText}
+            label="Visa sponsorship"
+            value={<VisaSponsorshipBadge status={application.visa_sponsorship_status} />}
+          />
         </div>
 
         {application.notes && (
@@ -197,7 +196,8 @@ export function ApplicationDetailClient({
 
       <div className="grid gap-5 lg:grid-cols-2">
         <InterviewRoundsSection applicationId={application.id} rounds={interviewRounds} />
-        <div className="space-y-5">
+        <HrContactsCard contacts={hrContacts} />
+        <div className="space-y-5 lg:col-span-2">
           <NotesPanel
             entityType="application"
             entityId={application.id}

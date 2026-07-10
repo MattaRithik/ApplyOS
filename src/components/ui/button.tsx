@@ -44,12 +44,21 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      // Base UI assumes a native <button> unless told otherwise. When `render`
+      // swaps the underlying element (e.g. a Next.js <Link> or an <a>),
+      // default nativeButton to false so Base UI applies the correct ARIA
+      // role/keyboard handling instead of warning that the rendered element
+      // isn't a real button. Callers can still override explicitly.
+      nativeButton={nativeButton ?? !render}
       {...props}
     />
   )

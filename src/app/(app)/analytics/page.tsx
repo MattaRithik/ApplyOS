@@ -1,18 +1,4 @@
-import {
-  TrendingUp,
-  Percent,
-  CalendarClock,
-  XCircle,
-  Ghost,
-  Timer,
-  Trophy,
-  Globe,
-  FileText,
-  Mail,
-  Building2,
-  Layers,
-  BarChart3,
-} from "lucide-react";
+import { TrendingUp, Globe, FileText, Mail, Building2, Layers } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getAnalyticsData } from "@/lib/data/analytics";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -34,7 +20,7 @@ export default async function AnalyticsPage() {
     return (
       <div className="mx-auto max-w-2xl pt-16">
         <EmptyState
-          icon={BarChart3}
+          iconName="barChart3"
           title="No analytics yet"
           description="Once you start applying, this page will surface response rates, conversion funnels, and which resumes, templates, and boards actually work."
         />
@@ -50,15 +36,15 @@ export default async function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile label="Response Rate" value={`${data.responseRate}%`} icon={Percent} accent="blue" />
-        <StatTile label="Interview Conversion" value={`${data.interviewConversionRate}%`} icon={CalendarClock} accent="amber" />
-        <StatTile label="Offer Conversion" value={`${data.offerConversionRate}%`} icon={Trophy} accent="emerald" />
-        <StatTile label="Rejection Rate" value={`${data.rejectionRate}%`} icon={XCircle} accent="silver" />
-        <StatTile label="Ghosting Rate" value={`${data.ghostingRate}%`} icon={Ghost} accent="silver" />
+        <StatTile label="Response Rate" value={`${data.responseRate}%`} iconName="percent" accent="blue" />
+        <StatTile label="Interview Conversion" value={`${data.interviewConversionRate}%`} iconName="calendarClock" accent="amber" />
+        <StatTile label="Offer Conversion" value={`${data.offerConversionRate}%`} iconName="trophy" accent="emerald" />
+        <StatTile label="Rejection Rate" value={`${data.rejectionRate}%`} iconName="xCircle" accent="silver" />
+        <StatTile label="Ghosting Rate" value={`${data.ghostingRate}%`} iconName="ghost" accent="silver" />
         <StatTile
           label="Avg. App → Response"
           value={data.avgDaysApplicationToResponse !== null ? `${data.avgDaysApplicationToResponse}d` : "—"}
-          icon={Timer}
+          iconName="timer"
           accent="cyan"
         />
       </div>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { APPLICATION_STATUSES } from "@/lib/types/database";
+import { APPLICATION_STATUSES, WORK_MODES } from "@/lib/types/database";
 import type { ApplicationWithResume } from "@/components/applications/types";
 import { TableView } from "@/components/applications/views/table-view";
 import { KanbanView } from "@/components/applications/views/kanban-view";
@@ -91,7 +91,11 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
             className="h-8 pl-8 text-sm"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? ALL)}>
+        <Select
+          items={[{ value: ALL, label: "All statuses" }, ...APPLICATION_STATUSES]}
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v ?? ALL)}
+        >
           <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All statuses</SelectItem>
@@ -100,16 +104,24 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
             ))}
           </SelectContent>
         </Select>
-        <Select value={workModeFilter} onValueChange={(v) => setWorkModeFilter(v ?? ALL)}>
+        <Select
+          items={[{ value: ALL, label: "All modes" }, ...WORK_MODES]}
+          value={workModeFilter}
+          onValueChange={(v) => setWorkModeFilter(v ?? ALL)}
+        >
           <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Work mode" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All modes</SelectItem>
-            <SelectItem value="remote">Remote</SelectItem>
-            <SelectItem value="hybrid">Hybrid</SelectItem>
-            <SelectItem value="onsite">Onsite</SelectItem>
+            {WORK_MODES.map((m) => (
+              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        <Select value={resumeFilter} onValueChange={(v) => setResumeFilter(v ?? ALL)}>
+        <Select
+          items={[{ value: ALL, label: "All resumes" }, ...resumeOptions.map((r) => ({ value: r.id, label: r.display_name }))]}
+          value={resumeFilter}
+          onValueChange={(v) => setResumeFilter(v ?? ALL)}
+        >
           <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Resume" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All resumes</SelectItem>

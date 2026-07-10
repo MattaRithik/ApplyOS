@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { createContact, updateContact, type ContactInput } from "@/app/(app)/contacts/actions";
-import { RELATIONSHIP_TYPES, type Contact } from "@/lib/types/database";
+import { RELATIONSHIP_TYPES, RESPONSE_STATUSES, type Contact } from "@/lib/types/database";
 
 const NONE = "__none__";
 
@@ -116,6 +116,7 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Company</Label>
               <Select
+                items={[{ value: NONE, label: "—" }, ...companyOptions.map((c) => ({ value: c.id, label: c.name }))]}
                 value={values.company_id ?? NONE}
                 onValueChange={(v) => {
                   const selected = companyOptions.find((c) => c.id === v);
@@ -134,7 +135,11 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Relationship type</Label>
-              <Select value={values.relationship_type} onValueChange={(v) => set("relationship_type", (v ?? "other") as ContactInput["relationship_type"])}>
+              <Select
+                items={RELATIONSHIP_TYPES}
+                value={values.relationship_type}
+                onValueChange={(v) => set("relationship_type", (v ?? "other") as ContactInput["relationship_type"])}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {RELATIONSHIP_TYPES.map((r) => (
@@ -183,16 +188,16 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
 
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Response status</Label>
-            <Select value={values.response_status ?? "no_response"} onValueChange={(v) => set("response_status", (v ?? "no_response") as ContactInput["response_status"])}>
+            <Select
+              items={RESPONSE_STATUSES}
+              value={values.response_status ?? "no_response"}
+              onValueChange={(v) => set("response_status", (v ?? "no_response") as ContactInput["response_status"])}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="no_response">No response</SelectItem>
-                <SelectItem value="opened">Opened</SelectItem>
-                <SelectItem value="replied_positive">Replied — positive</SelectItem>
-                <SelectItem value="replied_negative">Replied — negative</SelectItem>
-                <SelectItem value="referred">Referred</SelectItem>
-                <SelectItem value="meeting_scheduled">Meeting scheduled</SelectItem>
-                <SelectItem value="declined">Declined</SelectItem>
+                {RESPONSE_STATUSES.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

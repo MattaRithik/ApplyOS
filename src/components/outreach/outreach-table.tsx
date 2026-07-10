@@ -65,7 +65,11 @@ export function OutreachTable({
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search outreach…" className="h-8 pl-8 text-sm" />
         </div>
-        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? ALL)}>
+        <Select
+          items={[{ value: ALL, label: "All types" }, ...OUTREACH_TYPES]}
+          value={typeFilter}
+          onValueChange={(v) => setTypeFilter(v ?? ALL)}
+        >
           <SelectTrigger className="h-8 w-[170px] text-xs"><SelectValue placeholder="Type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All types</SelectItem>
@@ -74,7 +78,15 @@ export function OutreachTable({
             ))}
           </SelectContent>
         </Select>
-        <Select value={responseFilter} onValueChange={(v) => setResponseFilter(v ?? ALL)}>
+        <Select
+          items={[
+            { value: ALL, label: "Any response" },
+            { value: "replied", label: "Replied" },
+            { value: "pending", label: "No response" },
+          ]}
+          value={responseFilter}
+          onValueChange={(v) => setResponseFilter(v ?? ALL)}
+        >
           <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Response" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Any response</SelectItem>
