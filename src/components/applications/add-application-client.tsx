@@ -54,7 +54,6 @@ export function AddApplicationClient({
   const [jobUrl, setJobUrl] = React.useState("");
   const [jobDescription, setJobDescription] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
-  const [mobileParserOpen, setMobileParserOpen] = React.useState(false);
   const [lastParsed, setLastParsed] = React.useState<JobIntelligenceResult | null>(null);
 
   const handleApplyExtractedFields = (
@@ -117,19 +116,11 @@ export function AddApplicationClient({
   };
 
   return (
-    <div className="flex gap-6">
-      <GlassPanel className="min-w-0 flex-1 p-5 sm:p-6">
+    <div>
+      <GlassPanel className="p-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} />
           <div className="flex items-center justify-end gap-2 border-t border-border/50 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="lg:hidden gap-2"
-              onClick={() => setMobileParserOpen(true)}
-            >
-              <Sparkles className="h-4 w-4" /> Open AI Assistant
-            </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save Application"}
             </Button>
@@ -145,8 +136,6 @@ export function AddApplicationClient({
             <Sparkles className="h-4 w-4" />
           </span>
         }
-        mobileOpen={mobileParserOpen}
-        onMobileOpenChange={setMobileParserOpen}
       >
         <JobIntelligencePanel
           jobUrl={jobUrl}

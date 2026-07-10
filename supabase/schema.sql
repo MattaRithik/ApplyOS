@@ -126,6 +126,17 @@ create table if not exists profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table profiles add column if not exists full_name text;
+alter table profiles add column if not exists email text;
+alter table profiles add column if not exists avatar_url text;
+alter table profiles add column if not exists target_role text;
+alter table profiles add column if not exists job_search_start_date date;
+alter table profiles add column if not exists theme_preference text default 'system';
+alter table profiles add column if not exists settings jsonb default '{}'::jsonb;
+alter table profiles add column if not exists created_at timestamptz not null default now();
+alter table profiles add column if not exists updated_at timestamptz not null default now();
+
 drop trigger if exists trg_profiles_updated_at on profiles;
 create trigger trg_profiles_updated_at before update on profiles
   for each row execute function set_updated_at();
@@ -165,6 +176,21 @@ create table if not exists companies (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Upgrade path for installs predating any of these columns.
+alter table companies add column if not exists name text not null default 'Untitled Company';
+alter table companies add column if not exists website text;
+alter table companies add column if not exists careers_page_url text;
+alter table companies add column if not exists industry text;
+alter table companies add column if not exists location text;
+alter table companies add column if not exists linkedin_url text;
+alter table companies add column if not exists sponsorship_friendly boolean;
+alter table companies add column if not exists sponsorship_notes text;
+alter table companies add column if not exists notes text;
+alter table companies add column if not exists logo_url text;
+alter table companies add column if not exists created_at timestamptz not null default now();
+alter table companies add column if not exists updated_at timestamptz not null default now();
+alter table companies alter column name drop default;
 
 create index if not exists idx_companies_user on companies(user_id);
 create unique index if not exists uniq_companies_user_name on companies(user_id, lower(name));
@@ -220,16 +246,46 @@ begin
     alter table resumes rename column file_size_bytes to file_size;
   end if;
 
+  -- Older installs stored the resume's name in a single `file_name` column;
+  -- the current schema splits that into `display_name` (user-editable label)
+  -- and `original_file_name` (the file as uploaded). Add both if missing and
+  -- backfill from `file_name` before it's dropped below, so existing rows
+  -- never end up with a null in a NOT NULL column (the bug that made
+  -- PostgREST report display_name as missing from the schema cache).
+  if not exists (select 1 from information_schema.columns where table_name = 'resumes' and column_name = 'display_name') then
+    alter table resumes add column display_name text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'resumes' and column_name = 'original_file_name') then
+    alter table resumes add column original_file_name text;
+  end if;
+
   if exists (select 1 from information_schema.columns where table_name = 'resumes' and column_name = 'file_name') then
+    update resumes set
+      display_name = coalesce(display_name, file_name),
+      original_file_name = coalesce(original_file_name, file_name)
+    where file_name is not null;
     alter table resumes drop column file_name;
   end if;
+
+  update resumes set display_name = coalesce(display_name, 'Untitled Resume') where display_name is null;
+  update resumes set original_file_name = coalesce(original_file_name, display_name, 'resume.pdf') where original_file_name is null;
+
+  alter table resumes alter column display_name set not null;
+  alter table resumes alter column original_file_name set not null;
 end $$;
 
+alter table resumes add column if not exists file_size bigint;
 alter table resumes add column if not exists storage_provider text not null default 'backblaze_b2';
 alter table resumes add column if not exists file_type text;
 alter table resumes add column if not exists status text not null default 'uploaded';
 alter table resumes add column if not exists uploaded_at timestamptz;
 alter table resumes add column if not exists parsed_text text;
+alter table resumes add column if not exists target_role text;
+alter table resumes add column if not exists version_notes text;
+alter table resumes add column if not exists resume_match_score numeric;
+alter table resumes add column if not exists missing_keywords text[] default '{}';
+alter table resumes add column if not exists is_archived boolean not null default false;
+alter table resumes add column if not exists file_extension text;
 alter table resumes alter column file_extension drop not null;
 
 -- Legacy rows predate `status`/`uploaded_at` and were already fully
@@ -288,12 +344,45 @@ create table if not exists applications (
   updated_at timestamptz not null default now()
 );
 
--- Upgrade path for installs created before referral email/phone were added.
+-- Upgrade path for installs predating any of these columns.
+alter table applications add column if not exists company_id uuid references companies(id) on delete set null;
+alter table applications add column if not exists company_name text not null default 'Unknown Company';
+alter table applications add column if not exists job_title text not null default 'Untitled Role';
+alter table applications add column if not exists job_url text;
+alter table applications add column if not exists job_description text;
+alter table applications add column if not exists location text;
+alter table applications add column if not exists work_mode work_mode;
+alter table applications add column if not exists employment_type employment_type;
+alter table applications add column if not exists salary_min numeric;
+alter table applications add column if not exists salary_max numeric;
+alter table applications add column if not exists salary_currency text default 'USD';
+alter table applications add column if not exists visa_sponsorship_notes text;
+alter table applications add column if not exists visa_sponsorship_status visa_sponsorship_status not null default 'not_mentioned';
+alter table applications add column if not exists date_applied date;
+alter table applications add column if not exists status application_status not null default 'saved';
+alter table applications add column if not exists priority_score numeric default 0;
+alter table applications add column if not exists resume_id uuid references resumes(id) on delete set null;
+alter table applications add column if not exists cover_letter_used text;
+alter table applications add column if not exists referral_person text;
 alter table applications add column if not exists referral_email text;
 alter table applications add column if not exists referral_phone text;
-
--- Upgrade path for installs created before the structured visa sponsorship field was added.
-alter table applications add column if not exists visa_sponsorship_status visa_sponsorship_status not null default 'not_mentioned';
+alter table applications add column if not exists recruiter_name text;
+alter table applications add column if not exists hr_email text;
+alter table applications add column if not exists recruiter_linkedin_url text;
+alter table applications add column if not exists hiring_manager_linkedin_url text;
+alter table applications add column if not exists notes text;
+alter table applications add column if not exists follow_up_date date;
+alter table applications add column if not exists final_result text;
+alter table applications add column if not exists source text;
+alter table applications add column if not exists keywords text[] default '{}';
+alter table applications add column if not exists required_skills text[] default '{}';
+alter table applications add column if not exists preferred_skills text[] default '{}';
+alter table applications add column if not exists resume_match_score numeric;
+alter table applications add column if not exists is_archived boolean not null default false;
+alter table applications add column if not exists created_at timestamptz not null default now();
+alter table applications add column if not exists updated_at timestamptz not null default now();
+alter table applications alter column company_name drop default;
+alter table applications alter column job_title drop default;
 
 create index if not exists idx_applications_user on applications(user_id);
 create index if not exists idx_applications_company on applications(company_id);
@@ -315,6 +404,13 @@ create table if not exists application_status_history (
   changed_at timestamptz not null default now(),
   notes text
 );
+
+-- Upgrade path for installs predating any of these columns.
+alter table application_status_history add column if not exists application_id uuid references applications(id) on delete cascade;
+alter table application_status_history add column if not exists from_status application_status;
+alter table application_status_history add column if not exists to_status application_status;
+alter table application_status_history add column if not exists changed_at timestamptz not null default now();
+alter table application_status_history add column if not exists notes text;
 
 create index if not exists idx_status_history_application on application_status_history(application_id);
 
@@ -380,6 +476,35 @@ create table if not exists parsed_job_details (
   created_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table parsed_job_details add column if not exists application_id uuid references applications(id) on delete cascade;
+alter table parsed_job_details add column if not exists source_url text;
+alter table parsed_job_details add column if not exists raw_job_description text;
+alter table parsed_job_details add column if not exists parsed_company text;
+alter table parsed_job_details add column if not exists parsed_job_title text;
+alter table parsed_job_details add column if not exists parsed_role_type text;
+alter table parsed_job_details add column if not exists parsed_location text;
+alter table parsed_job_details add column if not exists parsed_work_mode work_mode;
+alter table parsed_job_details add column if not exists parsed_employment_type employment_type;
+alter table parsed_job_details add column if not exists parsed_salary_range text;
+alter table parsed_job_details add column if not exists required_skills text[] default '{}';
+alter table parsed_job_details add column if not exists preferred_skills text[] default '{}';
+alter table parsed_job_details add column if not exists education text;
+alter table parsed_job_details add column if not exists years_experience text;
+alter table parsed_job_details add column if not exists visa_notes text;
+alter table parsed_job_details add column if not exists deadline date;
+alter table parsed_job_details add column if not exists recruiter_info text;
+alter table parsed_job_details add column if not exists keywords text[] default '{}';
+alter table parsed_job_details add column if not exists job_summary text;
+alter table parsed_job_details add column if not exists resume_match_score numeric;
+alter table parsed_job_details add column if not exists missing_skills text[] default '{}';
+alter table parsed_job_details add column if not exists suggested_resume_id uuid references resumes(id) on delete set null;
+alter table parsed_job_details add column if not exists suggested_cold_email_angle text;
+alter table parsed_job_details add column if not exists suggested_follow_up_date date;
+alter table parsed_job_details add column if not exists priority_score numeric;
+alter table parsed_job_details add column if not exists field_confidence jsonb default '{}'::jsonb;
+alter table parsed_job_details add column if not exists created_at timestamptz not null default now();
+
 -- Upgrade path for installs created before the AI Job Intelligence Engine.
 alter table parsed_job_details add column if not exists model_used text;
 alter table parsed_job_details add column if not exists parser_version text;
@@ -435,6 +560,24 @@ create table if not exists contacts (
   updated_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table contacts add column if not exists company_id uuid references companies(id) on delete set null;
+alter table contacts add column if not exists name text not null default 'Unnamed Contact';
+alter table contacts add column if not exists company_name text;
+alter table contacts add column if not exists role_title text;
+alter table contacts add column if not exists email text;
+alter table contacts add column if not exists linkedin_url text;
+alter table contacts add column if not exists phone text;
+alter table contacts add column if not exists relationship_type relationship_type not null default 'other';
+alter table contacts add column if not exists source text;
+alter table contacts add column if not exists last_contacted_date date;
+alter table contacts add column if not exists next_follow_up_date date;
+alter table contacts add column if not exists response_status response_status not null default 'no_response';
+alter table contacts add column if not exists notes text;
+alter table contacts add column if not exists created_at timestamptz not null default now();
+alter table contacts add column if not exists updated_at timestamptz not null default now();
+alter table contacts alter column name drop default;
+
 create index if not exists idx_contacts_user on contacts(user_id);
 create index if not exists idx_contacts_company on contacts(company_id);
 create index if not exists idx_contacts_next_follow_up on contacts(next_follow_up_date);
@@ -467,6 +610,19 @@ create table if not exists email_templates (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Upgrade path for installs predating any of these columns.
+alter table email_templates add column if not exists name text not null default 'Untitled Template';
+alter table email_templates add column if not exists category template_category not null default 'custom';
+alter table email_templates add column if not exists subject text;
+alter table email_templates add column if not exists body text not null default '';
+alter table email_templates add column if not exists is_system_default boolean not null default false;
+alter table email_templates add column if not exists times_used integer not null default 0;
+alter table email_templates add column if not exists reply_count integer not null default 0;
+alter table email_templates add column if not exists created_at timestamptz not null default now();
+alter table email_templates add column if not exists updated_at timestamptz not null default now();
+alter table email_templates alter column name drop default;
+alter table email_templates alter column body drop default;
 
 create index if not exists idx_email_templates_user on email_templates(user_id);
 
@@ -502,6 +658,27 @@ create table if not exists outreach (
   updated_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table outreach add column if not exists contact_id uuid references contacts(id) on delete set null;
+alter table outreach add column if not exists company_id uuid references companies(id) on delete set null;
+alter table outreach add column if not exists application_id uuid references applications(id) on delete set null;
+alter table outreach add column if not exists template_id uuid references email_templates(id) on delete set null;
+alter table outreach add column if not exists person_name text;
+alter table outreach add column if not exists company_name text;
+alter table outreach add column if not exists email text;
+alter table outreach add column if not exists linkedin_url text;
+alter table outreach add column if not exists outreach_type outreach_type not null default 'cold_email';
+alter table outreach add column if not exists subject_line text;
+alter table outreach add column if not exists message_sent text;
+alter table outreach add column if not exists date_sent date not null default current_date;
+alter table outreach add column if not exists follow_up_date date;
+alter table outreach add column if not exists response_received boolean not null default false;
+alter table outreach add column if not exists response_type response_status default 'no_response';
+alter table outreach add column if not exists response_date date;
+alter table outreach add column if not exists notes text;
+alter table outreach add column if not exists created_at timestamptz not null default now();
+alter table outreach add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists idx_outreach_user on outreach(user_id);
 create index if not exists idx_outreach_contact on outreach(contact_id);
 create index if not exists idx_outreach_company on outreach(company_id);
@@ -536,6 +713,24 @@ create table if not exists interview_rounds (
   updated_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table interview_rounds add column if not exists application_id uuid references applications(id) on delete cascade;
+alter table interview_rounds add column if not exists round_name text not null default 'Interview';
+alter table interview_rounds add column if not exists round_type interview_round_type not null default 'other';
+alter table interview_rounds add column if not exists scheduled_at timestamptz;
+alter table interview_rounds add column if not exists interviewer_name text;
+alter table interview_rounds add column if not exists interviewer_linkedin_url text;
+alter table interview_rounds add column if not exists interviewer_email text;
+alter table interview_rounds add column if not exists meeting_link text;
+alter table interview_rounds add column if not exists preparation_notes text;
+alter table interview_rounds add column if not exists questions_asked text;
+alter table interview_rounds add column if not exists result interview_result not null default 'pending';
+alter table interview_rounds add column if not exists follow_up_sent boolean not null default false;
+alter table interview_rounds add column if not exists thank_you_email_sent boolean not null default false;
+alter table interview_rounds add column if not exists created_at timestamptz not null default now();
+alter table interview_rounds add column if not exists updated_at timestamptz not null default now();
+alter table interview_rounds alter column round_name drop default;
+
 create index if not exists idx_interview_rounds_application on interview_rounds(application_id);
 create index if not exists idx_interview_rounds_user on interview_rounds(user_id);
 create index if not exists idx_interview_rounds_scheduled on interview_rounds(scheduled_at);
@@ -566,6 +761,23 @@ create table if not exists follow_ups (
   updated_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table follow_ups add column if not exists context follow_up_context not null default 'general';
+alter table follow_ups add column if not exists application_id uuid references applications(id) on delete cascade;
+alter table follow_ups add column if not exists contact_id uuid references contacts(id) on delete cascade;
+alter table follow_ups add column if not exists company_id uuid references companies(id) on delete set null;
+alter table follow_ups add column if not exists outreach_id uuid references outreach(id) on delete cascade;
+alter table follow_ups add column if not exists interview_round_id uuid references interview_rounds(id) on delete cascade;
+alter table follow_ups add column if not exists title text not null default 'Follow up';
+alter table follow_ups add column if not exists due_date date not null default current_date;
+alter table follow_ups add column if not exists is_completed boolean not null default false;
+alter table follow_ups add column if not exists completed_at timestamptz;
+alter table follow_ups add column if not exists notes text;
+alter table follow_ups add column if not exists created_at timestamptz not null default now();
+alter table follow_ups add column if not exists updated_at timestamptz not null default now();
+alter table follow_ups alter column title drop default;
+alter table follow_ups alter column due_date drop default;
+
 create index if not exists idx_follow_ups_user on follow_ups(user_id);
 create index if not exists idx_follow_ups_due on follow_ups(due_date);
 create index if not exists idx_follow_ups_completed on follow_ups(is_completed);
@@ -589,6 +801,14 @@ create table if not exists notes (
   updated_at timestamptz not null default now()
 );
 
+-- Upgrade path for installs predating any of these columns.
+alter table notes add column if not exists entity_type text;
+alter table notes add column if not exists entity_id uuid;
+alter table notes add column if not exists body text not null default '';
+alter table notes add column if not exists created_at timestamptz not null default now();
+alter table notes add column if not exists updated_at timestamptz not null default now();
+alter table notes alter column body drop default;
+
 create index if not exists idx_notes_entity on notes(entity_type, entity_id);
 create index if not exists idx_notes_user on notes(user_id);
 
@@ -610,6 +830,14 @@ create table if not exists exports (
   file_path text,
   created_at timestamptz not null default now()
 );
+
+-- Upgrade path for installs predating any of these columns.
+alter table exports add column if not exists entity export_entity not null default 'applications';
+alter table exports add column if not exists format export_format not null default 'xlsx';
+alter table exports add column if not exists filters jsonb default '{}'::jsonb;
+alter table exports add column if not exists row_count integer;
+alter table exports add column if not exists file_path text;
+alter table exports add column if not exists created_at timestamptz not null default now();
 
 create index if not exists idx_exports_user on exports(user_id);
 
