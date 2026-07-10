@@ -8,6 +8,7 @@ import { StickyNote, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { GlassPanel } from "@/components/shared/glass-panel";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { addNote, deleteNote } from "@/lib/actions/notes";
 import type { Note } from "@/lib/types/database";
 
@@ -25,6 +26,7 @@ export function NotesPanel({
   const router = useRouter();
   const [text, setText] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const handleAdd = async () => {
     if (!text.trim()) return;
@@ -40,14 +42,16 @@ export function NotesPanel({
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteNote(id, revalidate);
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    router.refresh();
   };
+
+  const deletingNote = notes.find((n) => n.id === deletingId) ?? null;
+  const deletingNotePreview = deletingNote
+    ? deletingNote.body.length > 60
+      ? `${deletingNote.body.slice(0, 60)}…`
+      : deletingNote.body
+    : undefined;
 
   return (
     <GlassPanel className="p-5">
@@ -78,13 +82,23 @@ export function NotesPanel({
                   {format(new Date(n.created_at), "MMM d, yyyy h:mm a")}
                 </p>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(n.id)}>
+              <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(n.id)} aria-label="Delete note">
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </li>
           ))}
         </ul>
       )}
+
+      <ConfirmDeleteDialog
+        open={deletingId !== null}
+        onOpenChange={(o) => setDeletingId(o ? deletingId : null)}
+        title="Delete this note?"
+        itemName={deletingNotePreview}
+        confirmLabel="Delete Note"
+        onConfirm={() => deleteNote(deletingId!, revalidate)}
+        onSuccess={handleDeleted}
+      />
     </GlassPanel>
   );
 }

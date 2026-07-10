@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { TemplateFormDialog } from "@/components/templates/template-form-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { deleteTemplate } from "@/app/(app)/templates/actions";
 import { TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/types/database";
 
 export function TemplatesGrid({ templates }: { templates: EmailTemplate[] }) {
   const router = useRouter();
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const handleCopy = async (template: EmailTemplate) => {
     await navigator.clipboard.writeText(
@@ -21,15 +23,12 @@ export function TemplatesGrid({ templates }: { templates: EmailTemplate[] }) {
     toast.success("Copied to clipboard.");
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteTemplate(id);
-      toast.success("Template deleted.");
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Template deleted.");
+    router.refresh();
   };
+
+  const deletingTemplate = templates.find((t) => t.id === deletingId) ?? null;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,13 +60,24 @@ export function TemplatesGrid({ templates }: { templates: EmailTemplate[] }) {
                 onSaved={() => router.refresh()}
                 trigger={<Button variant="ghost" size="icon-sm"><Pencil className="h-3.5 w-3.5" /></Button>}
               />
-              <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(t.id)}>
+              <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(t.id)} aria-label="Delete template">
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </div>
           </div>
         </GlassPanel>
       ))}
+
+      <ConfirmDeleteDialog
+        open={deletingId !== null}
+        onOpenChange={(o) => setDeletingId(o ? deletingId : null)}
+        title="Delete this template?"
+        itemName={deletingTemplate?.name}
+        warningText="Outreach records that used this template will keep their content but lose the template link."
+        confirmLabel="Delete Template"
+        onConfirm={() => deleteTemplate(deletingId!)}
+        onSuccess={handleDeleted}
+      />
     </div>
   );
 }

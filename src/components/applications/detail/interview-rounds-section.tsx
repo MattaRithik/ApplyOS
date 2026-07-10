@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { INTERVIEW_ROUND_TYPES, INTERVIEW_RESULTS, type InterviewRound, type InterviewResult } from "@/lib/types/database";
 import { addInterviewRound, deleteInterviewRound, updateInterviewRound } from "@/app/(app)/applications/[id]/actions";
 
@@ -54,6 +55,7 @@ export function InterviewRoundsSection({
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState(EMPTY_ROUND);
   const [saving, setSaving] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const handleAdd = async () => {
     if (!form.round_name) {
@@ -95,15 +97,12 @@ export function InterviewRoundsSection({
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteInterviewRound(id, applicationId);
-      toast.success("Round removed.");
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Round removed.");
+    router.refresh();
   };
+
+  const deletingRound = rounds.find((r) => r.id === deletingId) ?? null;
 
   return (
     <GlassPanel className="p-5">
@@ -115,12 +114,12 @@ export function InterviewRoundsSection({
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpen(true)}>
             <Plus className="h-3.5 w-3.5" /> Add round
           </Button>
-          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto scrollbar-thin">
+          <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto scrollbar-thin">
             <DialogHeader>
               <DialogTitle>Add interview round</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label className="mb-1.5 block text-xs text-muted-foreground">Round name *</Label>
                   <Input value={form.round_name} onChange={(e) => setForm({ ...form, round_name: e.target.value })} />
@@ -149,7 +148,7 @@ export function InterviewRoundsSection({
                   onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label className="mb-1.5 block text-xs text-muted-foreground">Interviewer name</Label>
                   <Input value={form.interviewer_name} onChange={(e) => setForm({ ...form, interviewer_name: e.target.value })} />
@@ -159,7 +158,7 @@ export function InterviewRoundsSection({
                   <Input value={form.interviewer_email} onChange={(e) => setForm({ ...form, interviewer_email: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label className="mb-1.5 block text-xs text-muted-foreground">Interviewer LinkedIn</Label>
                   <Input value={form.interviewer_linkedin_url} onChange={(e) => setForm({ ...form, interviewer_linkedin_url: e.target.value })} />
@@ -215,7 +214,7 @@ export function InterviewRoundsSection({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(round.id)}>
+                  <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(round.id)} aria-label="Delete round">
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
                 </div>
@@ -249,6 +248,17 @@ export function InterviewRoundsSection({
           ))}
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={deletingId !== null}
+        onOpenChange={(o) => setDeletingId(o ? deletingId : null)}
+        title="Delete this interview round?"
+        itemName={deletingRound?.round_name}
+        warningText="Any follow-up reminders linked to this round will also be deleted. This can't be undone."
+        confirmLabel="Delete Round"
+        onConfirm={() => deleteInterviewRound(deletingId!, applicationId)}
+        onSuccess={handleDeleted}
+      />
     </GlassPanel>
   );
 }

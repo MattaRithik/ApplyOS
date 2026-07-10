@@ -60,24 +60,26 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
   return (
     <div className="space-y-4">
       <Tabs value={view} onValueChange={setView}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <TabsList>
-            <TabsTrigger value="table" className="gap-1.5">
-              <Table2 className="h-3.5 w-3.5" /> Table
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="gap-1.5">
-              <Kanban className="h-3.5 w-3.5" /> Kanban
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5" /> Calendar
-            </TabsTrigger>
-            <TabsTrigger value="company" className="gap-1.5">
-              <Building2 className="h-3.5 w-3.5" /> Company
-            </TabsTrigger>
-            <TabsTrigger value="priority" className="gap-1.5">
-              <Flame className="h-3.5 w-3.5" /> Priority
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex items-center justify-between gap-3">
+          <div className="max-w-full overflow-x-auto scrollbar-thin">
+            <TabsList>
+              <TabsTrigger value="table" className="gap-1.5">
+                <Table2 className="h-3.5 w-3.5" /> Table
+              </TabsTrigger>
+              <TabsTrigger value="kanban" className="gap-1.5">
+                <Kanban className="h-3.5 w-3.5" /> Kanban
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5" /> Calendar
+              </TabsTrigger>
+              <TabsTrigger value="company" className="gap-1.5">
+                <Building2 className="h-3.5 w-3.5" /> Company
+              </TabsTrigger>
+              <TabsTrigger value="priority" className="gap-1.5">
+                <Flame className="h-3.5 w-3.5" /> Priority
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
       </Tabs>
 

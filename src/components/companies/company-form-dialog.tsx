@@ -86,7 +86,7 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
           {company ? "Edit" : "Add Company"}
         </Button>
       )}
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto scrollbar-thin">
+      <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <DialogTitle>{company ? "Edit company" : "Add company"}</DialogTitle>
         </DialogHeader>
@@ -95,7 +95,7 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
             <Label className="mb-1.5 block text-xs text-muted-foreground">Company name *</Label>
             <Input value={values.name} onChange={(e) => set("name", e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Website</Label>
               <Input value={values.website ?? ""} onChange={(e) => set("website", e.target.value)} />
@@ -105,7 +105,7 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
               <Input value={values.careers_page_url ?? ""} onChange={(e) => set("careers_page_url", e.target.value)} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Industry</Label>
               <Input value={values.industry ?? ""} onChange={(e) => set("industry", e.target.value)} />

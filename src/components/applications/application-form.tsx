@@ -328,7 +328,7 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact }: Ap
             {hrContacts.map((contact, index) => (
               <GlassPanel key={index} className="space-y-2.5 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="grid flex-1 grid-cols-2 gap-2">
+                  <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
                     <Input
                       value={contact.name}
                       onChange={(e) => updateHrContact(index, { name: e.target.value })}
@@ -354,7 +354,7 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact }: Ap
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <Input
                     value={contact.role_title}
                     onChange={(e) => updateHrContact(index, { role_title: e.target.value })}

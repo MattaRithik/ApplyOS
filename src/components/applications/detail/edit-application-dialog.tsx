@@ -82,7 +82,7 @@ export function EditApplicationDialog({
       <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
         <Pencil className="h-3.5 w-3.5" /> Edit
       </Button>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto scrollbar-thin">
+      <DialogContent className="max-h-[85vh] sm:max-w-2xl overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <DialogTitle>Edit application</DialogTitle>
         </DialogHeader>

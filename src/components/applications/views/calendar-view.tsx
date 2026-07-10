@@ -63,32 +63,36 @@ export function CalendarView({ applications }: { applications: ApplicationWithRe
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] font-medium text-muted-foreground sm:gap-1 sm:text-[11px]">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="py-1.5">{d}</div>
+          <div key={d} className="py-1.5">
+            <span className="sm:hidden">{d.slice(0, 1)}</span>
+            <span className="hidden sm:inline">{d}</span>
+          </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const events = byDate.get(key) ?? [];
+          const maxEvents = 2;
           return (
             <div
               key={key}
               className={cn(
-                "min-h-[86px] rounded-lg border border-border/40 p-1.5 text-left align-top",
+                "min-h-[56px] rounded-lg border border-border/40 p-1 text-left align-top sm:min-h-[86px] sm:p-1.5",
                 !isSameMonth(day, month) && "opacity-40",
                 isToday(day) && "border-[var(--cyan-accent)]/60 bg-[var(--cyan-accent)]/5"
               )}
             >
-              <span className="text-[11px] text-muted-foreground">{format(day, "d")}</span>
+              <span className="text-[10px] text-muted-foreground sm:text-[11px]">{format(day, "d")}</span>
               <div className="mt-1 space-y-1">
-                {events.slice(0, 3).map((e, i) => (
+                {events.slice(0, maxEvents).map((e, i) => (
                   <Link
                     key={i}
                     href={`/applications/${e.app.id}`}
                     className={cn(
-                      "block truncate rounded px-1 py-0.5 text-[10px] font-medium",
+                      "block truncate rounded px-1 py-0.5 text-[9px] font-medium sm:text-[10px]",
                       e.kind === "applied"
                         ? "bg-[var(--blue-accent)]/15 text-[var(--blue-accent)]"
                         : "bg-[var(--amber-accent)]/15 text-[var(--amber-accent)]"
@@ -99,8 +103,8 @@ export function CalendarView({ applications }: { applications: ApplicationWithRe
                     {e.app.company_name}
                   </Link>
                 ))}
-                {events.length > 3 && (
-                  <span className="block text-[10px] text-muted-foreground">+{events.length - 3} more</span>
+                {events.length > maxEvents && (
+                  <span className="block text-[9px] text-muted-foreground sm:text-[10px]">+{events.length - maxEvents} more</span>
                 )}
               </div>
             </div>

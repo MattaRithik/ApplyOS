@@ -128,7 +128,7 @@ export function OutreachFormDialog({
           {outreach ? "Edit" : "Log Outreach"}
         </Button>
       )}
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto scrollbar-thin">
+      <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <DialogTitle>{outreach ? "Edit outreach" : "Log cold outreach"}</DialogTitle>
         </DialogHeader>
@@ -150,7 +150,7 @@ export function OutreachFormDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Person name</Label>
               <Input value={values.person_name ?? ""} onChange={(e) => set("person_name", e.target.value)} />
@@ -177,7 +177,7 @@ export function OutreachFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Email</Label>
               <Input value={values.email ?? ""} onChange={(e) => set("email", e.target.value)} />
@@ -188,7 +188,7 @@ export function OutreachFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Outreach type</Label>
               <Select
@@ -232,7 +232,7 @@ export function OutreachFormDialog({
             <Textarea rows={3} value={values.message_sent ?? ""} onChange={(e) => set("message_sent", e.target.value)} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Date sent *</Label>
               <Input type="date" value={values.date_sent} onChange={(e) => set("date_sent", e.target.value)} />
@@ -249,7 +249,7 @@ export function OutreachFormDialog({
           </label>
 
           {values.response_received && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label className="mb-1.5 block text-xs text-muted-foreground">Response type</Label>
                 <Select

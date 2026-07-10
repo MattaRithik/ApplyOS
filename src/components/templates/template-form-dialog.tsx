@@ -66,7 +66,7 @@ export function TemplateFormDialog({
           <Plus className="h-3.5 w-3.5" /> New Template
         </Button>
       )}
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto scrollbar-thin">
+      <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <DialogTitle>{template ? "Edit template" : "New template"}</DialogTitle>
         </DialogHeader>

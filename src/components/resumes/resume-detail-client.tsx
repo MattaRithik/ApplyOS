@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { RenameResumeDialog } from "@/components/resumes/rename-resume-dialog";
 import { getResumeDownloadUrl, deleteResume } from "@/lib/supabase/resumes";
 import { updateResumeMetadata } from "@/app/(app)/resumes/actions";
@@ -32,6 +33,7 @@ export function ResumeDetailClient({ resume, applications }: { resume: Resume; a
   const [matchScore, setMatchScore] = React.useState(resume.resume_match_score?.toString() ?? "");
   const [keywords, setKeywords] = React.useState((resume.missing_keywords ?? []).join(", "));
   const [saving, setSaving] = React.useState(false);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
 
   const handleSaveMeta = async () => {
     setSaving(true);
@@ -60,14 +62,9 @@ export function ResumeDetailClient({ resume, applications }: { resume: Resume; a
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await deleteResume(resume.id);
-      toast.success("Resume deleted.");
-      router.push("/resumes");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Resume deleted.");
+    router.push("/resumes");
   };
 
   return (
@@ -94,9 +91,23 @@ export function ResumeDetailClient({ resume, applications }: { resume: Resume; a
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
             <RenameResumeDialog resume={resume} onRenamed={() => router.refresh()} />
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={handleDelete}>
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
+            <ConfirmDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              title="Delete resume?"
+              itemName={resume.display_name}
+              warningText="This permanently removes the file from storage. This can't be undone."
+              linkedCount={applications.length}
+              linkedLabel={(n) =>
+                `This resume is currently linked to ${n} application${n === 1 ? "" : "s"}. Deleting it will remove access to the file from ${n === 1 ? "that application" : "those applications"} — their history is kept.`
+              }
+              confirmLabel="Delete Resume"
+              onConfirm={() => deleteResume(resume.id)}
+              onSuccess={handleDeleted}
+            />
           </div>
         </div>
       </GlassPanel>

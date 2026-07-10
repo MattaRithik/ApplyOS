@@ -96,12 +96,12 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
           {contact ? "Edit" : "Add Contact"}
         </Button>
       )}
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto scrollbar-thin">
+      <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <DialogTitle>{contact ? "Edit contact" : "Add contact"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Name *</Label>
               <Input value={values.name} onChange={(e) => set("name", e.target.value)} />
@@ -112,7 +112,7 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Company</Label>
               <Select
@@ -150,7 +150,7 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Email</Label>
               <Input value={values.email ?? ""} onChange={(e) => set("email", e.target.value)} />
@@ -175,7 +175,7 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Last contacted</Label>
               <Input type="date" value={values.last_contacted_date ?? ""} onChange={(e) => set("last_contacted_date", e.target.value)} />

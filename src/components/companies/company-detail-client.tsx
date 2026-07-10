@@ -20,16 +20,7 @@ import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { CompanyFormDialog } from "@/components/companies/company-form-dialog";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { deleteCompany } from "@/app/(app)/companies/actions";
@@ -47,15 +38,12 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
-  const handleDelete = async () => {
-    try {
-      await deleteCompany(company.id);
-      toast.success("Company deleted.");
-      router.push("/companies");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Company deleted.");
+    router.push("/companies");
   };
+
+  const linkedRecordCount = applications.length + contacts.length + outreach.length;
 
   const bestContact = contacts.find((c) => c.response_status === "meeting_scheduled" || c.response_status === "referred") ?? contacts[0];
 
@@ -87,25 +75,22 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
           </div>
           <div className="flex items-center gap-2">
             <CompanyFormDialog company={company} trigger={<Button variant="outline" size="sm">Edit</Button>} onSaved={() => router.refresh()} />
-            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="h-3.5 w-3.5" /> Delete
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this company?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Applications and contacts linked to this company will remain but lose their company link.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </Button>
+            <ConfirmDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              title="Delete this company?"
+              itemName={company.name}
+              linkedCount={linkedRecordCount}
+              linkedLabel={() =>
+                `${applications.length} application${applications.length === 1 ? "" : "s"}, ${contacts.length} contact${contacts.length === 1 ? "" : "s"}, and ${outreach.length} outreach record${outreach.length === 1 ? "" : "s"} will keep their history but lose their company link.`
+              }
+              confirmLabel="Delete Company"
+              onConfirm={() => deleteCompany(company.id)}
+              onSuccess={handleDeleted}
+            />
           </div>
         </div>
 

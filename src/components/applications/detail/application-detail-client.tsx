@@ -18,16 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { APPLICATION_STATUSES, type ApplicationStatus, type InterviewRound, type Note, type ApplicationStatusHistory } from "@/lib/types/database";
 import { deleteApplication, updateApplicationStatus } from "@/app/(app)/applications/actions";
 import { EditApplicationDialog } from "@/components/applications/detail/edit-application-dialog";
@@ -84,14 +75,9 @@ export function ApplicationDetailClient({
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await deleteApplication(application.id);
-      toast.success("Application deleted.");
-      router.push("/applications");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Application deleted.");
+    router.push("/applications");
   };
 
   const salary =
@@ -143,25 +129,19 @@ export function ApplicationDetailClient({
               initialHrContacts={hrContacts}
               onSaved={() => router.refresh()}
             />
-            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="h-3.5 w-3.5" /> Delete
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this application?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This removes the application and its interview rounds, notes, and status history. This can&apos;t be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </Button>
+            <ConfirmDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              title="Delete this application?"
+              itemName={`${application.job_title} at ${application.company_name}`}
+              warningText="This removes the application and its interview rounds, notes, and status history. This can't be undone."
+              confirmLabel="Delete Application"
+              onConfirm={() => deleteApplication(application.id)}
+              onSuccess={handleDeleted}
+            />
           </div>
         </div>
 

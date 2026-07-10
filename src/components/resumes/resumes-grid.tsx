@@ -8,16 +8,7 @@ import { FileText, Trash2, Eye, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { RenameResumeDialog } from "@/components/resumes/rename-resume-dialog";
 import { deleteResume, getResumeDownloadUrl } from "@/lib/supabase/resumes";
 import { formatFileSize } from "@/lib/utils/resume";
@@ -41,16 +32,9 @@ export function ResumesGrid({ resumes, bestResumeId }: { resumes: ResumeWithStat
     }
   };
 
-  const handleDelete = async (resume: Resume) => {
-    try {
-      await deleteResume(resume.id);
-      toast.success("Resume deleted.");
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDeleted = () => {
+    toast.success("Resume deleted.");
+    router.refresh();
   };
 
   return (
@@ -90,25 +74,23 @@ export function ResumesGrid({ resumes, bestResumeId }: { resumes: ResumeWithStat
                 <Eye className="h-3.5 w-3.5" />
               </Button>
               <RenameResumeDialog resume={r} onRenamed={() => router.refresh()} />
-              <AlertDialog open={deletingId === r.id} onOpenChange={(o) => setDeletingId(o ? r.id : null)}>
-                <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(r.id)}>
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </Button>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this resume?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes the file from storage. Applications that used it will keep their history but lose the resume link.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDelete(r)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(r.id)} aria-label="Delete resume">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+              <ConfirmDeleteDialog
+                open={deletingId === r.id}
+                onOpenChange={(o) => setDeletingId(o ? r.id : null)}
+                title="Delete resume?"
+                itemName={r.display_name}
+                warningText="This permanently removes the file from storage. This can't be undone."
+                linkedCount={r.applicationCount}
+                linkedLabel={(n) =>
+                  `This resume is currently linked to ${n} application${n === 1 ? "" : "s"}. Deleting it will remove access to the file from ${n === 1 ? "that application" : "those applications"} — their history is kept.`
+                }
+                confirmLabel="Delete Resume"
+                onConfirm={() => deleteResume(r.id)}
+                onSuccess={handleDeleted}
+              />
             </div>
           </div>
         </GlassPanel>

@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ContactFormDialog } from "@/components/contacts/contact-form-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { deleteContact } from "@/app/(app)/contacts/actions";
 import { RELATIONSHIP_TYPES, type Contact } from "@/lib/types/database";
 
@@ -45,6 +46,7 @@ export function ContactsTable({
   const [search, setSearch] = React.useState("");
   const [relationshipFilter, setRelationshipFilter] = React.useState(ALL);
   const [followUpOnly, setFollowUpOnly] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const filtered = contacts.filter((c) => {
     const term = search.trim().toLowerCase();
@@ -54,15 +56,12 @@ export function ContactsTable({
     return true;
   });
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteContact(id);
-      toast.success("Contact deleted.");
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Contact deleted.");
+    router.refresh();
   };
+
+  const deletingContact = contacts.find((c) => c.id === deletingId) ?? null;
 
   return (
     <div className="space-y-4">
@@ -149,7 +148,7 @@ export function ContactsTable({
                         onSaved={() => router.refresh()}
                         trigger={<Button variant="ghost" size="icon-sm"><Pencil className="h-3.5 w-3.5" /></Button>}
                       />
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(c.id)}>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(c.id)} aria-label="Delete contact">
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                     </div>
@@ -160,6 +159,17 @@ export function ContactsTable({
           </Table>
         </div>
       </GlassPanel>
+
+      <ConfirmDeleteDialog
+        open={deletingId !== null}
+        onOpenChange={(o) => setDeletingId(o ? deletingId : null)}
+        title="Delete this contact?"
+        itemName={deletingContact?.name}
+        warningText="Outreach records with this contact will keep their history but lose the contact link. Follow-up reminders tied to this contact will also be deleted."
+        confirmLabel="Delete Contact"
+        onConfirm={() => deleteContact(deletingId!)}
+        onSuccess={handleDeleted}
+      />
     </div>
   );
 }

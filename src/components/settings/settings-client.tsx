@@ -74,7 +74,7 @@ export function SettingsClient({ profile, email }: { profile: Profile | null; em
       <TabsContent value="appearance" className="mt-4">
         <GlassPanel className="max-w-lg space-y-3 p-5">
           <p className="text-sm font-semibold">Theme</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {[
               { value: "light", label: "Light", icon: Sun },
               { value: "dark", label: "Dark", icon: Moon },

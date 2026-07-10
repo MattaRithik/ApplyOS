@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { OutreachFormDialog } from "@/components/outreach/outreach-form-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { deleteOutreach } from "@/app/(app)/outreach/actions";
 import { OUTREACH_TYPES, type Outreach } from "@/lib/types/database";
 
@@ -38,6 +39,7 @@ export function OutreachTable({
   const [search, setSearch] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState(ALL);
   const [responseFilter, setResponseFilter] = React.useState(ALL);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const filtered = outreach.filter((o) => {
     const term = search.trim().toLowerCase();
@@ -48,15 +50,12 @@ export function OutreachTable({
     return true;
   });
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteOutreach(id);
-      toast.success("Outreach removed.");
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
-    }
+  const handleDeleted = () => {
+    toast.success("Outreach removed.");
+    router.refresh();
   };
+
+  const deletingOutreach = outreach.find((o) => o.id === deletingId) ?? null;
 
   return (
     <div className="space-y-4">
@@ -140,7 +139,7 @@ export function OutreachTable({
                         onSaved={() => router.refresh()}
                         trigger={<Button variant="ghost" size="icon-sm"><Pencil className="h-3.5 w-3.5" /></Button>}
                       />
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(o.id)}>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(o.id)} aria-label="Delete outreach">
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                     </div>
@@ -151,6 +150,17 @@ export function OutreachTable({
           </Table>
         </div>
       </GlassPanel>
+
+      <ConfirmDeleteDialog
+        open={deletingId !== null}
+        onOpenChange={(o) => setDeletingId(o ? deletingId : null)}
+        title="Delete this outreach record?"
+        itemName={deletingOutreach?.person_name ?? deletingOutreach?.company_name ?? undefined}
+        warningText="This permanently removes the outreach log entry, including any reply history. This can't be undone."
+        confirmLabel="Delete Outreach"
+        onConfirm={() => deleteOutreach(deletingId!)}
+        onSuccess={handleDeleted}
+      />
     </div>
   );
 }
