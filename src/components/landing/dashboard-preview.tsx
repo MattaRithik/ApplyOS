@@ -41,10 +41,10 @@ export function DashboardPreview() {
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <StatTile label="Applications" value={42} iconName="briefcase" accent="blue" delay={0} />
-        <StatTile label="Interviews" value={5} iconName="calendarClock" accent="amber" delay={0.04} />
-        <StatTile label="Offers" value={2} iconName="trophy" accent="emerald" delay={0.08} />
-        <StatTile label="Reply Rate" value="38%" iconName="reply" accent="cyan" delay={0.12} />
+        <StatTile compact label="Applications" value={42} iconName="briefcase" accent="blue" delay={0} />
+        <StatTile compact label="Interviews" value={5} iconName="calendarClock" accent="amber" delay={0.04} />
+        <StatTile compact label="Offers" value={2} iconName="trophy" accent="emerald" delay={0.08} />
+        <StatTile compact label="Reply Rate" value="38%" iconName="reply" accent="cyan" delay={0.12} />
       </div>
 
       <div className="mt-4 space-y-1.5">

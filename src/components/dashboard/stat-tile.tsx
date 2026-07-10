@@ -49,6 +49,7 @@ interface StatTileProps {
   accent?: "blue" | "cyan" | "emerald" | "amber" | "silver";
   hint?: string;
   delay?: number;
+  compact?: boolean;
 }
 
 const accentClasses: Record<NonNullable<StatTileProps["accent"]>, string> = {
@@ -59,7 +60,7 @@ const accentClasses: Record<NonNullable<StatTileProps["accent"]>, string> = {
   silver: "from-[var(--silver-accent)]/25 to-[var(--silver-accent)]/5 text-[var(--silver-accent)]",
 };
 
-export function StatTile({ label, value, iconName, accent = "blue", hint, delay = 0 }: StatTileProps) {
+export function StatTile({ label, value, iconName, accent = "blue", hint, delay = 0, compact = false }: StatTileProps) {
   const Icon = icons[iconName];
 
   return (
@@ -68,19 +69,23 @@ export function StatTile({ label, value, iconName, accent = "blue", hint, delay 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }}
     >
-      <GlassPanel hoverLift className="flex items-center gap-4 p-4">
-        <span
-          className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br",
-            accentClasses[accent]
-          )}
-        >
-          <Icon className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xl font-semibold tracking-tight tabular-nums">{value}</p>
-          <p className="truncate text-xs text-muted-foreground">{label}</p>
-          {hint && <p className="truncate text-[11px] text-muted-foreground/70">{hint}</p>}
+      <GlassPanel hoverLift className={cn(compact ? "h-full p-3" : "flex items-center gap-4 p-4")}>
+        <div className={cn(compact && "flex items-center gap-2.5")}>
+          <span
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br",
+              compact ? "h-9 w-9" : "h-11 w-11",
+              accentClasses[accent]
+            )}
+          >
+            <Icon className={compact ? "h-4 w-4" : "h-5 w-5"} />
+          </span>
+          {compact && <p className="text-lg font-semibold tracking-tight tabular-nums">{value}</p>}
+        </div>
+        <div className={cn("min-w-0", compact && "mt-2")}>
+          {!compact && <p className="text-xl font-semibold tracking-tight tabular-nums">{value}</p>}
+          <p className={cn("text-muted-foreground", compact ? "text-[11px] leading-tight" : "truncate text-xs")}>{label}</p>
+          {hint && <p className={cn("text-[11px] text-muted-foreground/70", !compact && "truncate")}>{hint}</p>}
         </div>
       </GlassPanel>
     </motion.div>
