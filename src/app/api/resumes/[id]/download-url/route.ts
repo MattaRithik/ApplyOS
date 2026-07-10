@@ -7,8 +7,9 @@ import { createResumeDownloadUrl } from "@/lib/storage/b2";
  * against `resumes.user_id = auth.uid()` before any B2 call is made — a
  * user can never reach another user's file by guessing/changing an id.
  */
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const disposition = new URL(request.url).searchParams.get("disposition") === "attachment" ? "attachment" : "inline";
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,7 +38,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     ? `${resume.display_name}.${resume.file_extension}`
     : resume.display_name;
 
-  const { url, expiresIn } = await createResumeDownloadUrl(resume.storage_key, downloadFileName);
+  const { url, expiresIn } = await createResumeDownloadUrl(resume.storage_key, downloadFileName, disposition);
 
   return NextResponse.json({ url, expires_in: expiresIn, file_name: downloadFileName });
 }

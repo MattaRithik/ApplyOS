@@ -69,13 +69,14 @@ export async function createResumeUploadUrl(
 
 export async function createResumeDownloadUrl(
   storageKey: string,
-  downloadFileName?: string
+  downloadFileName?: string,
+  disposition: "inline" | "attachment" = "attachment"
 ): Promise<{ url: string; expiresIn: number }> {
   const command = new GetObjectCommand({
     Bucket: getBucketName(),
     Key: storageKey,
     ResponseContentDisposition: downloadFileName
-      ? `attachment; filename="${downloadFileName.replace(/"/g, "")}"`
+      ? `${disposition}; filename="${downloadFileName.replace(/"/g, "")}"`
       : undefined,
   });
   const url = await getSignedUrl(getB2Client(), command, { expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS });

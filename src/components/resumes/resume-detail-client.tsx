@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,12 +51,12 @@ export function ResumeDetailClient({ resume, applications }: { resume: Resume; a
     }
   };
 
-  const handleDownload = async () => {
+  const handleView = async () => {
     try {
       const url = await getResumeDownloadUrl(resume.id);
-      window.open(url, "_blank");
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Download failed");
+      toast.error(e instanceof Error ? e.message : "Couldn't open resume");
     }
   };
 
@@ -90,8 +90,8 @@ export function ResumeDetailClient({ resume, applications }: { resume: Resume; a
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}>
-              <Download className="h-3.5 w-3.5" /> Download
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleView}>
+              <Eye className="h-3.5 w-3.5" /> View
             </Button>
             <RenameResumeDialog resume={resume} onRenamed={() => router.refresh()} />
             <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={handleDelete}>

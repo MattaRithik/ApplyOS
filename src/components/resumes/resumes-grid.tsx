@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FileText, Trash2, Download, Trophy } from "lucide-react";
+import { FileText, Trash2, Eye, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
@@ -32,12 +32,12 @@ export function ResumesGrid({ resumes, bestResumeId }: { resumes: ResumeWithStat
   const router = useRouter();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  const handleDownload = async (resume: Resume) => {
+  const handleView = async (resume: Resume) => {
     try {
       const url = await getResumeDownloadUrl(resume.id);
-      window.open(url, "_blank");
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Download failed");
+      toast.error(e instanceof Error ? e.message : "Couldn't open resume");
     }
   };
 
@@ -86,8 +86,8 @@ export function ResumesGrid({ resumes, bestResumeId }: { resumes: ResumeWithStat
           <div className="mt-auto flex items-center justify-between border-t border-border/40 pt-2.5">
             <span className="truncate text-[11px] text-muted-foreground">{r.original_file_name}</span>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={() => handleDownload(r)}>
-                <Download className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon-sm" onClick={() => handleView(r)} aria-label="View resume">
+                <Eye className="h-3.5 w-3.5" />
               </Button>
               <RenameResumeDialog resume={r} onRenamed={() => router.refresh()} />
               <AlertDialog open={deletingId === r.id} onOpenChange={(o) => setDeletingId(o ? r.id : null)}>

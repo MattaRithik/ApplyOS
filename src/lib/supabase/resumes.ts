@@ -68,8 +68,13 @@ export async function deleteResume(resumeId: string): Promise<void> {
   await readJsonOrThrow(res);
 }
 
-export async function getResumeDownloadUrl(resumeId: string): Promise<string> {
-  const res = await fetch(`/api/resumes/${resumeId}/download-url`);
+/**
+ * `mode: "view"` (default) opens the file in the browser tab — used for the
+ * one-click preview. `mode: "download"` forces a save-to-disk instead.
+ */
+export async function getResumeDownloadUrl(resumeId: string, mode: "view" | "download" = "view"): Promise<string> {
+  const disposition = mode === "download" ? "attachment" : "inline";
+  const res = await fetch(`/api/resumes/${resumeId}/download-url?disposition=${disposition}`);
   const { url } = await readJsonOrThrow(res);
   return url as string;
 }
