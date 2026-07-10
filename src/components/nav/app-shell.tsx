@@ -7,6 +7,7 @@ import { Topbar } from "@/components/nav/topbar";
 import { CommandPalette } from "@/components/command-palette/command-palette";
 import { PageTransition } from "@/components/shared/page-transition";
 import { primaryNav, secondaryNav } from "@/components/nav/nav-config";
+import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ interface AppShellProps {
   userName?: string | null;
   avatarUrl?: string | null;
   followUpsDueCount?: number;
+  showOnboarding?: boolean;
 }
 
 export function AppShell({
@@ -22,8 +24,10 @@ export function AppShell({
   userName,
   avatarUrl,
   followUpsDueCount,
+  showOnboarding,
 }: AppShellProps) {
   const [commandOpen, setCommandOpen] = React.useState(false);
+  const [onboardingOpen, setOnboardingOpen] = React.useState(!!showOnboarding);
   const pathname = usePathname();
 
   const pageTitle =
@@ -54,6 +58,7 @@ export function AppShell({
       </div>
 
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <OnboardingFlow open={onboardingOpen} onOpenChange={setOnboardingOpen} />
     </div>
   );
 }

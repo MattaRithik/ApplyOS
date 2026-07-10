@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { format } from "date-fns";
 import { CalendarClock, ListChecks, Building2, ArrowUpRight, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { getTimelinesContext } from "@/lib/data/timelines";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -11,7 +13,9 @@ import { StatusDistributionChart } from "@/components/dashboard/charts/status-di
 import { OutreachReplyChart } from "@/components/dashboard/charts/outreach-reply-chart";
 import { InterviewFunnelChart } from "@/components/dashboard/charts/interview-funnel-chart";
 import { ResumePerformanceChart } from "@/components/dashboard/charts/resume-performance-chart";
-import { format } from "date-fns";
+import { ImportantTimelinesSection } from "@/components/dashboard/timelines/important-timelines-section";
+import type { TimelineCardData } from "@/components/dashboard/timelines/timeline-card";
+import type { UserTimeline } from "@/lib/types/database";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -20,18 +24,56 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const data = await getDashboardData(supabase, user.id);
+  const [data, timelinesContext, { data: profile }] = await Promise.all([
+    getDashboardData(supabase, user.id),
+    getTimelinesContext(supabase, user.id),
+    supabase.from("profiles").select("user_category").eq("id", user.id).maybeSingle(),
+  ]);
+
+  const isInternational = profile?.user_category === "international_student_us";
+
+  const slotTimelines: Partial<Record<1 | 2 | 3, UserTimeline>> = {};
+  for (const t of timelinesContext.allTimelines) {
+    if (t.is_pinned && t.dashboard_slot) slotTimelines[t.dashboard_slot] = t;
+  }
+
+  const timelineCards: TimelineCardData[] = timelinesContext.pinnedTimelines.map((r) => ({
+    id: r.id,
+    title: r.title,
+    icon: r.icon,
+    category: r.category,
+    targetDateISO: r.targetDate ? format(r.targetDate, "yyyy-MM-dd") : null,
+    rollingRule: r.rollingRule,
+    sourceLabel: r.sourceLabel,
+    supportingText: r.supportingText,
+    warningText: r.warningText,
+    isMissingData: r.isMissingData,
+    createdAtISO: r.createdAt,
+    dashboardSlot: r.dashboardSlot as 1 | 2 | 3,
+  }));
+
+  const timelinesSection = (
+    <ImportantTimelinesSection
+      cards={timelineCards}
+      slotTimelines={slotTimelines}
+      isInternational={isInternational}
+      internationalProfile={timelinesContext.internationalProfile}
+    />
+  );
 
   if (data.isEmpty) {
     return (
-      <div className="mx-auto max-w-2xl pt-16">
-        <EmptyState
-          iconName="sparkles"
-          title="Welcome to ApplyOS"
-          description="Your command center is ready. Add your first application to start tracking outreach, interviews, and offers in one place."
-          actionLabel="Add your first application"
-          actionHref="/applications/add"
-        />
+      <div className="space-y-6 py-6">
+        <div className="mx-auto max-w-2xl pt-10">
+          <EmptyState
+            iconName="sparkles"
+            title="Welcome to ApplyOS"
+            description="Your command center is ready. Add your first application to start tracking outreach, interviews, and offers in one place."
+            actionLabel="Add your first application"
+            actionHref="/applications/add"
+          />
+        </div>
+        {timelinesSection}
       </div>
     );
   }
@@ -101,6 +143,8 @@ export default async function DashboardPage() {
           )}
         </GlassPanel>
       </div>
+
+      {timelinesSection}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <GlassPanel className="p-5">

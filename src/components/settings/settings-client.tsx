@@ -12,10 +12,20 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { updateProfile } from "@/app/(app)/settings/actions";
 import { createClient } from "@/lib/supabase/client";
+import { ProfileTimelineSettings } from "@/components/settings/profile-timeline-settings";
 import type { Profile } from "@/lib/types/database";
+import type { TimelinesContext } from "@/lib/data/timelines";
 import { cn } from "@/lib/utils";
 
-export function SettingsClient({ profile, email }: { profile: Profile | null; email: string | null | undefined }) {
+export function SettingsClient({
+  profile,
+  email,
+  timelinesContext,
+}: {
+  profile: Profile | null;
+  email: string | null | undefined;
+  timelinesContext: TimelinesContext;
+}) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [fullName, setFullName] = React.useState(profile?.full_name ?? "");
@@ -47,6 +57,7 @@ export function SettingsClient({ profile, email }: { profile: Profile | null; em
     <Tabs defaultValue="profile">
       <TabsList>
         <TabsTrigger value="profile">Profile</TabsTrigger>
+        <TabsTrigger value="timelines">Profile &amp; Timeline Settings</TabsTrigger>
         <TabsTrigger value="appearance">Appearance</TabsTrigger>
         <TabsTrigger value="account">Account</TabsTrigger>
       </TabsList>
@@ -69,6 +80,14 @@ export function SettingsClient({ profile, email }: { profile: Profile | null; em
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </GlassPanel>
+      </TabsContent>
+
+      <TabsContent value="timelines" className="mt-4">
+        <ProfileTimelineSettings
+          userCategory={profile?.user_category ?? null}
+          internationalProfile={timelinesContext.internationalProfile}
+          allTimelines={timelinesContext.allTimelines}
+        />
       </TabsContent>
 
       <TabsContent value="appearance" className="mt-4">

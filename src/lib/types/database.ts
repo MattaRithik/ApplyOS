@@ -90,7 +90,60 @@ export type ExportEntity =
   | "interviews"
   | "follow_ups"
   | "resumes"
+  | "international_profile"
   | "full_backup";
+
+// ---------------------------------------------------------------------
+// Onboarding / international-student / dashboard timelines
+// ---------------------------------------------------------------------
+
+export type UserCategory =
+  | "us_citizen_or_permanent_resident"
+  | "international_student_us"
+  | "other_temporary_authorization"
+  | "prefer_not_to_answer";
+
+export type OnboardingStatus = "not_started" | "skipped" | "completed";
+
+export type VisaStatus = "f1" | "j1" | "other" | "prefer_not_to_answer";
+
+export type ProgramLevel = "bachelors" | "masters" | "phd" | "certificate" | "other";
+
+export type StemDesignatedStatus = "yes" | "no" | "unsure";
+
+export type AuthorizationStage =
+  | "enrolled"
+  | "preparing_for_cpt"
+  | "using_cpt"
+  | "preparing_for_opt"
+  | "opt_application_pending"
+  | "opt_approved"
+  | "post_completion_opt"
+  | "preparing_for_stem_opt"
+  | "stem_opt_application_pending"
+  | "on_stem_opt"
+  | "other";
+
+/** Keep in sync with src/lib/config/immigration-rules.ts and the `timeline_type` enum in supabase/schema.sql. */
+export type TimelineType =
+  | "fixed_date"
+  | "i20_program_end"
+  | "opt_earliest_filing"
+  | "opt_general_latest_filing"
+  | "opt_start"
+  | "opt_end"
+  | "stem_opt_preparation"
+  | "ead_expiration"
+  | "end_of_month"
+  | "end_of_quarter"
+  | "end_of_year"
+  | "custom";
+
+export type TimelineCategory = "academic" | "immigration" | "job_search" | "interview" | "personal" | "other";
+
+export type TimelineSource = "user" | "profile" | "calculated";
+
+export type RollingRule = "end_of_month" | "end_of_quarter" | "end_of_year";
 
 export interface Profile {
   id: string;
@@ -101,6 +154,58 @@ export interface Profile {
   job_search_start_date: string | null;
   theme_preference: string | null;
   settings: Record<string, unknown>;
+  user_category: UserCategory | null;
+  onboarding_status: OnboardingStatus;
+  onboarding_completed_at: string | null;
+  onboarding_skipped_at: string | null;
+  timezone: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InternationalStudentProfile {
+  id: string;
+  user_id: string;
+  visa_status: VisaStatus | null;
+  program_level: ProgramLevel | null;
+  program_name: string | null;
+  school_name: string | null;
+  i20_program_end_date: string | null;
+  expected_graduation_date: string | null;
+  stem_designated_status: StemDesignatedStatus | null;
+  current_authorization_stage: AuthorizationStage | null;
+  /** Optional. Never rendered on dashboard cards or included outside the labeled profile export. */
+  sevis_id: string | null;
+  opt_start_date: string | null;
+  opt_end_date: string | null;
+  ead_expiration_date: string | null;
+  stem_opt_expiration_date: string | null;
+  reminder_days_before: number[];
+  /** Lets a user hide immigration features/cards without deleting the underlying data. */
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserTimeline {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  /** Lucide icon key chosen for a custom timeline — see ICON_OPTIONS in the timeline UI. Null falls back to a category default. */
+  icon: string | null;
+  timeline_type: TimelineType;
+  category: TimelineCategory;
+  /** Source of truth only for 'fixed_date' / 'custom' rows — see src/lib/timelines/resolve.ts. */
+  target_date: string | null;
+  rolling_rule: RollingRule | null;
+  source: TimelineSource;
+  is_system_generated: boolean;
+  is_pinned: boolean;
+  dashboard_slot: 1 | 2 | 3 | null;
+  sort_order: number;
+  completed_at: string | null;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 }

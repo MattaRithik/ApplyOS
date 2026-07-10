@@ -29,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       userName={profile?.full_name}
       avatarUrl={profile?.avatar_url}
       followUpsDueCount={followUpsDueCount ?? 0}
+      showOnboarding={profile?.onboarding_status === "not_started"}
     >
       {children}
     </AppShell>
