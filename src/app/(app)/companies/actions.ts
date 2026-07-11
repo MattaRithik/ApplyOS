@@ -2,6 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { assertAllowedKeys, optionalHttpUrlSchema, uuidSchema } from "@/lib/validation/common";
+
+const COMPANY_INPUT_KEYS = ["name", "website", "careers_page_url", "industry", "location", "linkedin_url", "sponsorship_friendly", "sponsorship_notes", "notes"] as const;
+
+function validateCompanyUrls(input: Partial<CompanyInput>) {
+  optionalHttpUrlSchema.parse(input.website);
+  optionalHttpUrlSchema.parse(input.careers_page_url);
+  optionalHttpUrlSchema.parse(input.linkedin_url);
+}
 
 export interface CompanyInput {
   name: string;
@@ -16,11 +25,14 @@ export interface CompanyInput {
 }
 
 export async function createCompany(input: CompanyInput) {
+  assertAllowedKeys(input, COMPANY_INPUT_KEYS);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  if (!input.name.trim() || input.name.length > 200) throw new Error("Invalid company name.");
+  validateCompanyUrls(input);
 
   const { data, error } = await supabase
     .from("companies")
@@ -34,11 +46,15 @@ export async function createCompany(input: CompanyInput) {
 }
 
 export async function updateCompany(id: string, input: Partial<CompanyInput>) {
+  assertAllowedKeys(input, COMPANY_INPUT_KEYS);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  uuidSchema.parse(id);
+  if (input.name !== undefined && (!input.name.trim() || input.name.length > 200)) throw new Error("Invalid company name.");
+  validateCompanyUrls(input);
 
   const { data, error } = await supabase
     .from("companies")
@@ -60,6 +76,7 @@ export async function deleteCompany(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  uuidSchema.parse(id);
 
   const { error } = await supabase.from("companies").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);

@@ -1,3 +1,4 @@
+import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
@@ -28,7 +29,7 @@ export async function createClient() {
   );
 }
 
-/** Service-role client for privileged server-only operations (storage rename, exports). */
+/** Service-role client for narrow, privileged server-only operations. */
 export function createServiceRoleClient() {
   return createSupabaseJsClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

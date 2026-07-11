@@ -22,7 +22,12 @@ export default async function ResumesPage() {
   if (!user) return null;
 
   const [{ data: resumes }, { data: applications }] = await Promise.all([
-    supabase.from("resumes").select("*").eq("user_id", user.id).eq("is_archived", false).order("created_at", { ascending: false }),
+    supabase
+      .from("resumes")
+      .select("id, display_name, original_file_name, file_extension, file_size, target_role, status, created_at")
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false }),
     supabase.from("applications").select("resume_id, status").eq("user_id", user.id).eq("is_archived", false),
   ]);
 

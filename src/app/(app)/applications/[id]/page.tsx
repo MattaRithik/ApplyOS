@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ApplicationDetailClient } from "@/components/applications/detail/application-detail-client";
 import { getApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
+import { hasAIParserAccess } from "@/lib/ai-parser/entitlement";
 
 export default async function ApplicationDetailPage({
   params,
@@ -15,7 +16,7 @@ export default async function ApplicationDetailPage({
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: application }, { data: resumes }, { data: interviewRounds }, { data: statusHistory }, { data: notes }, hrContacts] =
+  const [{ data: application }, { data: resumes }, { data: interviewRounds }, { data: statusHistory }, { data: notes }, hrContacts, aiParserEnabled] =
     await Promise.all([
       supabase
         .from("applications")
@@ -44,6 +45,7 @@ export default async function ApplicationDetailPage({
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
       getApplicationHrContacts(id),
+      hasAIParserAccess(supabase),
     ]);
 
   if (!application) notFound();
@@ -56,6 +58,7 @@ export default async function ApplicationDetailPage({
       statusHistory={statusHistory ?? []}
       notes={notes ?? []}
       hrContacts={hrContacts}
+      aiParserEnabled={aiParserEnabled}
     />
   );
 }

@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password", "/auth/callback"];
 
+function isPublicPath(pathname: string): boolean {
+  return pathname === "/" || PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -30,17 +34,23 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublic = pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isPublic = isPublicPath(pathname);
 
   if (!user && !isPublic) {
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    redirectResponse.headers.set("Cache-Control", "private, no-store");
+    return redirectResponse;
   }
 
   if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+    redirectResponse.headers.set("Cache-Control", "private, no-store");
+    return redirectResponse;
   }
+
+  if (!isPublic) response.headers.set("Cache-Control", "private, no-store");
 
   return response;
 }

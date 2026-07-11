@@ -2,8 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { ApplicationStatus, VisaSponsorshipStatus } from "@/lib/types/database";
-import type { JobIntelligenceResult } from "@/lib/parser/schema";
+import type { ApplicationStatus, VisaSponsorshipStatus, WorkMode, EmploymentType } from "@/lib/types/database";
+import type { AiParserApiResponse } from "@/lib/ai-parser/schema";
+import { assertOptionalOwnedEntity, assertOwnedEntity } from "@/lib/security/ownership";
+import { assertAllowedKeys, httpUrlSchema, uuidSchema } from "@/lib/validation/common";
+
+const APPLICATION_INPUT_KEYS = [
+  "company_name", "job_title", "job_url", "job_description", "location", "work_mode", "employment_type",
+  "salary_min", "salary_max", "salary_currency", "visa_sponsorship_notes", "visa_sponsorship_status", "date_applied",
+  "status", "priority_score", "resume_id", "cover_letter_used", "referral_person", "referral_email", "referral_phone",
+  "recruiter_name", "hr_email", "recruiter_linkedin_url", "hiring_manager_linkedin_url", "notes", "follow_up_date",
+  "source", "keywords", "required_skills", "preferred_skills", "resume_match_score",
+] as const;
 
 export interface ApplicationInput {
   company_name: string;
@@ -59,11 +69,19 @@ async function findOrCreateCompany(userId: string, companyName: string) {
 }
 
 export async function createApplication(input: ApplicationInput) {
+  assertAllowedKeys(input, APPLICATION_INPUT_KEYS);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  if (!input.company_name?.trim() || input.company_name.length > 200) throw new Error("Invalid company name.");
+  if (!input.job_title?.trim() || input.job_title.length > 200) throw new Error("Invalid job title.");
+  if (input.job_url) httpUrlSchema.parse(input.job_url);
+  if (input.recruiter_linkedin_url) httpUrlSchema.parse(input.recruiter_linkedin_url);
+  if (input.hiring_manager_linkedin_url) httpUrlSchema.parse(input.hiring_manager_linkedin_url);
+  if (input.job_description && input.job_description.length > 100_000) throw new Error("Job description is too long.");
+  await assertOptionalOwnedEntity(supabase, user.id, "resume", input.resume_id);
 
   const companyId = await findOrCreateCompany(user.id, input.company_name);
 
@@ -82,11 +100,21 @@ export async function createApplication(input: ApplicationInput) {
 }
 
 export async function updateApplication(id: string, input: Partial<ApplicationInput>) {
+  assertAllowedKeys(input, APPLICATION_INPUT_KEYS);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  uuidSchema.parse(id);
+  await assertOwnedEntity(supabase, user.id, "application", id);
+  await assertOptionalOwnedEntity(supabase, user.id, "resume", input.resume_id);
+  if (input.company_name !== undefined && (!input.company_name.trim() || input.company_name.length > 200)) throw new Error("Invalid company name.");
+  if (input.job_title !== undefined && (!input.job_title.trim() || input.job_title.length > 200)) throw new Error("Invalid job title.");
+  if (input.job_url) httpUrlSchema.parse(input.job_url);
+  if (input.recruiter_linkedin_url) httpUrlSchema.parse(input.recruiter_linkedin_url);
+  if (input.hiring_manager_linkedin_url) httpUrlSchema.parse(input.hiring_manager_linkedin_url);
+  if (input.job_description && input.job_description.length > 100_000) throw new Error("Job description is too long.");
 
   let companyId: string | null | undefined = undefined;
   if (input.company_name) {
@@ -120,67 +148,88 @@ function toDateOrNull(value: string | undefined | null): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
 }
 
+const WORKPLACE_TO_WORK_MODE: Record<string, WorkMode | null> = {
+  remote: "remote",
+  hybrid: "hybrid",
+  onsite: "onsite",
+  unknown: null,
+};
+
+const EMPLOYMENT_TYPE_TO_DB: Record<string, EmploymentType | null> = {
+  full_time: "full_time",
+  part_time: "part_time",
+  internship: "internship",
+  contract: "contract",
+  temporary: "temporary",
+  seasonal: null,
+  apprenticeship: null,
+  unknown: null,
+};
+
+/** Persists the AI parser's structured output (from POST /api/ai-parser) onto an application. */
 export async function saveParsedJobDetails(
   applicationId: string,
   sourceUrl: string | null,
   rawJobDescription: string,
-  result: JobIntelligenceResult
+  apiResponse: AiParserApiResponse
 ) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  uuidSchema.parse(applicationId);
+  await assertOwnedEntity(supabase, user.id, "application", applicationId);
+  if (rawJobDescription.length > 100_000) throw new Error("Job description is too long.");
+  if (sourceUrl) httpUrlSchema.parse(sourceUrl);
 
-  const { extraction, intelligence, resumeComparison, warnings, meta } = result;
-
-  const fieldConfidence: Record<string, number> = {};
-  for (const [key, field] of Object.entries(extraction)) {
-    if (field && typeof field === "object" && "confidence" in field) {
-      fieldConfidence[key] = (field as { confidence: number }).confidence;
-    }
-  }
+  const { result } = apiResponse;
+  const { identity, location, employment, compensation, skills, experienceEducation, roleContent, immigration, metadata } = result;
 
   const salaryRange =
-    extraction.salaryMin || extraction.salaryMax
-      ? [extraction.salaryMin?.value, extraction.salaryMax?.value].filter(Boolean).join(" - ")
+    compensation.salaryMinimum || compensation.salaryMaximum
+      ? [compensation.salaryMinimum, compensation.salaryMaximum].filter((v) => v !== null).join(" - ")
       : null;
 
-  const recruiterInfo = [extraction.recruiterName?.value, extraction.recruiterEmail?.value].filter(Boolean).join(" · ") || null;
+  const yearsExperience =
+    experienceEducation.experienceText ||
+    (experienceEducation.minimumYearsExperience !== null || experienceEducation.maximumYearsExperience !== null
+      ? [experienceEducation.minimumYearsExperience, experienceEducation.maximumYearsExperience]
+          .filter((v) => v !== null)
+          .join("-")
+      : null);
 
-  await supabase.from("parsed_job_details").insert({
+  const recruiterInfo = [identity.recruiterName, identity.recruiterEmail].filter(Boolean).join(" · ") || null;
+
+  const { error } = await supabase.from("parsed_job_details").insert({
     user_id: user.id,
     application_id: applicationId,
     source_url: sourceUrl,
     raw_job_description: rawJobDescription,
-    parsed_company: extraction.companyName?.value ?? null,
-    parsed_job_title: extraction.jobTitle?.value ?? null,
-    parsed_role_type: extraction.roleCategory?.value ?? null,
-    parsed_location: extraction.locations?.value?.join(", ") ?? null,
-    parsed_work_mode: extraction.workMode?.value || null,
-    parsed_employment_type: extraction.employmentType?.value || null,
+    parsed_company: identity.companyName,
+    parsed_job_title: identity.jobTitle,
+    parsed_role_type: employment.roleCategory,
+    parsed_location: location.rawLocation,
+    parsed_work_mode: WORKPLACE_TO_WORK_MODE[location.workplaceType] ?? null,
+    parsed_employment_type: EMPLOYMENT_TYPE_TO_DB[employment.employmentType] ?? null,
     parsed_salary_range: salaryRange,
-    required_skills: extraction.requiredSkills?.value ?? [],
-    preferred_skills: extraction.preferredSkills?.value ?? [],
-    education: extraction.education?.value ?? null,
-    years_experience: extraction.experience?.value ?? null,
-    visa_notes: extraction.visaStatus?.value ?? null,
-    deadline: toDateOrNull(extraction.deadline?.value),
+    required_skills: skills.requiredSkills ?? [],
+    preferred_skills: skills.preferredSkills ?? [],
+    education: experienceEducation.educationLevel,
+    years_experience: yearsExperience,
+    visa_notes: immigration.sponsorshipText,
+    deadline: toDateOrNull(roleContent.applicationDeadline),
     recruiter_info: recruiterInfo,
-    keywords: extraction.keywords?.value ?? [],
-    job_summary: extraction.jobSummary?.value ?? null,
-    missing_skills: resumeComparison?.missingSkills ?? intelligence.missingSkills ?? [],
-    suggested_cold_email_angle: intelligence.suggestedColdEmailAngle ?? null,
-    suggested_follow_up_date: toDateOrNull(intelligence.suggestedFollowUpDate),
-    priority_score: intelligence.priorityScore ?? null,
-    field_confidence: fieldConfidence,
-    model_used: meta.modelUsed,
-    parser_version: meta.parserVersion,
-    description_hash: meta.descriptionHash,
-    processing_time_ms: meta.processingTimeMs,
-    warnings,
-    full_result: result,
+    keywords: skills.keywords ?? [],
+    job_summary: roleContent.conciseSummary,
+    model_used: apiResponse.modelUsed,
+    parser_version: apiResponse.parserVersion,
+    description_hash: apiResponse.descriptionHash,
+    processing_time_ms: result.parseMeta.latencyMs,
+    warnings: metadata.warnings ?? [],
+    full_result: { result, provenance: result.provenance },
   });
+  if (error) throw new Error("Failed to save parsed job details.");
 }
 
 /** Fills in a company's website/LinkedIn URL from parser output, but only if the field is still empty. */
@@ -204,8 +253,8 @@ export async function updateCompanyMetaIfEmpty(
   if (!company) return;
 
   const patch: Record<string, string> = {};
-  if (!company.website && meta.website) patch.website = meta.website;
-  if (!company.linkedin_url && meta.linkedinUrl) patch.linkedin_url = meta.linkedinUrl;
+  if (!company.website && meta.website && httpUrlSchema.safeParse(meta.website).success) patch.website = meta.website;
+  if (!company.linkedin_url && meta.linkedinUrl && httpUrlSchema.safeParse(meta.linkedinUrl).success) patch.linkedin_url = meta.linkedinUrl;
   if (Object.keys(patch).length === 0) return;
 
   await supabase.from("companies").update(patch).eq("id", companyId).eq("user_id", user.id);
@@ -217,6 +266,7 @@ export async function deleteApplication(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  uuidSchema.parse(id);
 
   const { error } = await supabase.from("applications").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);

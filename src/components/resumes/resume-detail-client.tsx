@@ -26,7 +26,23 @@ interface ApplicationRow {
   date_applied: string | null;
 }
 
-export function ResumeDetailClient({ resume, applications }: { resume: Resume; applications: ApplicationRow[] }) {
+type ResumeDetailView = Pick<
+  Resume,
+  | "id"
+  | "display_name"
+  | "original_file_name"
+  | "file_extension"
+  | "file_size"
+  | "target_role"
+  | "version_notes"
+  | "resume_match_score"
+  | "missing_keywords"
+  | "status"
+  | "created_at"
+  | "updated_at"
+>;
+
+export function ResumeDetailClient({ resume, applications }: { resume: ResumeDetailView; applications: ApplicationRow[] }) {
   const router = useRouter();
   const [targetRole, setTargetRole] = React.useState(resume.target_role ?? "");
   const [versionNotes, setVersionNotes] = React.useState(resume.version_notes ?? "");

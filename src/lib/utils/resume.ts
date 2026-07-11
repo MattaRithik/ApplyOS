@@ -40,9 +40,31 @@ export function sanitizeToFileName(name: string, extension: string): string {
 
 /** Sanitizes the original uploaded file name for use as the trailing segment of a B2 object key. */
 export function sanitizeOriginalFileName(originalFileName: string): string {
-  const extension = getFileExtension(originalFileName) || "pdf";
-  const base = originalFileName.slice(0, originalFileName.length - extension.length - 1);
+  const detectedExtension = getFileExtension(originalFileName);
+  const extension = detectedExtension || "pdf";
+  const base = detectedExtension
+    ? originalFileName.slice(0, originalFileName.length - detectedExtension.length - 1)
+    : originalFileName;
   return sanitizeToFileName(base, extension);
+}
+
+export function canonicalMimeType(extension: ResumeExtension): string {
+  const entry = Object.entries(ALLOWED_RESUME_MIME_TYPES).find(([, ext]) => ext === extension);
+  if (!entry) throw new Error("Unsupported resume extension.");
+  return entry[0];
+}
+
+export function isResumeSignatureValid(extension: ResumeExtension, bytes: Uint8Array): boolean {
+  if (extension === "pdf") {
+    return bytes.length >= 5 && String.fromCharCode(...bytes.slice(0, 5)) === "%PDF-";
+  }
+  if (extension === "doc") {
+    const ole = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+    return ole.every((value, index) => bytes[index] === value);
+  }
+  // DOCX is an OPC document in a ZIP container. This rejects arbitrary
+  // executable formats, while deeper document parsing remains out of scope.
+  return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
 }
 
 export function formatFileSize(bytes: number | null): string {

@@ -15,6 +15,14 @@ drop view if exists v_outreach_stale;
 
 -- ---- Tables (cascade clears FKs/policies/indexes regardless of order) ----
 drop table if exists follow_ups cascade;
+drop table if exists api_rate_limit_events cascade;
+drop table if exists admin_audit_log cascade;
+drop table if exists ai_parser_entitlements cascade;
+drop table if exists app_user_roles cascade;
+drop table if exists ai_parser_cache cascade;
+drop table if exists ai_parser_usage cascade;
+drop table if exists user_timelines cascade;
+drop table if exists international_student_profiles cascade;
 drop table if exists notes cascade;
 drop table if exists exports cascade;
 drop table if exists interview_rounds cascade;
@@ -37,6 +45,9 @@ drop trigger if exists trg_on_auth_user_created on auth.users;
 drop function if exists handle_new_user() cascade;
 drop function if exists log_application_status_change() cascade;
 drop function if exists set_updated_at() cascade;
+drop function if exists ai_parser_try_acquire_slot(uuid, int, int, int) cascade;
+drop function if exists try_consume_api_rate_limit(uuid, text, integer, integer) cascade;
+drop function if exists admin_mutate_ai_entitlement(uuid, uuid, text, jsonb, text) cascade;
 
 -- ---- Enum types ----
 drop type if exists application_status cascade;
@@ -52,3 +63,13 @@ drop type if exists template_category cascade;
 drop type if exists follow_up_context cascade;
 drop type if exists export_format cascade;
 drop type if exists export_entity cascade;
+drop type if exists user_category cascade;
+drop type if exists onboarding_status cascade;
+drop type if exists visa_status cascade;
+drop type if exists program_level cascade;
+drop type if exists stem_designated_status cascade;
+drop type if exists authorization_stage cascade;
+drop type if exists timeline_type cascade;
+drop type if exists timeline_category cascade;
+drop type if exists timeline_source cascade;
+drop type if exists rolling_rule cascade;

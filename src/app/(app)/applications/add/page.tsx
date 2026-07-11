@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AddApplicationClient } from "@/components/applications/add-application-client";
+import { hasAIParserAccess } from "@/lib/ai-parser/entitlement";
 
 export default async function AddApplicationPage() {
   const supabase = await createClient();
@@ -8,12 +9,15 @@ export default async function AddApplicationPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: resumes } = await supabase
-    .from("resumes")
-    .select("id, display_name")
-    .eq("user_id", user.id)
-    .eq("is_archived", false)
-    .order("display_name");
+  const [{ data: resumes }, aiParserEnabled] = await Promise.all([
+    supabase
+      .from("resumes")
+      .select("id, display_name")
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .order("display_name"),
+    hasAIParserAccess(supabase),
+  ]);
 
   return (
     <div className="py-6">
@@ -23,7 +27,7 @@ export default async function AddApplicationPage() {
           Fill in the details manually, or paste a job posting into the AI assistant on the right.
         </p>
       </div>
-      <AddApplicationClient resumeOptions={resumes ?? []} />
+      <AddApplicationClient resumeOptions={resumes ?? []} aiParserEnabled={aiParserEnabled} />
     </div>
   );
 }

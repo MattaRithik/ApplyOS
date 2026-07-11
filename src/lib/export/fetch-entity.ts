@@ -15,7 +15,7 @@ const TABLE_BY_ENTITY: Record<Exclude<ExportEntity, "full_backup" | "follow_ups"
 // SEVIS ID is private, optional data — never included in an export, even
 // the one entity that's specifically about the international-student
 // profile. See src/lib/actions/profile.ts for where it's actually stored.
-const OMIT_COLUMNS = new Set(["user_id", "sevis_id"]);
+const OMIT_COLUMNS = new Set(["user_id", "sevis_id", "storage_key"]);
 
 function stripRow(row: Record<string, unknown>) {
   const out: Record<string, unknown> = {};

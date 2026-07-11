@@ -25,6 +25,7 @@ import { CompanyFormDialog } from "@/components/companies/company-form-dialog";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { deleteCompany } from "@/app/(app)/companies/actions";
 import { RELATIONSHIP_TYPES, type Company, type Contact, type Outreach, type Note, type ApplicationStatus } from "@/lib/types/database";
+import { safeHttpUrl } from "@/lib/utils/url";
 
 interface Props {
   company: Company;
@@ -46,6 +47,9 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
   const linkedRecordCount = applications.length + contacts.length + outreach.length;
 
   const bestContact = contacts.find((c) => c.response_status === "meeting_scheduled" || c.response_status === "referred") ?? contacts[0];
+  const websiteUrl = safeHttpUrl(company.website);
+  const careersUrl = safeHttpUrl(company.careers_page_url);
+  const linkedinUrl = safeHttpUrl(company.linkedin_url);
 
   return (
     <div className="space-y-5 py-6">
@@ -95,18 +99,18 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
         </div>
 
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
-          {company.website && (
-            <a href={company.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
+          {websiteUrl && (
+            <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
               <Globe className="h-3.5 w-3.5" /> Website
             </a>
           )}
-          {company.careers_page_url && (
-            <a href={company.careers_page_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
+          {careersUrl && (
+            <a href={careersUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
               <Briefcase className="h-3.5 w-3.5" /> Careers page
             </a>
           )}
-          {company.linkedin_url && (
-            <a href={company.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
+          {linkedinUrl && (
+            <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
               <Users className="h-3.5 w-3.5" /> LinkedIn
             </a>
           )}

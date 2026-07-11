@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { updateProfile } from "@/app/(app)/settings/actions";
 import { createClient } from "@/lib/supabase/client";
 import { ProfileTimelineSettings } from "@/components/settings/profile-timeline-settings";
+import { AiUsageTab } from "@/components/settings/ai-usage-tab";
+import { AdministrationPanel } from "@/components/settings/admin/administration-panel";
 import type { Profile } from "@/lib/types/database";
 import type { TimelinesContext } from "@/lib/data/timelines";
 import { cn } from "@/lib/utils";
@@ -21,10 +23,14 @@ export function SettingsClient({
   profile,
   email,
   timelinesContext,
+  aiParserEnabled,
+  isOwner,
 }: {
   profile: Profile | null;
   email: string | null | undefined;
   timelinesContext: TimelinesContext;
+  aiParserEnabled: boolean;
+  isOwner: boolean;
 }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -55,11 +61,29 @@ export function SettingsClient({
 
   return (
     <Tabs defaultValue="profile">
-      <TabsList>
-        <TabsTrigger value="profile">Profile</TabsTrigger>
-        <TabsTrigger value="timelines">Profile &amp; Timeline Settings</TabsTrigger>
-        <TabsTrigger value="appearance">Appearance</TabsTrigger>
-        <TabsTrigger value="account">Account</TabsTrigger>
+      <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
+        <TabsTrigger value="profile" className="h-8 flex-none px-3">
+          Profile
+        </TabsTrigger>
+        <TabsTrigger value="timelines" className="h-8 flex-none px-3">
+          Profile &amp; Timeline Settings
+        </TabsTrigger>
+        <TabsTrigger value="appearance" className="h-8 flex-none px-3">
+          Appearance
+        </TabsTrigger>
+        <TabsTrigger value="account" className="h-8 flex-none px-3">
+          Account
+        </TabsTrigger>
+        {aiParserEnabled && (
+          <TabsTrigger value="ai-usage" className="h-8 flex-none px-3">
+            AI Parser Usage
+          </TabsTrigger>
+        )}
+        {isOwner && (
+          <TabsTrigger value="administration" className="h-8 flex-none px-3">
+            Administration
+          </TabsTrigger>
+        )}
       </TabsList>
 
       <TabsContent value="profile" className="mt-4">
@@ -141,6 +165,18 @@ export function SettingsClient({
           </div>
         </GlassPanel>
       </TabsContent>
+
+      {aiParserEnabled && (
+        <TabsContent value="ai-usage" className="mt-4">
+          <AiUsageTab />
+        </TabsContent>
+      )}
+
+      {isOwner && (
+        <TabsContent value="administration" className="mt-4">
+          <AdministrationPanel />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

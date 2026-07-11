@@ -28,6 +28,7 @@ import { VisaSponsorshipBadge } from "@/components/shared/visa-sponsorship-badge
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { StatusHistorySection } from "@/components/applications/detail/status-history-section";
 import type { ApplicationWithResume, HrContactDraft } from "@/components/applications/types";
+import { safeHttpUrl } from "@/lib/utils/url";
 
 interface Props {
   application: ApplicationWithResume;
@@ -36,6 +37,7 @@ interface Props {
   statusHistory: ApplicationStatusHistory[];
   notes: Note[];
   hrContacts: HrContactDraft[];
+  aiParserEnabled: boolean;
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
@@ -58,6 +60,7 @@ export function ApplicationDetailClient({
   statusHistory,
   notes,
   hrContacts,
+  aiParserEnabled,
 }: Props) {
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -88,6 +91,7 @@ export function ApplicationDetailClient({
   const referral = [application.referral_person, application.referral_email, application.referral_phone]
     .filter(Boolean)
     .join(" · ");
+  const jobUrl = safeHttpUrl(application.job_url);
 
   return (
     <div className="space-y-5 py-6">
@@ -100,8 +104,8 @@ export function ApplicationDetailClient({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold tracking-tight">{application.job_title}</h1>
-              {application.job_url && (
-                <a href={application.job_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary">
+              {jobUrl && (
+                <a href={jobUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
                   <ExternalLink className="h-4 w-4" />
                 </a>
               )}
@@ -127,6 +131,7 @@ export function ApplicationDetailClient({
               application={application}
               resumeOptions={resumeOptions}
               initialHrContacts={hrContacts}
+              aiParserEnabled={aiParserEnabled}
               onSaved={() => router.refresh()}
             />
             <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>

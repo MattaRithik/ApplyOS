@@ -18,7 +18,9 @@ import {
 import { renameResume } from "@/lib/supabase/resumes";
 import type { Resume } from "@/lib/types/database";
 
-export function RenameResumeDialog({ resume, onRenamed }: { resume: Resume; onRenamed?: () => void }) {
+type RenameableResume = Pick<Resume, "id" | "display_name" | "file_extension">;
+
+export function RenameResumeDialog({ resume, onRenamed }: { resume: RenameableResume; onRenamed?: () => void }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState(resume.display_name);

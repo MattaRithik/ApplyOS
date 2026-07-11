@@ -22,6 +22,7 @@ import { ContactFormDialog } from "@/components/contacts/contact-form-dialog";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { deleteContact } from "@/app/(app)/contacts/actions";
 import { RELATIONSHIP_TYPES, type Contact } from "@/lib/types/database";
+import { safeHttpUrl, safeMailto } from "@/lib/utils/url";
 
 const ALL = "__all__";
 
@@ -124,9 +125,9 @@ export function ContactsTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {c.email && <a href={`mailto:${c.email}`} className="hover:text-primary"><Mail className="h-3.5 w-3.5" /></a>}
-                      {c.linkedin_url && (
-                        <a href={c.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-primary">
+                      {safeMailto(c.email) && <a href={safeMailto(c.email)!} className="hover:text-primary"><Mail className="h-3.5 w-3.5" /></a>}
+                      {safeHttpUrl(c.linkedin_url) && (
+                        <a href={safeHttpUrl(c.linkedin_url)!} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
                           <Link2 className="h-3.5 w-3.5" />
                         </a>
                       )}

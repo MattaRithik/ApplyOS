@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { buildResumeObjectKey, createResumeUploadUrl } from "@/lib/storage/b2";
 import {
   ALLOWED_RESUME_MIME_TYPES,
@@ -8,7 +9,19 @@ import {
   isAllowedResumeExtension,
   isAllowedResumeMimeType,
   sanitizeOriginalFileName,
+  canonicalMimeType,
 } from "@/lib/utils/resume";
+import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
+import { consumeApiRateLimit } from "@/lib/security/rate-limit";
+
+const uploadRequestSchema = z
+  .object({
+    fileName: z.string().trim().min(1).max(255).refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
+    fileType: z.string().trim().max(150),
+    fileSize: z.number().int().positive().max(MAX_RESUME_FILE_SIZE_BYTES),
+    displayName: z.string().trim().min(1).max(150).optional(),
+  })
+  .strict();
 
 /**
  * Step 1 of the resume upload flow: verify the caller, validate the file,
@@ -17,6 +30,9 @@ import {
  * single-use, time-limited URL.
  */
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json({ error: "Cross-site request rejected." }, { status: 403 });
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,29 +41,30 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-
-  const body = await request.json().catch(() => null);
-  const fileName = (body?.fileName as string | undefined)?.trim();
-  const fileType = body?.fileType as string | undefined;
-  const fileSize = Number(body?.fileSize);
-  const displayNameInput = (body?.displayName as string | undefined)?.trim();
-
-  if (!fileName || !fileType || !Number.isFinite(fileSize)) {
-    return NextResponse.json({ error: "fileName, fileType, and fileSize are required" }, { status: 400 });
+  if (!(await consumeApiRateLimit(user.id, "resume_upload", 60 * 60, 20))) {
+    return NextResponse.json({ error: "Upload rate limit reached." }, { status: 429 });
   }
+  const serviceClient = createServiceRoleClient();
+
+  const json = await readJsonBody(request, 8 * 1024);
+  if (!json.ok) return NextResponse.json({ error: json.error }, { status: json.status });
+  const parsedBody = uploadRequestSchema.safeParse(json.value);
+  if (!parsedBody.success) return NextResponse.json({ error: "Invalid upload request." }, { status: 400 });
+  const { fileName, fileType, fileSize, displayName: displayNameInput } = parsedBody.data;
 
   const extensionFromName = getFileExtension(fileName);
-  const extension = isAllowedResumeMimeType(fileType)
-    ? ALLOWED_RESUME_MIME_TYPES[fileType]
-    : isAllowedResumeExtension(extensionFromName)
-      ? extensionFromName
-      : null;
+  const extension = isAllowedResumeExtension(extensionFromName) ? extensionFromName : null;
 
   if (!extension) {
     return NextResponse.json(
       { error: "Only PDF, DOC, and DOCX files are allowed." },
       { status: 400 }
     );
+  }
+
+  const canonicalType = canonicalMimeType(extension);
+  if (fileType && (!isAllowedResumeMimeType(fileType) || ALLOWED_RESUME_MIME_TYPES[fileType] !== extension)) {
+    return NextResponse.json({ error: "The file extension and MIME type do not match." }, { status: 400 });
   }
 
   if (fileSize <= 0 || fileSize > MAX_RESUME_FILE_SIZE_BYTES) {
@@ -57,7 +74,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const displayName = (displayNameInput || fileName.replace(/\.[^.]+$/, "")).slice(0, 150);
+  const displayName = displayNameInput || fileName.replace(/\.[^.]+$/, "").trim().slice(0, 150);
   if (!displayName) {
     return NextResponse.json({ error: "displayName is required" }, { status: 400 });
   }
@@ -83,7 +100,7 @@ export async function POST(request: Request) {
   const safeFileName = sanitizeOriginalFileName(fileName);
   const storageKey = buildResumeObjectKey(user.id, resumeId, safeFileName);
 
-  const { data: resume, error: insertError } = await supabase
+  const { data: resume, error: insertError } = await serviceClient
     .from("resumes")
     .insert({
       id: resumeId,
@@ -93,7 +110,7 @@ export async function POST(request: Request) {
       storage_provider: "backblaze_b2",
       storage_key: storageKey,
       file_extension: extension,
-      file_type: fileType,
+      file_type: canonicalType,
       file_size: fileSize,
       status: "uploading",
     })
@@ -101,21 +118,19 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to reserve the upload." }, { status: 500 });
   }
 
   try {
-    const { url, expiresIn } = await createResumeUploadUrl(storageKey, fileType);
+    const { url, expiresIn } = await createResumeUploadUrl(storageKey, canonicalType);
     return NextResponse.json({
       resume_id: resume.id,
       signed_upload_url: url,
-      storage_key: storageKey,
       expires_in: expiresIn,
     });
-  } catch (e) {
+  } catch {
     // Roll back the reserved row if we can't even hand back an upload URL.
-    await supabase.from("resumes").delete().eq("id", resumeId).eq("user_id", user.id);
-    const message = e instanceof Error ? e.message : "Failed to create upload URL";
-    return NextResponse.json({ error: message }, { status: 500 });
+    await serviceClient.from("resumes").delete().eq("id", resumeId).eq("user_id", user.id);
+    return NextResponse.json({ error: "Failed to prepare the upload." }, { status: 500 });
   }
 }

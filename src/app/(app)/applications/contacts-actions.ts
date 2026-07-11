@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { HrContactDraft } from "@/components/applications/types";
+import { assertOptionalOwnedEntity, assertOwnedEntity } from "@/lib/security/ownership";
+import { uuidSchema } from "@/lib/validation/common";
 
 const HR_RELATIONSHIP_TYPES = ["recruiter", "hr", "hiring_manager"] as const;
 
@@ -25,6 +27,10 @@ export async function saveApplicationHrContacts(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  uuidSchema.parse(applicationId);
+  await assertOwnedEntity(supabase, user.id, "application", applicationId);
+  await assertOptionalOwnedEntity(supabase, user.id, "company", companyId);
+  if (companyName.length > 200 || contacts.length > 25) throw new Error("Invalid contact list.");
 
   const { data: application } = await supabase
     .from("applications")
@@ -86,6 +92,12 @@ export async function getApplicationHrContacts(applicationId: string): Promise<H
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
+  if (!uuidSchema.safeParse(applicationId).success) return [];
+  try {
+    await assertOwnedEntity(supabase, user.id, "application", applicationId);
+  } catch {
+    return [];
+  }
 
   const { data } = await supabase
     .from("application_contacts")

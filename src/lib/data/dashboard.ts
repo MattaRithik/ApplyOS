@@ -1,5 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { startOfWeek, subWeeks, format, differenceInCalendarDays } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  differenceInCalendarDays,
+  format,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks,
+} from "date-fns";
 import type { Application, ApplicationStatus, InterviewRound, FollowUp } from "@/lib/types/database";
 
 const TERMINAL_STATUSES: ApplicationStatus[] = ["rejected", "withdrawn", "ghosted", "accepted"];
@@ -37,7 +49,11 @@ export interface DashboardData {
   applicationsThisWeek: number;
   avgResponseTimeDays: number | null;
   topCompanies: { name: string; count: number }[];
-  applicationsOverTime: { week: string; count: number }[];
+  applicationsOverTime: {
+    daily: { label: string; count: number }[];
+    weekly: { label: string; count: number }[];
+    monthly: { label: string; count: number }[];
+  };
   statusDistribution: { status: ApplicationStatus; count: number }[];
   outreachOverTime: { week: string; sent: number; replied: number }[];
   interviewFunnel: { stage: string; count: number }[];
@@ -129,22 +145,43 @@ export async function getDashboardData(
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  const weeks: string[] = [];
-  for (let i = 11; i >= 0; i--) {
-    weeks.push(startOfWeek(subWeeks(new Date(), i), { weekStartsOn: 1 }).toISOString().slice(0, 10));
-  }
-  const applicationsOverTime = weeks.map((week) => {
-    const nextWeek = format(
-      new Date(new Date(week).getTime() + 7 * 24 * 60 * 60 * 1000),
-      "yyyy-MM-dd"
-    );
-    const count = applications.filter(
-      (a) => a.date_applied && a.date_applied >= week && a.date_applied < nextWeek
+  const countApplicationsBetween = (start: Date, end: Date) => {
+    const startKey = format(start, "yyyy-MM-dd");
+    const endKey = format(end, "yyyy-MM-dd");
+    return applications.filter(
+      (application) =>
+        application.date_applied &&
+        application.date_applied >= startKey &&
+        application.date_applied < endKey
     ).length;
-    return { week: format(new Date(week), "MMM d"), count };
-  });
+  };
 
-  const outreachOverTime = weeks.map((week) => {
+  const daily = Array.from({ length: 14 }, (_, index) =>
+    startOfDay(subDays(new Date(), 13 - index))
+  ).map((day) => ({
+    label: format(day, "MMM d"),
+    count: countApplicationsBetween(day, addDays(day, 1)),
+  }));
+
+  const weekDates = Array.from({ length: 12 }, (_, index) =>
+    startOfWeek(subWeeks(new Date(), 11 - index), { weekStartsOn: 1 })
+  );
+  const weekly = weekDates.map((week) => ({
+    label: format(week, "MMM d"),
+    count: countApplicationsBetween(week, addWeeks(week, 1)),
+  }));
+
+  const monthly = Array.from({ length: 12 }, (_, index) =>
+    startOfMonth(subMonths(new Date(), 11 - index))
+  ).map((month) => ({
+    label: format(month, "MMM yyyy"),
+    count: countApplicationsBetween(month, addMonths(month, 1)),
+  }));
+
+  const applicationsOverTime = { daily, weekly, monthly };
+
+  const outreachOverTime = weekDates.map((weekDate) => {
+    const week = format(weekDate, "yyyy-MM-dd");
     const nextWeek = format(
       new Date(new Date(week).getTime() + 7 * 24 * 60 * 60 * 1000),
       "yyyy-MM-dd"

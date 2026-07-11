@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Pencil, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,24 +11,33 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApplicationForm, type ApplicationFormValues } from "@/components/applications/application-form";
-import { updateApplication } from "@/app/(app)/applications/actions";
+import { AiParserPanel } from "@/components/applications/parser/ai-parser-panel";
+import { updateApplication, saveParsedJobDetails } from "@/app/(app)/applications/actions";
 import { saveApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
+import { applyParsedResultToForm, type AcceptableFieldKey } from "@/lib/ai-parser/apply-to-form";
+import type { AiParserApiResponse, AiParserResult } from "@/lib/ai-parser/schema";
 import type { ApplicationWithResume, HrContactDraft } from "@/components/applications/types";
 
 export function EditApplicationDialog({
   application,
   resumeOptions,
   initialHrContacts,
+  aiParserEnabled,
   onSaved,
 }: {
   application: ApplicationWithResume;
   resumeOptions: { id: string; display_name: string }[];
   initialHrContacts: HrContactDraft[];
+  aiParserEnabled: boolean;
   onSaved: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [jobUrl, setJobUrl] = React.useState(application.job_url ?? "");
+  const [jobDescription, setJobDescription] = React.useState(application.job_description ?? "");
+  const [lastParsed, setLastParsed] = React.useState<AiParserApiResponse | null>(null);
   const [values, setValues] = React.useState<ApplicationFormValues>(() => ({
     company_name: application.company_name,
     job_title: application.job_title,
@@ -59,6 +68,10 @@ export function EditApplicationDialog({
     hrContacts: initialHrContacts,
   }));
 
+  const handleApplyExtractedFields = (result: AiParserResult, accepted: Set<AcceptableFieldKey>) => {
+    setValues((prev) => applyParsedResultToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, result, accepted));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -66,6 +79,10 @@ export function EditApplicationDialog({
 
       const updated = await updateApplication(application.id, applicationFields);
       await saveApplicationHrContacts(application.id, updated.company_id, updated.company_name, hrContacts);
+
+      if (lastParsed) {
+        await saveParsedJobDetails(application.id, jobUrl || null, jobDescription, lastParsed);
+      }
 
       toast.success("Application updated.");
       setOpen(false);
@@ -86,7 +103,34 @@ export function EditApplicationDialog({
         <DialogHeader>
           <DialogTitle>Edit application</DialogTitle>
         </DialogHeader>
-        <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} compact />
+
+        {aiParserEnabled ? (
+          <Tabs defaultValue="details">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="parser" className="gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" /> AI Parser
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="mt-4">
+              <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} compact />
+            </TabsContent>
+            <TabsContent value="parser" className="mt-4">
+              <AiParserPanel
+                jobUrl={jobUrl}
+                jobDescription={jobDescription}
+                aiParserEnabled={aiParserEnabled}
+                onJobUrlChange={setJobUrl}
+                onJobDescriptionChange={setJobDescription}
+                onParsed={setLastParsed}
+                onApply={handleApplyExtractedFields}
+              />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} compact />
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel

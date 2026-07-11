@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ensureGraduationSlotPinned } from "@/lib/actions/timelines";
 import type { UserCategory } from "@/lib/types/database";
+import { assertAllowedKeys } from "@/lib/validation/common";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -56,6 +57,7 @@ export interface InternationalStudentProfileInput {
 }
 
 export async function upsertInternationalStudentProfile(input: InternationalStudentProfileInput) {
+  assertAllowedKeys(input, ["expected_graduation_date"]);
   const { supabase, user } = await requireUser();
   const { data, error } = await supabase
     .from("international_student_profiles")

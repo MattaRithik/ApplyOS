@@ -14,7 +14,7 @@ import { deleteResume, getResumeDownloadUrl } from "@/lib/supabase/resumes";
 import { formatFileSize } from "@/lib/utils/resume";
 import type { Resume } from "@/lib/types/database";
 
-interface ResumeWithStats extends Resume {
+interface ResumeWithStats extends Pick<Resume, "id" | "display_name" | "original_file_name" | "file_extension" | "file_size" | "target_role" | "status" | "created_at"> {
   applicationCount: number;
   interviewRate: number;
 }
@@ -23,7 +23,7 @@ export function ResumesGrid({ resumes, bestResumeId }: { resumes: ResumeWithStat
   const router = useRouter();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  const handleView = async (resume: Resume) => {
+  const handleView = async (resume: Pick<Resume, "id">) => {
     try {
       const url = await getResumeDownloadUrl(resume.id);
       window.open(url, "_blank", "noopener,noreferrer");

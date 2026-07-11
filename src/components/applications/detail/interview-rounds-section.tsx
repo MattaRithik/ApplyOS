@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { INTERVIEW_ROUND_TYPES, INTERVIEW_RESULTS, type InterviewRound, type InterviewResult } from "@/lib/types/database";
+import { safeHttpUrl } from "@/lib/utils/url";
 import { addInterviewRound, deleteInterviewRound, updateInterviewRound } from "@/app/(app)/applications/[id]/actions";
 
 const RESULT_STYLES: Record<InterviewResult, string> = {
@@ -225,8 +226,8 @@ export function InterviewRoundsSection({
                   {round.interviewer_name && (
                     <span className="flex items-center gap-1"><User className="h-3 w-3" /> {round.interviewer_name}</span>
                   )}
-                  {round.meeting_link && (
-                    <a href={round.meeting_link} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                  {safeHttpUrl(round.meeting_link) && (
+                    <a href={safeHttpUrl(round.meeting_link)!} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
                       <LinkIcon className="h-3 w-3" /> Meeting link
                     </a>
                   )}

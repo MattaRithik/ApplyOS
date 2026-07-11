@@ -6,6 +6,7 @@ import {
   MAX_RESUME_FILE_SIZE_BYTES,
   getFileExtension,
   isAllowedResumeExtension,
+  canonicalMimeType,
 } from "@/lib/utils/resume";
 
 /**
@@ -30,6 +31,13 @@ export async function uploadResume(file: File, displayName?: string): Promise<Re
   if (!(file.type in ALLOWED_RESUME_MIME_TYPES) && !isAllowedResumeExtension(extension)) {
     throw new ResumeUploadError("Only PDF, DOC, and DOCX files are allowed.");
   }
+  if (!isAllowedResumeExtension(extension)) {
+    throw new ResumeUploadError("The file must have a PDF, DOC, or DOCX extension.");
+  }
+  const uploadContentType = canonicalMimeType(extension);
+  if (file.type && file.type !== uploadContentType) {
+    throw new ResumeUploadError("The file extension and MIME type do not match.");
+  }
   if (file.size > MAX_RESUME_FILE_SIZE_BYTES) {
     throw new ResumeUploadError(`File must be under ${MAX_RESUME_FILE_SIZE_BYTES / (1024 * 1024)}MB.`);
   }
@@ -40,7 +48,7 @@ export async function uploadResume(file: File, displayName?: string): Promise<Re
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       fileName: file.name,
-      fileType: file.type,
+      fileType: uploadContentType,
       fileSize: file.size,
       displayName,
     }),
@@ -50,7 +58,7 @@ export async function uploadResume(file: File, displayName?: string): Promise<Re
   // 2. Upload the file directly to B2 — this request never touches our server.
   const uploadRes = await fetch(signedUploadUrl as string, {
     method: "PUT",
-    headers: { "Content-Type": file.type },
+    headers: { "Content-Type": uploadContentType },
     body: file,
   });
   if (!uploadRes.ok) {

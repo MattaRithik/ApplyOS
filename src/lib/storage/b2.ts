@@ -5,9 +5,12 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  CopyObjectCommand,
   NotFound,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import type { ResumeExtension } from "@/lib/utils/resume";
+import { isResumeSignatureValid } from "@/lib/utils/resume";
 
 /**
  * Server-only Backblaze B2 client via the S3-compatible API.
@@ -51,7 +54,22 @@ function getBucketName(): string {
 /** Object keys are always server-generated — callers never choose the final path. */
 export function buildResumeObjectKey(userId: string, resumeId: string, safeFileName: string): string {
   const uuid = crypto.randomUUID();
-  return `users/${userId}/resumes/${resumeId}/${uuid}-${safeFileName}`;
+  return `users/${userId}/resumes/${resumeId}/uploads/${uuid}-${safeFileName}`;
+}
+
+/** Final objects never have a browser-minted PUT URL. */
+export function buildFinalResumeObjectKey(userId: string, resumeId: string, safeFileName: string): string {
+  return `users/${userId}/resumes/${resumeId}/files/${crypto.randomUUID()}-${safeFileName}`;
+}
+
+/** Defense in depth for current-format keys; legacy keys remain DB-owned. */
+export function assertResumeObjectKeyOwnership(storageKey: string, userId: string): void {
+  if (storageKey.includes("..") || storageKey.includes("\\") || /[\u0000-\u001f\u007f]/.test(storageKey)) {
+    throw new Error("Invalid storage key.");
+  }
+  if (storageKey.startsWith("users/") && !storageKey.startsWith(`users/${userId}/resumes/`)) {
+    throw new Error("Storage key ownership mismatch.");
+  }
 }
 
 export async function createResumeUploadUrl(
@@ -70,32 +88,82 @@ export async function createResumeUploadUrl(
 export async function createResumeDownloadUrl(
   storageKey: string,
   downloadFileName?: string,
-  disposition: "inline" | "attachment" = "attachment"
+  disposition: "inline" | "attachment" = "attachment",
+  contentType = "application/octet-stream"
 ): Promise<{ url: string; expiresIn: number }> {
+  const safeName = downloadFileName
+    ?.normalize("NFKC")
+    .replace(/[\r\n"\\/\u0000-\u001f\u007f]/g, "_")
+    .slice(0, 180);
   const command = new GetObjectCommand({
     Bucket: getBucketName(),
     Key: storageKey,
-    ResponseContentDisposition: downloadFileName
-      ? `${disposition}; filename="${downloadFileName.replace(/"/g, "")}"`
+    ResponseContentDisposition: safeName
+      ? `${disposition}; filename="${safeName}"`
       : undefined,
+    ResponseContentType: contentType,
   });
   const url = await getSignedUrl(getB2Client(), command, { expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS });
   return { url, expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS };
 }
 
 /** Confirms the direct browser -> B2 PUT actually landed before we mark a resume "uploaded". */
-export async function resumeObjectExists(storageKey: string): Promise<{ exists: boolean; size?: number }> {
+export interface ResumeObjectInspection {
+  exists: boolean;
+  size?: number;
+  contentType?: string;
+  signatureValid?: boolean;
+  eTag?: string;
+}
+
+export async function inspectResumeObject(
+  storageKey: string,
+  extension: ResumeExtension
+): Promise<ResumeObjectInspection> {
   try {
     const result = await getB2Client().send(
       new HeadObjectCommand({ Bucket: getBucketName(), Key: storageKey })
     );
-    return { exists: true, size: result.ContentLength };
+    const prefix = await getB2Client().send(
+      new GetObjectCommand({ Bucket: getBucketName(), Key: storageKey, Range: "bytes=0-7" })
+    );
+    const bytes = prefix.Body ? await prefix.Body.transformToByteArray() : new Uint8Array();
+    return {
+      exists: true,
+      size: result.ContentLength,
+      contentType: result.ContentType,
+      signatureValid: isResumeSignatureValid(extension, bytes),
+      eTag: result.ETag,
+    };
   } catch (e) {
     if (e instanceof NotFound) return { exists: false };
     const meta = (e as { $metadata?: { httpStatusCode?: number } }).$metadata;
     if (meta?.httpStatusCode === 404) return { exists: false };
     throw e;
   }
+}
+
+/**
+ * Copies a validated temporary upload to an unguessable final key. The
+ * ETag precondition closes the race between inspection and promotion: if
+ * the signed PUT URL replaced the temp object, the copy fails.
+ */
+export async function promoteResumeObject(
+  sourceKey: string,
+  destinationKey: string,
+  sourceETag: string,
+  contentType: string
+): Promise<void> {
+  await getB2Client().send(
+    new CopyObjectCommand({
+      Bucket: getBucketName(),
+      Key: destinationKey,
+      CopySource: encodeURIComponent(`${getBucketName()}/${sourceKey}`).replace(/%2F/g, "/"),
+      CopySourceIfMatch: sourceETag,
+      ContentType: contentType,
+      MetadataDirective: "REPLACE",
+    })
+  );
 }
 
 export async function deleteResumeObject(storageKey: string): Promise<void> {

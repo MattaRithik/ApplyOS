@@ -516,25 +516,119 @@ alter table parsed_job_details add column if not exists full_result jsonb;
 create index if not exists idx_parsed_job_details_application on parsed_job_details(application_id);
 
 -- ---------------------------------------------------------------------
--- job_parse_cache — caches parser output by a hash of the raw description
--- so re-pasting (or re-parsing) the same posting skips the AI call.
+-- AI Parser (OpenAI gpt-5-nano/gpt-5-mini) — usage tracking + result
+-- cache. Replaces the old job_parse_cache table (Hugging Face era).
+--
+-- Server-write-only by design: both tables get a SELECT-only RLS policy
+-- for `authenticated` (see the policy block further down). All writes go
+-- through createServiceRoleClient() (src/lib/supabase/server.ts), which
+-- bypasses RLS — there is deliberately no insert/update/delete policy for
+-- `authenticated` on either table. See
+-- supabase/migrations/20260711120000_ai_parser_rewrite.sql for the
+-- original migration and the rate-limit RPC function it defines
+-- (ai_parser_try_acquire_slot), which is not repeated here since
+-- `create or replace function` in that migration is itself idempotent.
 -- ---------------------------------------------------------------------
 
-create table if not exists job_parse_cache (
+create table if not exists ai_parser_usage (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  user_email_snapshot text,
+  request_id text,
+  provider text not null default 'openai',
+  model text,
+  fallback_used boolean not null default false,
+  initial_model text,
+  final_model text,
+  status text not null default 'pending',
+  cache_hit boolean not null default false,
+  input_characters integer,
+  input_tokens integer,
+  output_tokens integer,
+  total_tokens integer,
+  cached_input_tokens integer,
+  reasoning_tokens integer,
+  provider_request_count integer not null default 0,
+  estimated_input_cost_usd numeric(14, 8),
+  estimated_cached_input_cost_usd numeric(14, 8),
+  estimated_output_cost_usd numeric(14, 8),
+  estimated_total_cost_usd numeric(14, 8),
+  latency_ms integer,
+  error_category text,
+  parser_schema_version text,
+  prompt_version text,
+  description_hash text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_ai_parser_usage_user_created on ai_parser_usage(user_id, created_at);
+
+create table if not exists ai_parser_cache (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   description_hash text not null,
   result jsonb not null,
-  model_used text not null,
-  parser_version text not null,
-  processing_time_ms integer not null default 0,
-  warnings jsonb not null default '[]'::jsonb,
-  confidence numeric,
-  created_at timestamptz not null default now()
+  model text,
+  parser_schema_version text not null,
+  prompt_version text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  expires_at timestamptz
 );
 
-create unique index if not exists uniq_job_parse_cache_user_hash on job_parse_cache(user_id, description_hash);
-create index if not exists idx_job_parse_cache_user on job_parse_cache(user_id);
+create unique index if not exists uniq_ai_parser_cache on ai_parser_cache(user_id, description_hash, parser_schema_version, prompt_version);
+
+-- Atomic rate-limit RPC (SECURITY DEFINER) — checks per-minute/daily/
+-- concurrency limits and inserts a `pending` usage row in one
+-- transaction. Only ever called server-side via the service-role client
+-- (src/lib/ai-parser/rate-limit.ts), never exposed to browser clients.
+-- Tradeoff: minute/daily counts include abandoned 'pending' rows too —
+-- acceptable for a single-user rollout, see the migration file for detail.
+create or replace function ai_parser_try_acquire_slot(
+  p_user_id uuid,
+  p_minute_limit int,
+  p_daily_limit int,
+  p_concurrency_limit int
+) returns table(ok boolean, reason text, usage_id uuid)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_minute_count int;
+  v_daily_count int;
+  v_concurrent_count int;
+  v_id uuid;
+begin
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text, 0));
+  select count(*) into v_concurrent_count from ai_parser_usage
+    where user_id = p_user_id and status = 'pending' and created_at > now() - interval '2 minutes';
+  if v_concurrent_count >= p_concurrency_limit then
+    return query select false, 'concurrency_limit', null::uuid;
+    return;
+  end if;
+
+  select count(*) into v_minute_count from ai_parser_usage
+    where user_id = p_user_id and created_at > now() - interval '1 minute';
+  if v_minute_count >= p_minute_limit then
+    return query select false, 'minute_limit', null::uuid;
+    return;
+  end if;
+
+  select count(*) into v_daily_count from ai_parser_usage
+    where user_id = p_user_id and created_at > date_trunc('day', now());
+  if v_daily_count >= p_daily_limit then
+    return query select false, 'daily_limit', null::uuid;
+    return;
+  end if;
+
+  insert into ai_parser_usage (user_id, status) values (p_user_id, 'pending') returning id into v_id;
+  return query select true, null::text, v_id;
+end;
+$$;
+
+revoke all on function ai_parser_try_acquire_slot(uuid, int, int, int) from public;
+grant execute on function ai_parser_try_acquire_slot(uuid, int, int, int) to service_role;
 
 -- ---------------------------------------------------------------------
 -- contacts
@@ -859,7 +953,14 @@ alter table interview_rounds enable row level security;
 alter table follow_ups enable row level security;
 alter table notes enable row level security;
 alter table exports enable row level security;
-alter table job_parse_cache enable row level security;
+
+-- ai_parser_usage / ai_parser_cache are intentionally NOT included in the
+-- insert/update/delete policy loop below — they get a select-own policy
+-- only (see the dedicated block right after the loop). All writes to
+-- those two tables go through the service-role client, which bypasses
+-- RLS entirely.
+alter table ai_parser_usage enable row level security;
+alter table ai_parser_cache enable row level security;
 
 drop policy if exists "profiles_select_own" on profiles;
 create policy "profiles_select_own" on profiles for select using (auth.uid() = id);
@@ -873,7 +974,7 @@ begin
   foreach t in array array[
     'companies', 'resumes', 'applications', 'application_status_history',
     'parsed_job_details', 'contacts', 'email_templates', 'outreach',
-    'interview_rounds', 'follow_ups', 'notes', 'exports', 'job_parse_cache'
+    'interview_rounds', 'follow_ups', 'notes', 'exports'
   ]
   loop
     execute format('drop policy if exists "%1$s_select_own" on %1$s', t);
@@ -886,6 +987,13 @@ begin
     execute format('create policy "%1$s_delete_own" on %1$s for delete using (auth.uid() = user_id)', t);
   end loop;
 end $$;
+
+-- ai_parser_usage / ai_parser_cache: select-own ONLY, no insert/update/
+-- delete policy for `authenticated` — writes are service-role only.
+drop policy if exists "ai_parser_usage_select_own" on ai_parser_usage;
+create policy "ai_parser_usage_select_own" on ai_parser_usage for select using (auth.uid() = user_id);
+drop policy if exists "ai_parser_cache_select_own" on ai_parser_cache;
+create policy "ai_parser_cache_select_own" on ai_parser_cache for select using (auth.uid() = user_id);
 
 drop policy if exists "application_contacts_select" on application_contacts;
 create policy "application_contacts_select" on application_contacts for select using (
@@ -904,15 +1012,15 @@ create policy "application_contacts_delete" on application_contacts for delete u
 -- Helpful views for dashboard / analytics
 -- =====================================================================
 
-create or replace view v_follow_ups_overdue as
+create or replace view v_follow_ups_overdue with (security_invoker = true) as
 select f.* from follow_ups f
 where f.is_completed = false and f.due_date < current_date;
 
-create or replace view v_follow_ups_due_today as
+create or replace view v_follow_ups_due_today with (security_invoker = true) as
 select f.* from follow_ups f
 where f.is_completed = false and f.due_date = current_date;
 
-create or replace view v_outreach_stale as
+create or replace view v_outreach_stale with (security_invoker = true) as
 select o.* from outreach o
 where o.response_received = false
   and o.date_sent <= (current_date - interval '7 days');
@@ -1131,3 +1239,75 @@ end $$;
 -- clearly-labeled "International Student Profile" sheet. SEVIS ID is
 -- stripped in src/lib/export/fetch-entity.ts regardless of this value.
 alter type export_entity add value if not exists 'international_profile';
+
+-- =====================================================================
+-- Administrator-managed access control
+-- Replaces the old AI_PARSER_ALLOWED_EMAIL single-email allowlist.
+-- Introduced alongside
+-- supabase/migrations/20260712090000_admin_authorization.sql — kept here
+-- too so this file stays the single canonical "run me on a fresh
+-- project" schema. Safe to re-run. See that migration file for the full
+-- rationale on the server-write-only RLS design used here.
+-- =====================================================================
+
+create table if not exists app_user_roles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  role text not null default 'user' check (role in ('owner', 'admin', 'user')),
+  granted_by uuid references auth.users(id) on delete set null,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_app_user_roles_role on app_user_roles(role);
+
+drop trigger if exists trg_app_user_roles_updated_at on app_user_roles;
+create trigger trg_app_user_roles_updated_at before update on app_user_roles
+  for each row execute function set_updated_at();
+
+create table if not exists ai_parser_entitlements (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  enabled boolean not null default false,
+  daily_request_limit integer check (daily_request_limit is null or daily_request_limit > 0),
+  monthly_budget_usd numeric(10, 2) check (monthly_budget_usd is null or monthly_budget_usd >= 0),
+  granted_by uuid references auth.users(id) on delete set null,
+  granted_at timestamptz,
+  suspended_at timestamptz,
+  suspension_reason text,
+  expires_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_ai_parser_entitlements_enabled on ai_parser_entitlements(enabled);
+
+drop trigger if exists trg_ai_parser_entitlements_updated_at on ai_parser_entitlements;
+create trigger trg_ai_parser_entitlements_updated_at before update on ai_parser_entitlements
+  for each row execute function set_updated_at();
+
+create table if not exists admin_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_user_id uuid references auth.users(id) on delete set null,
+  action_type text not null,
+  target_user_id uuid references auth.users(id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
+  request_id text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_admin_audit_log_target on admin_audit_log(target_user_id, created_at);
+create index if not exists idx_admin_audit_log_actor on admin_audit_log(actor_user_id, created_at);
+create index if not exists idx_admin_audit_log_action on admin_audit_log(action_type, created_at);
+
+alter table app_user_roles enable row level security;
+alter table ai_parser_entitlements enable row level security;
+alter table admin_audit_log enable row level security;
+
+drop policy if exists "app_user_roles_select_own" on app_user_roles;
+create policy "app_user_roles_select_own" on app_user_roles for select using (auth.uid() = user_id);
+
+drop policy if exists "ai_parser_entitlements_select_own" on ai_parser_entitlements;
+create policy "ai_parser_entitlements_select_own" on ai_parser_entitlements for select using (auth.uid() = user_id);
+
+-- Deliberately no policy of any kind for admin_audit_log + `authenticated`:
+-- reads happen only via the owner-only /api/admin/audit-log route using
+-- the service-role client.

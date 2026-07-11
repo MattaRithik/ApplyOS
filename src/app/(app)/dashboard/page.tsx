@@ -98,7 +98,7 @@ export default async function DashboardPage() {
         <StatTile label="Follow-ups Due" value={data.followUpsDueCount} iconName="listChecks" accent="cyan" delay={0.1} />
         <StatTile label="Cold Emails Sent" value={data.coldEmailsSent} iconName="send" accent="blue" delay={0.12} />
         <StatTile label="Reply Rate" value={`${data.replyRate}%`} iconName="reply" accent="emerald" delay={0.14} />
-        <StatTile label="This Week" value={data.applicationsThisWeek} iconName="trendingUp" accent="cyan" delay={0.16} />
+        <StatTile label="Applied This Week" value={data.applicationsThisWeek} iconName="trendingUp" accent="cyan" delay={0.16} />
         <StatTile
           label="Avg Response Time"
           value={data.avgResponseTimeDays !== null ? `${data.avgResponseTimeDays}d` : "—"}
@@ -110,10 +110,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <GlassPanel className="p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Applications over time</h2>
-            <span className="text-xs text-muted-foreground">Last 12 weeks</span>
-          </div>
+          <h2 className="mb-3 text-sm font-semibold">Applications over time</h2>
           <ApplicationsOverTimeChart data={data.applicationsOverTime} />
         </GlassPanel>
 

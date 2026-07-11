@@ -3,6 +3,7 @@ import { GlassPanel } from "@/components/shared/glass-panel";
 import { Badge } from "@/components/ui/badge";
 import { HR_CONTACT_RELATIONSHIP_TYPES } from "@/lib/types/database";
 import type { HrContactDraft } from "@/components/applications/types";
+import { safeHttpUrl, safeMailto } from "@/lib/utils/url";
 
 export function HrContactsCard({ contacts }: { contacts: HrContactDraft[] }) {
   return (
@@ -29,8 +30,8 @@ export function HrContactsCard({ contacts }: { contacts: HrContactDraft[] }) {
               </div>
               {(contact.email || contact.phone || contact.linkedin_url) && (
                 <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {contact.email && (
-                    <a href={`mailto:${contact.email}`} className="flex items-center gap-1 hover:text-primary">
+                  {safeMailto(contact.email) && (
+                    <a href={safeMailto(contact.email)!} className="flex items-center gap-1 hover:text-primary">
                       <Mail className="h-3 w-3" /> {contact.email}
                     </a>
                   )}
@@ -39,8 +40,8 @@ export function HrContactsCard({ contacts }: { contacts: HrContactDraft[] }) {
                       <Phone className="h-3 w-3" /> {contact.phone}
                     </span>
                   )}
-                  {contact.linkedin_url && (
-                    <a href={contact.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary">
+                  {safeHttpUrl(contact.linkedin_url) && (
+                    <a href={safeHttpUrl(contact.linkedin_url)!} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary">
                       <Link2 className="h-3 w-3" /> LinkedIn
                     </a>
                   )}

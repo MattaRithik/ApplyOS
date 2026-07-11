@@ -7,12 +7,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { ApplicationForm, type ApplicationFormValues } from "@/components/applications/application-form";
-import { JobIntelligenceLayout } from "@/components/applications/parser/job-intelligence-layout";
-import { JobIntelligencePanel } from "@/components/applications/parser/job-intelligence-panel";
-import { createApplication, saveParsedJobDetails, updateCompanyMetaIfEmpty } from "@/app/(app)/applications/actions";
+import { AiParserLayout } from "@/components/applications/parser/ai-parser-layout";
+import { AiParserPanel } from "@/components/applications/parser/ai-parser-panel";
+import { createApplication, saveParsedJobDetails } from "@/app/(app)/applications/actions";
 import { saveApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
-import { applyExtractionFieldsToForm, type AcceptableFieldKey } from "@/lib/parser/apply-to-form";
-import type { JobExtraction, JobIntelligenceResult } from "@/lib/parser/schema";
+import { applyParsedResultToForm, type AcceptableFieldKey } from "@/lib/ai-parser/apply-to-form";
+import type { AiParserApiResponse, AiParserResult } from "@/lib/ai-parser/schema";
 
 const DEFAULT_VALUES: ApplicationFormValues = {
   company_name: "",
@@ -46,31 +46,20 @@ const DEFAULT_VALUES: ApplicationFormValues = {
 
 export function AddApplicationClient({
   resumeOptions,
+  aiParserEnabled,
 }: {
   resumeOptions: { id: string; display_name: string }[];
+  aiParserEnabled: boolean;
 }) {
   const router = useRouter();
   const [values, setValues] = React.useState<ApplicationFormValues>(DEFAULT_VALUES);
   const [jobUrl, setJobUrl] = React.useState("");
   const [jobDescription, setJobDescription] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
-  const [lastParsed, setLastParsed] = React.useState<JobIntelligenceResult | null>(null);
+  const [lastParsed, setLastParsed] = React.useState<AiParserApiResponse | null>(null);
 
-  const handleApplyExtractedFields = (
-    extraction: JobExtraction,
-    suggestedFollowUpDate: string | undefined,
-    priorityScore: number | undefined,
-    accepted: Set<AcceptableFieldKey>
-  ) => {
-    setValues((prev) =>
-      applyExtractionFieldsToForm(
-        { ...prev, job_url: jobUrl, job_description: jobDescription },
-        extraction,
-        suggestedFollowUpDate,
-        priorityScore,
-        accepted
-      )
-    );
+  const handleApplyExtractedFields = (result: AiParserResult, accepted: Set<AcceptableFieldKey>) => {
+    setValues((prev) => applyParsedResultToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, result, accepted));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,10 +85,6 @@ export function AddApplicationClient({
 
       if (lastParsed) {
         await saveParsedJobDetails(app.id, jobUrl || null, jobDescription, lastParsed);
-        await updateCompanyMetaIfEmpty(app.company_id, {
-          website: lastParsed.extraction.companyWebsite?.value,
-          linkedinUrl: lastParsed.extraction.companyLinkedInUrl?.value,
-        });
       }
 
       if (hrContacts.some((c) => c.name.trim())) {
@@ -128,26 +113,27 @@ export function AddApplicationClient({
         </form>
       </GlassPanel>
 
-      <JobIntelligenceLayout
-        title="AI Job Intelligence"
-        subtitle="Paste a posting to analyze it"
-        icon={
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--cyan-accent)] to-[var(--blue-accent)] text-white">
-            <Sparkles className="h-4 w-4" />
-          </span>
-        }
-      >
-        <JobIntelligencePanel
-          jobUrl={jobUrl}
-          jobDescription={jobDescription}
-          resumeOptions={resumeOptions}
-          formResumeId={values.resume_id}
-          onJobUrlChange={setJobUrl}
-          onJobDescriptionChange={setJobDescription}
-          onParsed={setLastParsed}
-          onApply={handleApplyExtractedFields}
-        />
-      </JobIntelligenceLayout>
+      {aiParserEnabled ? (
+        <AiParserLayout
+          title="AI Job Parser"
+          subtitle="Paste a posting to extract fields"
+          icon={
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--cyan-accent)] to-[var(--blue-accent)] text-white">
+              <Sparkles className="h-4 w-4" />
+            </span>
+          }
+        >
+          <AiParserPanel
+            jobUrl={jobUrl}
+            jobDescription={jobDescription}
+            aiParserEnabled={aiParserEnabled}
+            onJobUrlChange={setJobUrl}
+            onJobDescriptionChange={setJobDescription}
+            onParsed={setLastParsed}
+            onApply={handleApplyExtractedFields}
+          />
+        </AiParserLayout>
+      ) : null}
     </div>
   );
 }
