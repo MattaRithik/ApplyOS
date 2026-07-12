@@ -31,12 +31,17 @@ export function AiParserLayout({ title, subtitle, icon, children }: AiParserLayo
             exit={{ opacity: 0, scale: 0.92, y: 16 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             className={cn(
-              "glass-panel-strong glass-inset-highlight fixed z-40 flex flex-col overflow-hidden rounded-2xl",
+              // Solid (not translucent glass) on purpose — this panel floats
+              // directly over the live form with no dimming scrim behind it
+              // (unlike a modal dialog), so a see-through background let the
+              // form's own labels/text show through and visually collide
+              // with the panel's content.
+              "fixed z-40 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl",
               "inset-x-4 bottom-24 max-h-[min(75vh,640px)]",
               "sm:inset-x-auto sm:right-6 sm:w-[440px]"
             )}
           >
-            <div className="flex items-center gap-2.5 border-b border-border/50 px-4 py-3.5">
+            <div className="flex items-center gap-2.5 border-b border-border bg-primary/[0.06] px-4 py-3.5">
               {icon}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{title}</p>

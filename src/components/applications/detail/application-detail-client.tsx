@@ -28,7 +28,7 @@ import { VisaSponsorshipBadge } from "@/components/shared/visa-sponsorship-badge
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { StatusHistorySection } from "@/components/applications/detail/status-history-section";
 import type { ApplicationWithResume, HrContactDraft } from "@/components/applications/types";
-import { safeHttpUrl } from "@/lib/utils/url";
+import { safeHttpUrl, formatShortUrl } from "@/lib/utils/url";
 
 interface Props {
   application: ApplicationWithResume;
@@ -152,6 +152,28 @@ export function ApplicationDetailClient({
 
         <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
           <InfoRow icon={MapPin} label="Location" value={[application.location, application.work_mode].filter(Boolean).join(" · ")} />
+          <InfoRow
+            icon={ExternalLink}
+            label="Source"
+            value={
+              application.source || jobUrl ? (
+                <span className="flex flex-wrap items-center gap-1.5">
+                  {application.source && <span>{application.source}</span>}
+                  {jobUrl && (
+                    <a
+                      href={jobUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline-offset-2 hover:underline"
+                      title={jobUrl}
+                    >
+                      {formatShortUrl(jobUrl, 34)}
+                    </a>
+                  )}
+                </span>
+              ) : null
+            }
+          />
           <InfoRow icon={FileText} label="Resume" value={application.resume?.display_name} />
           <InfoRow icon={DollarSign} label="Salary" value={salary} />
           <InfoRow icon={User} label="Referral" value={referral || null} />

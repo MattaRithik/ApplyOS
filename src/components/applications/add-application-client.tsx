@@ -127,6 +127,7 @@ export function AddApplicationClient({
             jobUrl={jobUrl}
             jobDescription={jobDescription}
             aiParserEnabled={aiParserEnabled}
+            currentValues={values}
             onJobUrlChange={setJobUrl}
             onJobDescriptionChange={setJobDescription}
             onParsed={setLastParsed}

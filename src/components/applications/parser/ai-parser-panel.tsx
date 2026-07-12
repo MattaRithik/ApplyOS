@@ -7,7 +7,6 @@ import {
   Loader2,
   Sparkles,
   Check,
-  CheckCheck,
   X,
   Copy,
   Search,
@@ -16,24 +15,34 @@ import {
   ChevronRight,
   Database,
   Zap,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { cn } from "@/lib/utils";
+import { safeHttpUrl } from "@/lib/utils/url";
 import type { AiParserApiResponse, AiParserResult, FieldProvenanceStatus } from "@/lib/ai-parser/schema";
+import { cleanJobPostingDescription, extractLikelyJobPostingUrl } from "@/lib/ai-parser/deterministic";
 import {
   ALL_FIELD_LABELS,
   SYNTHETIC_DEADLINE_KEY,
   SYNTHETIC_RECRUITER_CONTACT_KEY,
+  selectSafeFieldsToApply,
   type AcceptableFieldKey,
 } from "@/lib/ai-parser/apply-to-form";
+import type { ApplicationFormValues } from "@/components/applications/application-form";
 
-const STAGES = ["Reading posting…", "Extracting fields…", "Cross-checking sponsorship & compensation…", "Finalizing structured profile…"];
+const STAGES = [
+  "Cleaning pasted job text…",
+  "Detecting source platform…",
+  "Extracting job details…",
+  "Validating fields…",
+  "Preparing safe fields…",
+];
 
 const EXCLUDED_PATHS = new Set(["identity.recruiterName", "identity.recruiterEmail", "roleContent.applicationDeadline"]);
 
@@ -52,6 +61,7 @@ interface AiParserPanelProps {
   jobUrl: string;
   jobDescription: string;
   aiParserEnabled: boolean;
+  currentValues: ApplicationFormValues;
   onJobUrlChange: (v: string) => void;
   onJobDescriptionChange: (v: string) => void;
   onParsed: (response: AiParserApiResponse) => void;
@@ -66,12 +76,17 @@ function formatValue(value: unknown): string {
   return str.trim() === "" ? "—" : str;
 }
 
+// Reuses the same semantic colors as the rest of the app (VisaSponsorshipBadge,
+// etc.) instead of introducing extra one-off hues — explicit/confirmed reads
+// as emerald "good", normalized leans on the site's own primary/brand color
+// (never a semantic warning), inferred/uncertain both read as amber/red
+// "use caution", and missing stays neutral.
 function provenanceBadgeClasses(status: FieldProvenanceStatus): string {
   switch (status) {
     case "explicit":
       return "border-[var(--emerald-accent)]/40 text-[var(--emerald-accent)]";
     case "normalized":
-      return "border-[var(--cyan-accent)]/40 text-[var(--cyan-accent)]";
+      return "border-primary/40 text-primary";
     case "inferred":
       return "border-[var(--amber-accent)]/40 text-[var(--amber-accent)]";
     case "uncertain":
@@ -146,6 +161,7 @@ export function AiParserPanel({
   jobUrl,
   jobDescription,
   aiParserEnabled,
+  currentValues,
   onJobUrlChange,
   onJobDescriptionChange,
   onParsed,
@@ -154,9 +170,13 @@ export function AiParserPanel({
   const [loading, setLoading] = React.useState(false);
   const [stageIndex, setStageIndex] = React.useState(-1);
   const [response, setResponse] = React.useState<AiParserApiResponse | null>(null);
-  const [accepted, setAccepted] = React.useState<Set<AcceptableFieldKey>>(new Set());
   const [search, setSearch] = React.useState("");
   const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set());
+
+  const safeKeys = React.useMemo(
+    () => (response ? selectSafeFieldsToApply(response.result, currentValues) : new Set<AcceptableFieldKey>()),
+    [response, currentValues]
+  );
 
   if (!aiParserEnabled) {
     return (
@@ -177,7 +197,7 @@ export function AiParserPanel({
 
     const stageTimer = setInterval(() => {
       setStageIndex((i) => (i < STAGES.length - 1 ? i + 1 : i));
-    }, 900);
+    }, 750);
 
     try {
       const res = await fetch("/api/ai-parser", {
@@ -192,14 +212,19 @@ export function AiParserPanel({
       setResponse(parsed);
       onParsed(parsed);
 
-      const defaultAccepted = new Set<AcceptableFieldKey>();
-      const groups = buildFieldEntries(parsed.result);
-      for (const entries of Object.values(groups)) {
-        for (const entry of entries) {
-          if (entry.status === "explicit" || entry.status === "normalized") defaultAccepted.add(entry.path);
-        }
+      // Deterministic cleanup: replace the raw pasted text (page chrome,
+      // Apply/Save buttons, alumni callouts, ...) with a version that reads
+      // like a real job description — the AI extraction above already saw
+      // the messy original, which is fine (it's useful signal), but nothing
+      // downstream should end up saving the portal clutter.
+      const cleanedDescription = cleanJobPostingDescription(jobDescription);
+      if (cleanedDescription && cleanedDescription !== jobDescription) {
+        onJobDescriptionChange(cleanedDescription);
       }
-      setAccepted(defaultAccepted);
+      if (!jobUrl.trim()) {
+        const detectedUrl = extractLikelyJobPostingUrl(jobDescription);
+        if (detectedUrl) onJobUrlChange(detectedUrl);
+      }
 
       toast.success(
         parsed.cacheHit
@@ -215,15 +240,6 @@ export function AiParserPanel({
     }
   };
 
-  const toggleField = (path: string) => {
-    setAccepted((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
-  };
-
   const toggleGroup = (groupKey: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -234,7 +250,6 @@ export function AiParserPanel({
   };
 
   const groups = response ? buildFieldEntries(response.result) : {};
-  const allPaths = Object.values(groups).flat().map((e) => e.path);
 
   const matchesSearch = (entry: FieldEntry) => {
     if (!search.trim()) return true;
@@ -242,38 +257,44 @@ export function AiParserPanel({
     return haystack.includes(search.trim().toLowerCase());
   };
 
-  const acceptAll = () => setAccepted(new Set(allPaths));
-  const acceptHighConfidence = () =>
-    setAccepted(
-      new Set(
-        Object.values(groups)
-          .flat()
-          .filter((e) => e.status === "explicit" || e.status === "normalized")
-          .map((e) => e.path)
-      )
-    );
-  const rejectAll = () => setAccepted(new Set());
-
-  const applyAccepted = () => {
-    if (!response || accepted.size === 0) return;
-    onApply(response.result, accepted);
-    toast.success(`Applied ${accepted.size} field${accepted.size === 1 ? "" : "s"} to the form.`);
+  const applySafeFields = () => {
+    if (!response) return;
+    if (safeKeys.size === 0) {
+      toast.error("No fields were confident enough to auto-apply. Review the extracted fields below and fill them in manually.");
+      return;
+    }
+    onApply(response.result, safeKeys);
+    toast.success(`Applied ${safeKeys.size} safe field${safeKeys.size === 1 ? "" : "s"} to the form.`);
   };
 
   const warnings = response?.result.metadata.warnings ?? [];
+  const safeJobUrl = safeHttpUrl(jobUrl);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="space-y-3">
         <div>
           <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">Job URL</Label>
-          <Input
-            value={jobUrl}
-            onChange={(e) => onJobUrlChange(e.target.value)}
-            placeholder="https://…"
-            className="text-sm"
-            aria-label="Job posting URL"
-          />
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={jobUrl}
+              onChange={(e) => onJobUrlChange(e.target.value)}
+              placeholder="https://…"
+              className="text-sm"
+              aria-label="Job posting URL"
+            />
+            {safeJobUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                render={<a href={safeJobUrl} target="_blank" rel="noopener noreferrer" aria-label="Open job posting URL in a new tab" title={safeJobUrl} />}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <div>
           <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">Job description</Label>
@@ -286,51 +307,7 @@ export function AiParserPanel({
             aria-label="Job description text"
           />
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => handleParse(false)} disabled={loading} className="flex-1 gap-2">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {loading ? "Parsing…" : "Parse with AI"}
-          </Button>
-          {response && (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={loading}
-              onClick={() => handleParse(true)}
-              aria-label="Force a fresh parse, bypassing the cache"
-              title="Force a fresh parse, bypassing the cache"
-            >
-              <Zap className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
       </div>
-
-      <AnimatePresence mode="wait">
-        {loading && (
-          <motion.ul
-            key="stages"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-1.5 rounded-xl border border-border/50 bg-muted/30 p-3"
-          >
-            {STAGES.map((stage, i) => (
-              <li key={stage} className="flex items-center gap-2 text-xs">
-                {i < stageIndex ? (
-                  <Check className="h-3.5 w-3.5 shrink-0 text-[var(--emerald-accent)]" />
-                ) : i === stageIndex ? (
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
-                ) : (
-                  <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-border/60" />
-                )}
-                <span className={cn(i > stageIndex && "text-muted-foreground")}>{stage}</span>
-              </li>
-            ))}
-          </motion.ul>
-        )}
-      </AnimatePresence>
 
       {response && !loading && (
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -364,32 +341,18 @@ export function AiParserPanel({
             </div>
           )}
 
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search fields…"
-                className="h-8 pl-7 text-xs"
-                aria-label="Search extracted fields"
-              />
-            </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search fields…"
+              className="h-8 pl-7 text-xs"
+              aria-label="Search extracted fields"
+            />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button variant="ghost" size="xs" className="gap-1" onClick={acceptAll}>
-              <CheckCheck className="h-3 w-3" /> Accept all
-            </Button>
-            <Button variant="ghost" size="xs" className="gap-1" onClick={acceptHighConfidence}>
-              <Check className="h-3 w-3" /> Accept high-confidence
-            </Button>
-            <Button variant="ghost" size="xs" className="gap-1 text-destructive" onClick={rejectAll}>
-              <X className="h-3 w-3" /> Reject all
-            </Button>
-          </div>
-
-          <div className="max-h-[480px] space-y-3 overflow-y-auto scrollbar-thin pr-1">
+          <div className="space-y-3">
             {Object.entries(groups).map(([groupKey, entries]) => {
               const visible = entries.filter(matchesSearch);
               if (visible.length === 0) return null;
@@ -411,29 +374,36 @@ export function AiParserPanel({
                   {!isCollapsed && (
                     <div className="space-y-2 border-t border-border/50 p-2.5">
                       {visible.map((entry) => {
-                        const isAccepted = accepted.has(entry.path);
+                        const willApply = safeKeys.has(entry.path);
                         const isClassification = entry.status === "inferred" || entry.status === "uncertain";
                         return (
                           <div
                             key={entry.path}
                             className={cn(
                               "rounded-lg border p-2 transition-colors",
-                              isAccepted ? "border-primary/30 bg-primary/5" : "border-border/50 opacity-70"
+                              willApply ? "border-primary/30 bg-primary/5" : "border-border/50 opacity-70"
                             )}
                           >
-                            <div className="flex items-start gap-2">
-                              <Checkbox
-                                checked={isAccepted}
-                                onCheckedChange={() => toggleField(entry.path)}
-                                className="mt-0.5"
-                                aria-label={`Accept ${entry.label}`}
-                              />
+                            <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="text-xs font-semibold">{entry.label}</p>
-                                  <Badge variant="outline" className={cn("h-4 px-1 text-[9px] uppercase", provenanceBadgeClasses(entry.status))}>
-                                    {entry.status}
-                                  </Badge>
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <Badge variant="outline" className={cn("h-4 px-1 text-[9px] uppercase", provenanceBadgeClasses(entry.status))}>
+                                      {entry.status}
+                                    </Badge>
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        "h-4 px-1 text-[9px] uppercase",
+                                        willApply
+                                          ? "border-[var(--emerald-accent)]/40 text-[var(--emerald-accent)]"
+                                          : "border-border/50 text-muted-foreground"
+                                      )}
+                                    >
+                                      {willApply ? "will apply" : "skipped"}
+                                    </Badge>
+                                  </div>
                                 </div>
                                 <p className="mt-0.5 truncate text-xs text-muted-foreground" title={formatValue(entry.value)}>
                                   {formatValue(entry.value)}
@@ -457,10 +427,6 @@ export function AiParserPanel({
               );
             })}
           </div>
-
-          <Button onClick={applyAccepted} disabled={accepted.size === 0} className="w-full gap-2" variant="secondary">
-            <ChevronRight className="h-4 w-4" /> Apply {accepted.size} field{accepted.size === 1 ? "" : "s"} to form
-          </Button>
 
           {response.result.quantRelevance && (
             <GlassPanel className="space-y-2 p-3">
@@ -487,6 +453,57 @@ export function AiParserPanel({
           <X className="h-3 w-3" /> No results yet — paste a description and parse.
         </p>
       )}
+
+      {/* Sticky action bar — always reachable without scrolling through a long
+          pasted description or a long extracted-fields list. Cycles through
+          three states: idle (Parse), loading (progress steps), done (Apply). */}
+      <div className="sticky bottom-0 -mx-4 mt-auto border-t border-border bg-card px-4 py-3">
+        <AnimatePresence mode="wait" initial={false}>
+          {loading ? (
+            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1.5">
+              {STAGES.map((stage, i) => (
+                <div key={stage} className="flex items-center gap-2 text-xs">
+                  {i < stageIndex ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-[var(--emerald-accent)]" />
+                  ) : i === stageIndex ? (
+                    <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+                  ) : (
+                    <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-border/60" />
+                  )}
+                  <span className={cn(i > stageIndex && "text-muted-foreground")}>{stage}</span>
+                </div>
+              ))}
+            </motion.div>
+          ) : response ? (
+            <motion.div key="apply" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Button onClick={applySafeFields} className="flex-1 gap-2">
+                  <Check className="h-4 w-4" /> Apply Safe Fields to Form
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleParse(true)}
+                  aria-label="Force a fresh parse, bypassing the cache"
+                  title="Force a fresh parse, bypassing the cache"
+                >
+                  <Zap className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-center text-[10px] text-muted-foreground">
+                Only safe, explicit fields will be applied. Uncertain fields are skipped — review them above.
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div key="parse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Button onClick={() => handleParse(false)} disabled={loading} className="w-full gap-2">
+                <Sparkles className="h-4 w-4" /> Parse with AI
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
