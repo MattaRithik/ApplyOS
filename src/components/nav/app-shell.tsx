@@ -15,6 +15,7 @@ interface AppShellProps {
   userName?: string | null;
   avatarUrl?: string | null;
   followUpsDueCount?: number;
+  jobDropsUnreadCount?: number;
   showOnboarding?: boolean;
 }
 
@@ -24,6 +25,7 @@ export function AppShell({
   userName,
   avatarUrl,
   followUpsDueCount,
+  jobDropsUnreadCount,
   showOnboarding,
 }: AppShellProps) {
   const [commandOpen, setCommandOpen] = React.useState(false);
@@ -39,7 +41,7 @@ export function AppShell({
     <div className="flex min-h-screen w-full">
       <aside className="sticky top-0 hidden h-screen w-72 shrink-0 p-3 md:block">
         <div className="glass-nav glass-inset-highlight h-full rounded-2xl">
-          <SidebarNav followUpsDueCount={followUpsDueCount} />
+          <SidebarNav followUpsDueCount={followUpsDueCount} jobDropsUnreadCount={jobDropsUnreadCount} />
         </div>
       </aside>
 
@@ -50,6 +52,7 @@ export function AppShell({
           userName={userName}
           avatarUrl={avatarUrl}
           followUpsDueCount={followUpsDueCount}
+          jobDropsUnreadCount={jobDropsUnreadCount}
           openCommandPalette={() => setCommandOpen(true)}
         />
         <main className="flex-1 px-4 pb-10 md:px-6">

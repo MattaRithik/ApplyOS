@@ -1311,3 +1311,212 @@ create policy "ai_parser_entitlements_select_own" on ai_parser_entitlements for 
 -- Deliberately no policy of any kind for admin_audit_log + `authenticated`:
 -- reads happen only via the owner-only /api/admin/audit-log route using
 -- the service-role client.
+
+-- =====================================================================
+-- Together — a shared job-link thread between exactly two accounts.
+-- Kept here too so this file stays canonical (mirrors
+-- supabase/migrations/20260817120000_link_threads.sql). See that file's
+-- header comment for the design rationale.
+-- =====================================================================
+
+create table if not exists link_threads (
+  id uuid primary key default gen_random_uuid(),
+  created_by uuid references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists link_thread_participants (
+  thread_id uuid not null references link_threads(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  primary key (thread_id, user_id)
+);
+
+create index if not exists idx_link_thread_participants_user on link_thread_participants(user_id);
+
+create table if not exists link_messages (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references link_threads(id) on delete cascade,
+  sender_id uuid not null references auth.users(id) on delete cascade,
+  url text not null,
+  caption text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_link_messages_thread on link_messages(thread_id, created_at);
+
+create table if not exists link_message_statuses (
+  message_id uuid not null references link_messages(id) on delete cascade,
+  thread_id uuid not null references link_threads(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  status text not null check (status in ('applied', 'not_applied', 'not_applicable')),
+  updated_at timestamptz not null default now(),
+  primary key (message_id, user_id)
+);
+
+create index if not exists idx_link_message_statuses_thread on link_message_statuses(thread_id);
+
+drop trigger if exists trg_link_message_statuses_updated_at on link_message_statuses;
+create trigger trg_link_message_statuses_updated_at before update on link_message_statuses
+  for each row execute function set_updated_at();
+
+alter table link_threads enable row level security;
+alter table link_thread_participants enable row level security;
+alter table link_messages enable row level security;
+alter table link_message_statuses enable row level security;
+
+drop policy if exists "link_threads_select_participant" on link_threads;
+create policy "link_threads_select_participant" on link_threads for select using (
+  exists (select 1 from link_thread_participants tp where tp.thread_id = link_threads.id and tp.user_id = auth.uid())
+);
+
+drop policy if exists "link_thread_participants_select_member" on link_thread_participants;
+create policy "link_thread_participants_select_member" on link_thread_participants for select using (
+  exists (
+    select 1 from link_thread_participants tp2
+    where tp2.thread_id = link_thread_participants.thread_id and tp2.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "link_messages_select_participant" on link_messages;
+create policy "link_messages_select_participant" on link_messages for select using (
+  exists (select 1 from link_thread_participants tp where tp.thread_id = link_messages.thread_id and tp.user_id = auth.uid())
+);
+
+drop policy if exists "link_messages_insert_participant" on link_messages;
+create policy "link_messages_insert_participant" on link_messages for insert with check (
+  sender_id = auth.uid()
+  and exists (select 1 from link_thread_participants tp where tp.thread_id = link_messages.thread_id and tp.user_id = auth.uid())
+);
+
+drop policy if exists "link_message_statuses_select_participant" on link_message_statuses;
+create policy "link_message_statuses_select_participant" on link_message_statuses for select using (
+  exists (select 1 from link_thread_participants tp where tp.thread_id = link_message_statuses.thread_id and tp.user_id = auth.uid())
+);
+
+drop policy if exists "link_message_statuses_insert_own" on link_message_statuses;
+create policy "link_message_statuses_insert_own" on link_message_statuses for insert with check (
+  user_id = auth.uid()
+  and exists (select 1 from link_thread_participants tp where tp.thread_id = link_message_statuses.thread_id and tp.user_id = auth.uid())
+);
+
+drop policy if exists "link_message_statuses_update_own" on link_message_statuses;
+create policy "link_message_statuses_update_own" on link_message_statuses for update using (
+  user_id = auth.uid()
+  and exists (select 1 from link_thread_participants tp where tp.thread_id = link_message_statuses.thread_id and tp.user_id = auth.uid())
+);
+
+-- Deliberately no insert/update/delete policy of any kind for link_threads
+-- or link_thread_participants + `authenticated`: those rows are only ever
+-- written by the service-role client inside addThreadPartner.
+
+do $$ begin
+  alter publication supabase_realtime add table link_messages;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter publication supabase_realtime add table link_message_statuses;
+exception when duplicate_object then null; end $$;
+
+-- ---------------------------------------------------------------------
+-- Job Drops — per-user "last read" tracking (mirrors
+-- supabase/migrations/20260817130000_link_thread_last_read.sql). The
+-- update policy is paired with a column-restricted grant so a caller can
+-- only ever touch their own last_read_at, never re-point their
+-- participant row at a different thread_id.
+-- ---------------------------------------------------------------------
+
+alter table link_thread_participants add column if not exists last_read_at timestamptz;
+
+drop policy if exists "link_thread_participants_update_own" on link_thread_participants;
+create policy "link_thread_participants_update_own" on link_thread_participants for update using (
+  auth.uid() = user_id
+) with check (
+  auth.uid() = user_id
+);
+
+revoke update on table link_thread_participants from authenticated;
+grant update (last_read_at) on table link_thread_participants to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Job Drops — enforce "at most one thread per person" (mirrors
+-- supabase/migrations/20260817140000_link_thread_dedupe_and_unique.sql).
+-- The dedupe queries are no-ops on a fresh install.
+-- ---------------------------------------------------------------------
+
+with ranked as (
+  select thread_id, user_id,
+         row_number() over (partition by user_id order by joined_at asc, thread_id asc) as rn
+  from link_thread_participants
+)
+delete from link_thread_participants tp
+using ranked r
+where tp.thread_id = r.thread_id and tp.user_id = r.user_id and r.rn > 1;
+
+delete from link_threads t
+where not exists (select 1 from link_thread_participants tp where tp.thread_id = t.id);
+
+alter table link_thread_participants drop constraint if exists link_thread_participants_user_id_key;
+alter table link_thread_participants add constraint link_thread_participants_user_id_key unique (user_id);
+
+-- ---------------------------------------------------------------------
+-- Job Drops — fix "infinite recursion detected in policy" (mirrors
+-- supabase/migrations/20260817150000_link_thread_rls_fix.sql). See that
+-- file's header comment for the full explanation: self-referencing RLS
+-- on link_thread_participants recursed into itself on every query that
+-- touched it, including indirectly via link_threads/link_messages/
+-- link_message_statuses. Fixed with a SECURITY DEFINER membership-check
+-- function, which bypasses RLS (table owners aren't subject to their
+-- own table's policies) instead of re-triggering it.
+-- ---------------------------------------------------------------------
+
+create or replace function is_link_thread_participant(p_thread_id uuid, p_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from link_thread_participants
+    where thread_id = p_thread_id and user_id = p_user_id
+  );
+$$;
+
+revoke all on function is_link_thread_participant(uuid, uuid) from public;
+grant execute on function is_link_thread_participant(uuid, uuid) to authenticated;
+
+drop policy if exists "link_threads_select_participant" on link_threads;
+create policy "link_threads_select_participant" on link_threads for select using (
+  is_link_thread_participant(link_threads.id, auth.uid())
+);
+
+drop policy if exists "link_thread_participants_select_member" on link_thread_participants;
+create policy "link_thread_participants_select_member" on link_thread_participants for select using (
+  is_link_thread_participant(link_thread_participants.thread_id, auth.uid())
+);
+
+drop policy if exists "link_messages_select_participant" on link_messages;
+create policy "link_messages_select_participant" on link_messages for select using (
+  is_link_thread_participant(link_messages.thread_id, auth.uid())
+);
+
+drop policy if exists "link_messages_insert_participant" on link_messages;
+create policy "link_messages_insert_participant" on link_messages for insert with check (
+  sender_id = auth.uid() and is_link_thread_participant(link_messages.thread_id, auth.uid())
+);
+
+drop policy if exists "link_message_statuses_select_participant" on link_message_statuses;
+create policy "link_message_statuses_select_participant" on link_message_statuses for select using (
+  is_link_thread_participant(link_message_statuses.thread_id, auth.uid())
+);
+
+drop policy if exists "link_message_statuses_insert_own" on link_message_statuses;
+create policy "link_message_statuses_insert_own" on link_message_statuses for insert with check (
+  user_id = auth.uid() and is_link_thread_participant(link_message_statuses.thread_id, auth.uid())
+);
+
+drop policy if exists "link_message_statuses_update_own" on link_message_statuses;
+create policy "link_message_statuses_update_own" on link_message_statuses for update using (
+  user_id = auth.uid() and is_link_thread_participant(link_message_statuses.thread_id, auth.uid())
+);

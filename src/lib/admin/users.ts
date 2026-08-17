@@ -64,12 +64,12 @@ function monthStartUtc(): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
-function isBanned(u: Pick<User, "id"> & { banned_until?: string | null }): boolean {
+export function isBanned(u: Pick<User, "id"> & { banned_until?: string | null }): boolean {
   if (!u.banned_until) return false;
   return new Date(u.banned_until).getTime() > Date.now();
 }
 
-async function fetchAllAuthUsers(supabase: ReturnType<typeof createServiceRoleClient>): Promise<User[]> {
+export async function fetchAllAuthUsers(supabase: ReturnType<typeof createServiceRoleClient>): Promise<User[]> {
   const all: User[] = [];
   let page = 1;
   while (all.length < MAX_AUTH_USERS_FETCH) {
