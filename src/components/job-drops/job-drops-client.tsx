@@ -154,7 +154,7 @@ export function JobDropsClient({
         />
       </GlassPanel>
       <div className="h-4 text-xs text-muted-foreground">{partnerTyping ? `${partnerName} is typing…` : ""}</div>
-      <Composer onSend={handleSend} onTyping={handleTyping} />
+      <Composer currentUserName={currentUserName} onSend={handleSend} onTyping={handleTyping} />
     </div>
   );
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, Share2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { StatusPicker } from "./status-picker";
 import { formatShortUrl } from "@/lib/utils/url";
+import { buildWhatsAppShareUrl, jobDropShareText } from "@/lib/utils/whatsapp";
 import { cn } from "@/lib/utils";
 import type { LinkMessage, LinkStatus } from "@/lib/types/database";
 
@@ -40,6 +41,22 @@ export function MessageCard({
         <span className="font-medium text-foreground">{senderName}</span>
         <div className="flex items-center gap-2">
           <span>{formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            aria-label="Share to WhatsApp"
+            render={
+              <a
+                href={buildWhatsAppShareUrl(jobDropShareText({ senderName, url: message.url, caption: message.caption }))}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+            className="text-muted-foreground hover:text-[#25D366]"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+          </Button>
           {isMine && (
             <Button
               type="button"
