@@ -57,6 +57,14 @@ export function JobDropsClient({
       )
       .on(
         "postgres_changes",
+        { event: "DELETE", schema: "public", table: "link_messages", filter: `thread_id=eq.${threadId}` },
+        (payload) => {
+          const deletedId = (payload.old as Partial<LinkMessage>).id;
+          if (deletedId) setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "link_message_statuses", filter: `thread_id=eq.${threadId}` },
         (payload) => upsertStatus(payload.new as LinkMessageStatus)
       )
@@ -114,6 +122,16 @@ export function JobDropsClient({
     if (error) setStatuses(previous);
   };
 
+  const handleDelete = async (messageId: string) => {
+    const previousMessages = messages;
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    const { error } = await supabase.from("link_messages").delete().eq("id", messageId).eq("sender_id", currentUserId);
+    if (error) {
+      setMessages(previousMessages);
+      throw new Error(error.message);
+    }
+  };
+
   const handleTyping = () => {
     const now = Date.now();
     if (now - lastTypingSentRef.current < TYPING_SEND_THROTTLE_MS) return;
@@ -132,6 +150,7 @@ export function JobDropsClient({
           partnerId={partnerId}
           partnerName={partnerName}
           onSetStatus={handleSetStatus}
+          onDelete={handleDelete}
         />
       </GlassPanel>
       <div className="h-4 text-xs text-muted-foreground">{partnerTyping ? `${partnerName} is typing…` : ""}</div>

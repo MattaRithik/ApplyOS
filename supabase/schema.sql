@@ -1520,3 +1520,13 @@ drop policy if exists "link_message_statuses_update_own" on link_message_statuse
 create policy "link_message_statuses_update_own" on link_message_statuses for update using (
   user_id = auth.uid() and is_link_thread_participant(link_message_statuses.thread_id, auth.uid())
 );
+
+-- ---------------------------------------------------------------------
+-- Job Drops — let a sender delete their own link message, any time
+-- (mirrors supabase/migrations/20260817160000_link_messages_delete_own.sql).
+-- ---------------------------------------------------------------------
+
+drop policy if exists "link_messages_delete_own" on link_messages;
+create policy "link_messages_delete_own" on link_messages for delete using (
+  sender_id = auth.uid()
+);

@@ -13,6 +13,7 @@ interface MessageListProps {
   partnerId: string | null;
   partnerName: string;
   onSetStatus: (messageId: string, status: LinkStatus) => void;
+  onDelete: (messageId: string) => Promise<void>;
 }
 
 export function MessageList({
@@ -23,6 +24,7 @@ export function MessageList({
   partnerId,
   partnerName,
   onSetStatus,
+  onDelete,
 }: MessageListProps) {
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
@@ -51,6 +53,7 @@ export function MessageList({
               partnerStatus={partnerId ? statusFor(message.id, partnerId) : null}
               partnerName={partnerName}
               onSetMyStatus={(status) => onSetStatus(message.id, status)}
+              onDelete={() => onDelete(message.id)}
             />
           );
         })}

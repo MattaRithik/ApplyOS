@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarClock, ListChecks, Building2, ArrowUpRight, Sparkles } from "lucide-react";
+import { CalendarClock, ListChecks, Building2, ArrowUpRight, Sparkles, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { getTimelinesContext } from "@/lib/data/timelines";
+import { getJobDropsSummary } from "@/lib/data/job-drops";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { JobDropsStatsRow } from "@/components/job-drops/stats-row";
 import { ApplicationsOverTimeChart } from "@/components/dashboard/charts/applications-over-time-chart";
 import { StatusDistributionChart } from "@/components/dashboard/charts/status-distribution-chart";
 import { OutreachReplyChart } from "@/components/dashboard/charts/outreach-reply-chart";
@@ -24,11 +26,26 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [data, timelinesContext, { data: profile }] = await Promise.all([
+  const [data, timelinesContext, { data: profile }, jobDropsSummary] = await Promise.all([
     getDashboardData(supabase, user.id),
     getTimelinesContext(supabase, user.id),
     supabase.from("profiles").select("user_category").eq("id", user.id).maybeSingle(),
+    getJobDropsSummary(supabase, user.id, user.email ?? null),
   ]);
+
+  const jobDropsSection = jobDropsSummary && (
+    <GlassPanel className="p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <MessageCircle className="h-4 w-4 text-[var(--amber-accent)]" /> Job Drops
+        </h2>
+        <Link href="/job-drops" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+          Open <ArrowUpRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <JobDropsStatsRow summary={jobDropsSummary} />
+    </GlassPanel>
+  );
 
   const isInternational = profile?.user_category === "international_student_us";
 
@@ -73,6 +90,7 @@ export default async function DashboardPage() {
             actionHref="/applications/add"
           />
         </div>
+        {jobDropsSection}
         {timelinesSection}
       </div>
     );
@@ -107,6 +125,8 @@ export default async function DashboardPage() {
           delay={0.18}
         />
       </div>
+
+      {jobDropsSection}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <GlassPanel className="p-5 lg:col-span-2">

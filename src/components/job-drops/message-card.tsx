@@ -1,8 +1,11 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import * as React from "react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { GlassPanel } from "@/components/shared/glass-panel";
+import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { StatusPicker } from "./status-picker";
 import { formatShortUrl } from "@/lib/utils/url";
 import { cn } from "@/lib/utils";
@@ -16,14 +19,40 @@ interface MessageCardProps {
   partnerStatus: LinkStatus | null;
   partnerName: string;
   onSetMyStatus: (status: LinkStatus) => void;
+  onDelete: () => Promise<void>;
 }
 
-export function MessageCard({ message, isMine, senderName, myStatus, partnerStatus, partnerName, onSetMyStatus }: MessageCardProps) {
+export function MessageCard({
+  message,
+  isMine,
+  senderName,
+  myStatus,
+  partnerStatus,
+  partnerName,
+  onSetMyStatus,
+  onDelete,
+}: MessageCardProps) {
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
   return (
     <GlassPanel className={cn("max-w-lg space-y-2 p-3.5", isMine ? "ml-auto" : "mr-auto")}>
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">{senderName}</span>
-        <span>{formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+        <div className="flex items-center gap-2">
+          <span>{formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+          {isMine && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Delete link"
+              onClick={() => setConfirmOpen(true)}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
       <a
         href={message.url}
@@ -39,6 +68,16 @@ export function MessageCard({ message, isMine, senderName, myStatus, partnerStat
         <StatusPicker label="You" value={myStatus} onChange={onSetMyStatus} />
         <StatusPicker label={partnerName} value={partnerStatus} readOnly />
       </div>
+
+      {isMine && (
+        <ConfirmDeleteDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Delete this link?"
+          description="This removes it for both of you — it can't be undone."
+          onConfirm={onDelete}
+        />
+      )}
     </GlassPanel>
   );
 }

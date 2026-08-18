@@ -16,10 +16,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const description =
+  "ApplyOS Application Tracker: applications, outreach, contacts, resumes, interviews, and analytics in one place.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://applicationos.vercel.app"),
   title: "ApplyOS",
-  description:
-    "ApplyOS Application Tracker: applications, outreach, contacts, resumes, interviews, and analytics in one place.",
+  description,
+  openGraph: {
+    title: "ApplyOS",
+    description,
+    siteName: "ApplyOS",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ApplyOS",
+    description,
+  },
 };
 
 export default function RootLayout({
