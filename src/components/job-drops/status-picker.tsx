@@ -11,6 +11,14 @@ const STATUS_TEXT_STYLES: Record<LinkStatus, string> = {
   not_applicable: "text-muted-foreground",
 };
 
+// Base UI's Select is controlled the moment it's ever given a defined
+// value — `value ?? undefined` broke that on the first status-set (the
+// prop starts `null`/undefined for a fresh message, then flips to a real
+// string), which Base UI flags as switching uncontrolled → controlled.
+// This sentinel keeps a defined value on every render; it never matches
+// a real SelectItem, so it just falls back to the placeholder text.
+const UNSET = "__unset__";
+
 interface StatusPickerProps {
   label: string;
   value: LinkStatus | null;
@@ -37,7 +45,7 @@ export function StatusPicker({ label, value, onChange, readOnly }: StatusPickerP
   return (
     <div className="flex items-center gap-1.5 text-xs">
       <span className="text-muted-foreground">{label}:</span>
-      <Select value={value ?? undefined} onValueChange={(v) => v && onChange?.(v as LinkStatus)}>
+      <Select value={value ?? UNSET} onValueChange={(v) => v && v !== UNSET && onChange?.(v as LinkStatus)}>
         <SelectTrigger size="sm">
           <SelectValue placeholder="Set status" />
         </SelectTrigger>

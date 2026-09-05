@@ -14,6 +14,7 @@ interface ComposerProps {
 }
 
 export function Composer({ currentUserName, onSend, onTyping }: ComposerProps) {
+  const urlInputRef = React.useRef<HTMLInputElement>(null);
   const [url, setUrl] = React.useState("");
   const [caption, setCaption] = React.useState("");
   const [sending, setSending] = React.useState(false);
@@ -22,13 +23,14 @@ export function Composer({ currentUserName, onSend, onTyping }: ComposerProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedUrl = url.trim();
-    if (!trimmedUrl) return;
+    if (!trimmedUrl || sending) return;
     setSending(true);
     try {
       await onSend(trimmedUrl, caption.trim());
       setJustPosted({ url: trimmedUrl, caption: caption.trim() });
       setUrl("");
       setCaption("");
+      urlInputRef.current?.focus({ preventScroll: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to post link.");
     } finally {
@@ -39,7 +41,7 @@ export function Composer({ currentUserName, onSend, onTyping }: ComposerProps) {
   return (
     <div className="space-y-2">
       {justPosted && (
-        <div className="flex items-center justify-between gap-2 rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-2 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-2 text-xs">
           <span className="text-[#1a9950] dark:text-[#25D366]">Posted — want to ping your WhatsApp group too?</span>
           <div className="flex items-center gap-1.5">
             <Button
@@ -73,7 +75,9 @@ export function Composer({ currentUserName, onSend, onTyping }: ComposerProps) {
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
         <Input
+          ref={urlInputRef}
           type="url"
+          aria-label="Job link"
           required
           placeholder="Paste a job link…"
           value={url}
@@ -84,6 +88,7 @@ export function Composer({ currentUserName, onSend, onTyping }: ComposerProps) {
           className="sm:flex-[2]"
         />
         <Input
+          aria-label="Caption (optional)"
           placeholder="Caption (optional)"
           value={caption}
           onChange={(e) => {

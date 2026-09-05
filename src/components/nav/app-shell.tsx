@@ -8,6 +8,7 @@ import { CommandPalette } from "@/components/command-palette/command-palette";
 import { PageTransition } from "@/components/shared/page-transition";
 import { primaryNav, secondaryNav } from "@/components/nav/nav-config";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
+import { cn } from "@/lib/utils";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -31,6 +32,7 @@ export function AppShell({
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [onboardingOpen, setOnboardingOpen] = React.useState(!!showOnboarding);
   const pathname = usePathname();
+  const isJobDrops = pathname === "/job-drops";
 
   const pageTitle =
     [...primaryNav, ...secondaryNav].find((item) =>
@@ -38,14 +40,14 @@ export function AppShell({
     )?.label ?? "ApplyOS";
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className={cn("flex min-h-screen w-full", isJobDrops && "h-dvh min-h-0 overflow-hidden")}>
       <aside className="sticky top-0 hidden h-screen w-72 shrink-0 p-3 md:block">
         <div className="glass-nav glass-inset-highlight h-full rounded-2xl">
           <SidebarNav followUpsDueCount={followUpsDueCount} jobDropsUnreadCount={jobDropsUnreadCount} />
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className={cn("flex min-w-0 flex-1 flex-col", isJobDrops ? "min-h-0" : "min-h-screen")}>
         <Topbar
           pageTitle={pageTitle}
           userEmail={userEmail}
@@ -55,8 +57,8 @@ export function AppShell({
           jobDropsUnreadCount={jobDropsUnreadCount}
           openCommandPalette={() => setCommandOpen(true)}
         />
-        <main className="flex-1 px-4 pb-10 md:px-6">
-          <PageTransition>{children}</PageTransition>
+        <main className={cn("flex-1 px-4 md:px-6", isJobDrops ? "flex min-h-0 flex-col pb-3" : "pb-10")}>
+          <PageTransition className={isJobDrops ? "flex min-h-0 flex-1 flex-col" : undefined}>{children}</PageTransition>
         </main>
       </div>
 

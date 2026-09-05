@@ -101,13 +101,15 @@ export function JobDropsClient({
   const handleSend = async (url: string, caption: string) => {
     const parsed = httpUrlSchema.safeParse(url);
     if (!parsed.success) throw new Error("Enter a valid http(s) link.");
-    const { error } = await supabase.from("link_messages").insert({
+    const { data, error } = await supabase.from("link_messages").insert({
       thread_id: threadId,
       sender_id: currentUserId,
       url: parsed.data,
       caption: caption || null,
-    });
+    }).select("*").single();
     if (error) throw new Error(error.message);
+    // Show successful sends even if the realtime event is delayed or unavailable.
+    setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as LinkMessage]));
   };
 
   const handleSetStatus = async (messageId: string, status: LinkStatus) => {
@@ -140,8 +142,8 @@ export function JobDropsClient({
   };
 
   return (
-    <div className="space-y-3">
-      <GlassPanel className="p-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <GlassPanel className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
         <MessageList
           messages={messages}
           statuses={statuses}
@@ -153,8 +155,12 @@ export function JobDropsClient({
           onDelete={handleDelete}
         />
       </GlassPanel>
-      <div className="h-4 text-xs text-muted-foreground">{partnerTyping ? `${partnerName} is typing…` : ""}</div>
-      <Composer currentUserName={currentUserName} onSend={handleSend} onTyping={handleTyping} />
+      <GlassPanel strong className="z-10 shrink-0 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-lg">
+        <div className="mb-1 h-4 text-xs text-muted-foreground" aria-live="polite">
+          {partnerTyping ? `${partnerName} is typing…` : ""}
+        </div>
+        <Composer currentUserName={currentUserName} onSend={handleSend} onTyping={handleTyping} />
+      </GlassPanel>
     </div>
   );
 }

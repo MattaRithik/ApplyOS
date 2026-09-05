@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import { ExternalLink, Trash2, Share2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { StatusPicker } from "./status-picker";
+import { RelativeTime } from "./relative-time";
 import { formatShortUrl } from "@/lib/utils/url";
 import { buildWhatsAppShareUrl, jobDropShareText } from "@/lib/utils/whatsapp";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export function MessageCard({
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">{senderName}</span>
         <div className="flex items-center gap-2">
-          <span>{formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+          <RelativeTime date={message.created_at} />
           <Button
             type="button"
             variant="ghost"

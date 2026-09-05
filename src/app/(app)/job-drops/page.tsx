@@ -17,7 +17,7 @@ export default async function JobDropsPage() {
 
   if (!summary) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4 pt-16">
+      <div className="mx-auto w-full max-w-2xl space-y-4 overflow-y-auto pt-16">
         <EmptyState
           iconName="users"
           title="No shared thread yet"
@@ -36,12 +36,14 @@ export default async function JobDropsPage() {
   const { data: statuses } = await supabase.from("link_message_statuses").select("*").eq("thread_id", summary.threadId);
 
   return (
-    <div className="space-y-4 py-6">
-      <div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pt-2 sm:gap-4 sm:pt-4">
+      <div className="shrink-0">
         <h1 className="text-2xl font-semibold tracking-tight">Job Drops</h1>
         <p className="text-sm text-muted-foreground">Job links you and {summary.partnerName} drop for each other.</p>
       </div>
-      <JobDropsStatsRow summary={summary} />
+      <div className="shrink-0">
+        <JobDropsStatsRow summary={summary} />
+      </div>
       <JobDropsClient
         threadId={summary.threadId}
         currentUserId={user.id}
