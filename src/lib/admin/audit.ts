@@ -12,6 +12,7 @@ export type AdminActionType =
   | "user_disabled"
   | "user_enabled"
   | "user_applications_viewed"
+  | "user_application_resume_opened"
   | "user_parsing_viewed";
 
 export interface RecordAuditEventInput {

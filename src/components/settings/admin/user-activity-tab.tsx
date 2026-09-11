@@ -70,7 +70,7 @@ function ActivityList({ userId, kind }: { userId: string; kind: ActivityKind }) 
         <p className="py-6 text-center text-sm text-muted-foreground">{kind === "applications" ? "No applications on this page." : "No parsing attempts on this page."}</p>
       )}
       {result?.entries.map((entry) => "company_name" in entry
-        ? <ApplicationCard key={entry.id} application={entry} />
+        ? <ApplicationCard key={entry.id} application={entry} userId={userId} />
         : <ParseCard key={entry.id} attempt={entry} />)}
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>{result ? `${result.total} records · Page ${page + 1} of ${pages}` : `Page ${page + 1}`}</span>
@@ -83,7 +83,7 @@ function ActivityList({ userId, kind }: { userId: string; kind: ActivityKind }) 
   );
 }
 
-function ApplicationCard({ application: a }: { application: AdminApplication }) {
+function ApplicationCard({ application: a, userId }: { application: AdminApplication; userId: string }) {
   return (
     <GlassPanel className="min-w-0 space-y-3 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -101,7 +101,26 @@ function ApplicationCard({ application: a }: { application: AdminApplication }) 
       <PostingLink url={a.job_url} />
       <details className="text-sm">
         <summary className="cursor-pointer font-medium">All application details</summary>
-        <div className="mt-3">
+        <div className="mt-3 space-y-4">
+          <div className="rounded-lg border border-border p-3">
+            <p className="text-xs font-semibold">Application resume</p>
+            {a.resume ? (
+              <div className="mt-1 space-y-1">
+                <p className="break-words text-sm">{a.resume.display_name}{a.resume.file_extension ? `.${a.resume.file_extension}` : ""}</p>
+                {a.resume.version_notes && <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{a.resume.version_notes}</p>}
+                {a.resume.status === "uploaded" ? (
+                  <a
+                    href={`/api/admin/users/${userId}/applications/${a.id}/resume`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-9 items-center text-xs text-primary underline"
+                  >
+                    Open resume in new tab
+                  </a>
+                ) : <p className="text-xs text-muted-foreground">{a.resume.status === "failed" ? "Resume upload failed." : "Resume is still uploading."}</p>}
+              </div>
+            ) : <p className="mt-1 text-xs text-muted-foreground">No resume linked, or the linked resume was deleted.</p>}
+          </div>
           <Fields value={{
             employment_type: a.employment_type,
             salary_min: a.salary_min, salary_max: a.salary_max, salary_currency: a.salary_currency,

@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import type { Application } from "@/lib/types/database";
+import type { Application, Resume } from "@/lib/types/database";
 import type { AiParserResult } from "@/lib/ai-parser/schema";
 
 export type ActivityKind = "applications" | "parsing";
@@ -11,7 +11,10 @@ export interface ActivityPage<T> {
   pageSize: number;
 }
 
-export type AdminApplication = Omit<Application, "user_id" | "company_id" | "resume_id">;
+export type AdminApplicationResume = Pick<Resume, "id" | "display_name" | "file_extension" | "status" | "version_notes">;
+export type AdminApplication = Omit<Application, "user_id" | "company_id" | "resume_id"> & {
+  resume: AdminApplicationResume | null;
+};
 
 export interface AdminParseAttempt {
   id: string;
@@ -51,11 +54,23 @@ export async function getUserActivity(userId: string, kind: ActivityKind, page: 
   const from = page * pageSize;
   if (kind === "applications") {
     const { data, count, error } = await supabase.from("applications")
-      .select(APPLICATION_COLUMNS, { count: "exact" }).eq("user_id", userId)
+      .select(`${APPLICATION_COLUMNS}, resume_id`, { count: "exact" }).eq("user_id", userId)
       .order("created_at", { ascending: false }).order("id", { ascending: false })
       .range(from, from + pageSize - 1);
     if (error) throw new Error("Failed to load applications.");
-    return { entries: (data ?? []) as unknown as AdminApplication[], total: count ?? 0, page, pageSize };
+    const applications = (data ?? []) as unknown as (Omit<AdminApplication, "resume"> & { resume_id: string | null })[];
+    const resumeIds = [...new Set(applications.flatMap((a) => a.resume_id ? [a.resume_id] : []))];
+    const resumes = resumeIds.length ? await supabase.from("resumes")
+      .select("id, display_name, file_extension, status, version_notes")
+      .eq("user_id", userId).in("id", resumeIds) : { data: [], error: null };
+    if (resumes.error) throw new Error("Failed to load application resumes.");
+    const resumeById = new Map((resumes.data ?? []).map((resume) => [resume.id, resume as AdminApplicationResume]));
+    return {
+      entries: applications.map(({ resume_id, ...application }) => ({
+        ...application, resume: resume_id ? resumeById.get(resume_id) ?? null : null,
+      })),
+      total: count ?? 0, page, pageSize,
+    };
   }
 
   const { data, count, error } = await supabase.from("ai_parser_usage")

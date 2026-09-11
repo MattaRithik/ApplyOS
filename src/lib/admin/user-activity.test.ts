@@ -30,7 +30,7 @@ describe("privileged activity data scoping", () => {
     expect(from).toHaveBeenCalledWith("applications");
     expect(applications.eq.mock.calls).toEqual([["user_id", "selected-user"]]);
     expect(applications.range).toHaveBeenCalledWith(20, 29);
-    expect(result).toEqual({ entries: [{ id: "app-1", is_archived: true }], total: 42, page: 2, pageSize: 10 });
+    expect(result).toEqual({ entries: [{ id: "app-1", is_archived: true, resume: null }], total: 42, page: 2, pageSize: 10 });
   });
 
   it("reads posting context only for the selected user's paginated usage ids", async () => {
@@ -43,6 +43,31 @@ describe("privileged activity data scoping", () => {
     expect(details.in).toHaveBeenCalledWith("usage_id", ["usage-1", "legacy-2"]);
     expect(result?.entries[0]).toMatchObject({ status: "failed", job_description: "Original posting" });
     expect(result?.entries[1]).toMatchObject({ job_description: null, job_url: null, parsed_result: null });
+  });
+
+  it("loads only resumes linked on this page and belonging to the selected user", async () => {
+    const applications = query({ data: [
+      { id: "app-1", resume_id: "resume-1" },
+      { id: "app-2", resume_id: "missing-or-other-user" },
+      { id: "app-3", resume_id: null },
+    ], count: 3, error: null });
+    const resume = { id: "resume-1", display_name: "Engineering", file_extension: "pdf", status: "uploaded", version_notes: "Version 2" };
+    const resumes = query({ data: [resume], error: null });
+    from.mockImplementation((table) => table === "applications" ? applications : resumes);
+    const result = await getUserActivity("selected-user", "applications", 0, 10);
+    expect(resumes.eq).toHaveBeenCalledWith("user_id", "selected-user");
+    expect(resumes.in).toHaveBeenCalledWith("id", ["resume-1", "missing-or-other-user"]);
+    expect(resumes.select).toHaveBeenCalledWith("id, display_name, file_extension, status, version_notes");
+    expect(result?.entries).toEqual([
+      { id: "app-1", resume }, { id: "app-2", resume: null }, { id: "app-3", resume: null },
+    ]);
+  });
+
+  it("reports resume lookup failures instead of presenting linked files as missing", async () => {
+    const applications = query({ data: [{ id: "app-1", resume_id: "resume-1" }], count: 1, error: null });
+    const resumes = query({ data: null, error: { message: "unavailable" } });
+    from.mockImplementation((table) => table === "applications" ? applications : resumes);
+    await expect(getUserActivity("selected-user", "applications", 0, 10)).rejects.toThrow("Failed to load application resumes.");
   });
 
   it("does not query context for empty usage pages", async () => {
