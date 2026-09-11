@@ -13,7 +13,7 @@ describe("database security invariants", () => {
       "profiles", "companies", "resumes", "applications", "application_status_history", "parsed_job_details",
       "ai_parser_usage", "ai_parser_cache", "contacts", "application_contacts", "email_templates", "outreach",
       "interview_rounds", "follow_ups", "notes", "exports", "international_student_profiles", "user_timelines",
-      "app_user_roles", "ai_parser_entitlements", "admin_audit_log",
+      "app_user_roles", "ai_parser_entitlements", "admin_audit_log", "ai_parser_attempt_details",
     ];
     for (const table of tables) expect(schema).toContain(`alter table ${table} enable row level security;`);
     expect(`${schema}\n${hardening}`).not.toMatch(/using\s*\(\s*true\s*\)/i);
@@ -24,6 +24,12 @@ describe("database security invariants", () => {
     expect(adminMigration).toContain("NO insert/update/delete");
     expect(adminMigration).toContain("RLS with zero policies denies all access");
     expect(hardening).toContain("revoke insert, delete, update on table resumes from authenticated");
+  });
+
+  it("keeps parser posting context service-only and tied to usage deletion", () => {
+    expect(schema).toContain("revoke all on table ai_parser_attempt_details from anon, authenticated;");
+    expect(schema).toContain("usage_id uuid primary key references ai_parser_usage(id) on delete cascade");
+    expect(schema).not.toMatch(/create policy[^;]+on ai_parser_attempt_details/i);
   });
 
   it("makes user-data views honor caller RLS", () => {

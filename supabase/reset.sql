@@ -20,6 +20,7 @@ drop table if exists admin_audit_log cascade;
 drop table if exists ai_parser_entitlements cascade;
 drop table if exists app_user_roles cascade;
 drop table if exists ai_parser_cache cascade;
+drop table if exists ai_parser_attempt_details cascade;
 drop table if exists ai_parser_usage cascade;
 drop table if exists user_timelines cascade;
 drop table if exists international_student_profiles cascade;

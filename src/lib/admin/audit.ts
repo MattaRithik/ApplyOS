@@ -10,7 +10,9 @@ export type AdminActionType =
   | "password_reset_sent"
   | "sessions_revoked"
   | "user_disabled"
-  | "user_enabled";
+  | "user_enabled"
+  | "user_applications_viewed"
+  | "user_parsing_viewed";
 
 export interface RecordAuditEventInput {
   actorUserId: string;

@@ -9,6 +9,7 @@ import { acquireParseSlot, finalizeUsageRow, getRateLimitConfig, type FinalizeUs
 import { calculateCost } from "@/lib/ai-parser/pricing";
 import { parseJobDescription, ParserProviderError, ParserUnusableResultError } from "@/lib/ai-parser/service";
 import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
+import { recordAttemptInput, recordAttemptResult } from "@/lib/ai-parser/attempt-details";
 
 export const maxDuration = 60;
 
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Rate limit reached.", reason: slot.reason }, { status: 429 });
   }
   const usageRowId = slot.usageRowId;
+  await recordAttemptInput(usageRowId, jobDescription, jobUrl).catch(() =>
+    console.error(`[ai-parser] request=${requestId} attempt_input_write_failed`)
+  );
   const finalizeUsageSafely = async (patch: FinalizeUsagePatch) => {
     try {
       await finalizeUsageRow(usageRowId, patch);
@@ -81,9 +85,13 @@ export async function POST(request: Request) {
     if (!forceRefresh) {
       const cached = await getCachedResult(supabase, user.id, descriptionHash);
       if (cached) {
+        await recordAttemptResult(usageRowId, cached.result).catch(() =>
+          console.error(`[ai-parser] request=${requestId} attempt_result_write_failed`)
+        );
         await finalizeUsageSafely({
           status: "cache_hit",
           cacheHit: true,
+          fallbackUsed: cached.result.parseMeta?.fallbackUsed ?? false,
           model: cached.model ?? undefined,
           inputTokens: 0,
           outputTokens: 0,
@@ -168,6 +176,9 @@ export async function POST(request: Request) {
     }
 
     const { result, usage } = outcome;
+    await recordAttemptResult(usageRowId, result).catch(() =>
+      console.error(`[ai-parser] request=${requestId} attempt_result_write_failed`)
+    );
     const cost = calculateCost({
       model: result.parseMeta.finalModel,
       inputTokens: usage.totalInputTokens,

@@ -29,6 +29,8 @@ import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { formatUsd } from "@/components/settings/admin/stat-card";
 import type { AdminUserDetail } from "@/lib/admin/users";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { UserActivityTab } from "@/components/settings/admin/user-activity-tab";
 
 interface Props {
   userId: string;
@@ -40,6 +42,7 @@ interface Props {
 export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Props) {
   const [detail, setDetail] = React.useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [dailyLimit, setDailyLimit] = React.useState("");
   const [monthlyBudget, setMonthlyBudget] = React.useState("");
@@ -48,6 +51,7 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
 
   const fetchDetail = React.useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetch(`/api/admin/users/${userId}`);
       const json = await res.json();
@@ -58,6 +62,8 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
       setMonthlyBudget(data.aiAccess.monthlyBudgetUsd != null ? String(data.aiAccess.monthlyBudgetUsd) : "");
       setExpiresAt(data.aiAccess.expiresAt ? data.aiAccess.expiresAt.slice(0, 10) : "");
     } catch (e) {
+      setDetail(null);
+      setLoadError(e instanceof Error ? e.message : "Failed to load user");
       toast.error(e instanceof Error ? e.message : "Failed to load user");
     } finally {
       setLoading(false);
@@ -122,16 +128,29 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] w-full max-w-2xl overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[85vh] w-full max-w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{detail?.displayName || detail?.email || "User"}</DialogTitle>
           <DialogDescription>{detail?.email}</DialogDescription>
         </DialogHeader>
 
-        {loading || !detail ? (
+        {loadError ? (
+          <div role="alert" className="space-y-2 text-sm text-destructive">
+            <p>{loadError}</p>
+            <Button variant="outline" onClick={fetchDetail}>Retry</Button>
+          </div>
+        ) : loading || !detail ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : (
-          <div className="space-y-4">
+          <Tabs key={userId} defaultValue="access" className="min-w-0">
+            <TabsList className="w-full" aria-label="User details">
+              <TabsTrigger value="access" className="text-xs sm:text-sm">Account & AI access</TabsTrigger>
+              <TabsTrigger value="activity" className="text-xs sm:text-sm">Applications & parsing</TabsTrigger>
+            </TabsList>
+            <TabsContent value="activity">
+              <UserActivityTab userId={userId} />
+            </TabsContent>
+            <TabsContent value="access" className="space-y-4">
             <GlassPanel className="grid grid-cols-2 gap-2 p-3 text-xs sm:grid-cols-4">
               <div>
                 <p className="text-muted-foreground">Role</p>
@@ -283,7 +302,8 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                 )}
               </GlassPanel>
             </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         )}
 
         <DialogFooter showCloseButton />

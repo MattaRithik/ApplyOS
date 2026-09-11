@@ -22,8 +22,8 @@ export function AdministrationPanel() {
       <div>
         <p className="text-sm font-semibold">Administration</p>
         <p className="text-xs text-muted-foreground">
-          Owner-only controls for account access, AI parser entitlements, and security actions. This never shows job
-          applications, resumes, or other private product data.
+          Owner-only controls for account access, AI parser entitlements, and security actions.
+          Select a user to review their applications and parsing history.
         </p>
       </div>
 

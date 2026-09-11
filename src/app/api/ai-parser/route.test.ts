@@ -41,6 +41,13 @@ vi.mock("@/lib/ai-parser/rate-limit", () => ({
   getRateLimitConfig: (dailyLimit: number) => ({ minuteLimit: 5, dailyLimit, concurrencyLimit: 2 }),
 }));
 
+const recordAttemptInputMock = vi.fn(async () => {});
+const recordAttemptResultMock = vi.fn(async () => {});
+vi.mock("@/lib/ai-parser/attempt-details", () => ({
+  recordAttemptInput: recordAttemptInputMock,
+  recordAttemptResult: recordAttemptResultMock,
+}));
+
 vi.mock("@/lib/ai-parser/pricing", () => ({
   calculateCost: () => ({ inputCostUsd: 0, cachedInputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0 }),
 }));
@@ -86,6 +93,7 @@ describe("POST /api/ai-parser — entitlement gating", () => {
     expect(res.status).toBe(403);
     expect(parseJobDescriptionMock).not.toHaveBeenCalled();
     expect(acquireParseSlotMock).not.toHaveBeenCalled();
+    expect(recordAttemptInputMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 and never calls the provider when unauthenticated", async () => {
@@ -93,6 +101,7 @@ describe("POST /api/ai-parser — entitlement gating", () => {
     const res = await POST(makeRequest({ jobDescription: JOB_DESCRIPTION }));
     expect(res.status).toBe(401);
     expect(parseJobDescriptionMock).not.toHaveBeenCalled();
+    expect(recordAttemptInputMock).not.toHaveBeenCalled();
   });
 
   it("makes zero provider requests on a cache hit", async () => {
@@ -111,6 +120,8 @@ describe("POST /api/ai-parser — entitlement gating", () => {
     const json = await res.json();
     expect(json.cacheHit).toBe(true);
     expect(parseJobDescriptionMock).not.toHaveBeenCalled();
+    expect(recordAttemptInputMock).toHaveBeenCalledWith("row-1", JOB_DESCRIPTION, undefined);
+    expect(recordAttemptResultMock).toHaveBeenCalledWith("row-1", expect.objectContaining({ provenance: {} }));
   });
 
   it("uses the entitlement's resolved per-user limits for the budget check and rate limiter", async () => {
@@ -131,6 +142,7 @@ describe("POST /api/ai-parser — entitlement gating", () => {
 
     expect(checkMonthlyBudgetMock).toHaveBeenCalledWith("user-1", 3);
     expect(acquireParseSlotMock).toHaveBeenCalledWith("user-1", expect.objectContaining({ dailyLimit: 7 }));
+    expect(recordAttemptResultMock).toHaveBeenCalledWith("row-1", expect.objectContaining({ parseMeta: expect.objectContaining({ finalModel: "gpt-5-mini" }) }));
   });
 
   it("returns 429 without calling the provider when the monthly budget is exhausted", async () => {
@@ -177,5 +189,38 @@ describe("POST /api/ai-parser — entitlement gating", () => {
     });
     expect((await POST(makeRequest({ jobDescription: JOB_DESCRIPTION, jobUrl: "file:///etc/passwd" }))).status).toBe(400);
     expect(parseJobDescriptionMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("parser attempt context", () => {
+  beforeEach(() => {
+    requireAIParserAccessMock.mockResolvedValue({
+      user: { id: "user-1" },
+      limits: { dailyRequestLimit: 100, monthlyBudgetUsd: null },
+    });
+  });
+
+  it.each([
+    [new FakeParserProviderError("network", true), 503, "provider_network"],
+    [new FakeParserUnusableResultError("bad output"), 502, "unusable_result"],
+    [new Error("unexpected"), 500, "unexpected"],
+  ])("retains submitted posting and failure metadata when parsing fails (%s)", async (error, status, category) => {
+    parseJobDescriptionMock.mockRejectedValueOnce(error);
+    const jobUrl = "https://example.com/jobs/engineer";
+    const response = await POST(makeRequest({ jobDescription: JOB_DESCRIPTION, jobUrl }));
+    expect(response.status).toBe(status);
+    expect(recordAttemptInputMock).toHaveBeenCalledWith("row-1", JOB_DESCRIPTION, jobUrl);
+    expect(recordAttemptInputMock.mock.invocationCallOrder[0]).toBeLessThan(parseJobDescriptionMock.mock.invocationCallOrder[0]);
+    expect(finalizeUsageRowMock).toHaveBeenCalledWith("row-1", expect.objectContaining({ status: "failed", errorCategory: category }));
+    expect(recordAttemptResultMock).not.toHaveBeenCalled();
+  });
+
+  it("still returns results and finalizes usage when context storage is unavailable", async () => {
+    recordAttemptInputMock.mockRejectedValueOnce(new Error("migration missing"));
+    recordAttemptResultMock.mockRejectedValueOnce(new Error("migration missing"));
+    getCachedResultMock.mockResolvedValueOnce({ result: { provenance: {}, parseMeta: {} }, model: "gpt-5-mini" });
+    const response = await POST(makeRequest({ jobDescription: JOB_DESCRIPTION }));
+    expect(response.status).toBe(200);
+    expect(finalizeUsageRowMock).toHaveBeenCalledWith("row-1", expect.objectContaining({ status: "cache_hit" }));
   });
 });
