@@ -31,6 +31,7 @@ import { formatUsd } from "@/components/settings/admin/stat-card";
 import type { AdminUserDetail } from "@/lib/admin/users";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { UserActivityTab } from "@/components/settings/admin/user-activity-tab";
+import { DeleteUserDialog } from "@/components/settings/admin/delete-user-dialog";
 
 interface Props {
   userId: string;
@@ -127,7 +128,7 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!busy) onOpenChange(nextOpen); }}>
       <DialogContent className="max-h-[85vh] w-full max-w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{detail?.displayName || detail?.email || "User"}</DialogTitle>
@@ -300,6 +301,10 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                     onConfirm={() => callSecurity({ action: "disable", confirm: true })}
                   />
                 )}
+                <DeleteUserDialog user={detail} disabled={busy} onBusyChange={setBusy} onDeleted={() => {
+                  onOpenChange(false);
+                  onChanged();
+                }} />
               </GlassPanel>
             </div>
             </TabsContent>

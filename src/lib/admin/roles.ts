@@ -30,10 +30,8 @@ function isOwnerEmailMatch(user: User): boolean {
 /**
  * Supabase JS v2 `User` exposes `email_confirmed_at`; some configurations
  * instead populate `confirmed_at`. Prefer `email_confirmed_at`, fall back
- * to `confirmed_at`, and only treat verification as failing when we have
- * positive evidence it's unset (explicit null) — an absent field
- * (undefined, e.g. some magic-link-only configs) is not treated as
- * unverified.
+ * to `confirmed_at`, and require a positive verification timestamp.
+ * Missing/null verification fields fail closed.
  */
 function isEmailVerified(user: User): boolean {
   const emailConfirmedAt = (user as unknown as { email_confirmed_at?: string | null }).email_confirmed_at;

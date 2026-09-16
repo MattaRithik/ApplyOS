@@ -5,14 +5,14 @@ export type ExportRow = Record<string, unknown>;
 
 /** Prevent CSV/Excel formula execution when user-controlled cells are opened. */
 function neutralizeSpreadsheetFormula(value: string): string {
-  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /^(?:[\s\u0000-\u001f]*[=+\-@]|[\t\r\n])/.test(value) ? `'${value}` : value;
 }
 
 function normalize(row: ExportRow): ExportRow {
   const out: ExportRow = {};
   for (const [key, value] of Object.entries(row)) {
     if (value === null || value === undefined) out[key] = "";
-    else if (Array.isArray(value)) out[key] = value.join(", ");
+    else if (Array.isArray(value)) out[key] = neutralizeSpreadsheetFormula(value.join(", "));
     else if (typeof value === "object") out[key] = JSON.stringify(value);
     else if (typeof value === "string") out[key] = neutralizeSpreadsheetFormula(value);
     else out[key] = value;

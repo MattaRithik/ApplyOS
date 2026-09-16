@@ -36,6 +36,8 @@ export interface AdminUserSummary {
 export interface AdminUserListPage {
   users: AdminUserSummary[];
   total: number;
+  activeUsers: number;
+  disabledUsers: number;
   page: number;
   pageSize: number;
 }
@@ -91,7 +93,7 @@ export async function listUsers(opts: { search?: string; page: number; pageSize:
   const supabase = createServiceRoleClient();
   const authUsers = await fetchAllAuthUsers(supabase);
   const ids = authUsers.map((u) => u.id);
-  if (ids.length === 0) return { users: [], total: 0, page: opts.page, pageSize: opts.pageSize };
+  if (ids.length === 0) return { users: [], total: 0, activeUsers: 0, disabledUsers: 0, page: 0, pageSize: opts.pageSize };
 
   const [profilesResult, rolesResult, entitlementsResult, usageResult] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", ids),
@@ -158,10 +160,12 @@ export async function listUsers(opts: { search?: string; page: number; pageSize:
   summaries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const total = summaries.length;
-  const start = opts.page * opts.pageSize;
+  const disabledUsers = summaries.filter((user) => user.banned).length;
+  const page = Math.min(opts.page, Math.max(0, Math.ceil(total / opts.pageSize) - 1));
+  const start = page * opts.pageSize;
   const pageItems = summaries.slice(start, start + opts.pageSize);
 
-  return { users: pageItems, total, page: opts.page, pageSize: opts.pageSize };
+  return { users: pageItems, total, activeUsers: total - disabledUsers, disabledUsers, page, pageSize: opts.pageSize };
 }
 
 /** Full detail for one user — still only account/access/usage metadata, never application data. */
@@ -234,6 +238,8 @@ export async function getUserDetail(userId: string): Promise<AdminUserDetail | n
 
 export interface AdminOverview {
   totalUsers: number;
+  activeUsers: number;
+  disabledUsers: number;
   usersWithAiAccess: number;
   suspendedAiAccess: number;
   aiRequestsThisMonth: number;
@@ -257,6 +263,8 @@ export async function getOverview(): Promise<AdminOverview> {
 
   return {
     totalUsers: authUsers.length,
+    activeUsers: authUsers.filter((user) => !isBanned(user)).length,
+    disabledUsers: authUsers.filter(isBanned).length,
     usersWithAiAccess,
     suspendedAiAccess,
     aiRequestsThisMonth: (monthRows ?? []).length,

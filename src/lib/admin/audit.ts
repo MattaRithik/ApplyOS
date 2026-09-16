@@ -11,6 +11,8 @@ export type AdminActionType =
   | "sessions_revoked"
   | "user_disabled"
   | "user_enabled"
+  | "user_deletion_requested"
+  | "user_deleted"
   | "user_applications_viewed"
   | "user_application_resume_opened"
   | "user_parsing_viewed";

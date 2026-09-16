@@ -12,12 +12,15 @@ import { cn } from "@/lib/utils";
 import { formatUsd } from "@/components/settings/admin/stat-card";
 import { UserDetailDialog } from "@/components/settings/admin/user-detail-dialog";
 import type { AdminUserSummary } from "@/lib/admin/users";
+import { DeleteUserDialog } from "@/components/settings/admin/delete-user-dialog";
 
 const PAGE_SIZE = 20;
 
 interface UserListResponse {
   users: AdminUserSummary[];
   total: number;
+  activeUsers: number;
+  disabledUsers: number;
   page: number;
   pageSize: number;
 }
@@ -28,8 +31,10 @@ export function UsersSection() {
   const [result, setResult] = React.useState<UserListResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
+  const latestRequest = React.useRef(0);
 
   const fetchUsers = React.useCallback(async (searchTerm: string, pageNum: number) => {
+    const requestId = ++latestRequest.current;
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(pageNum), pageSize: String(PAGE_SIZE) });
@@ -37,11 +42,13 @@ export function UsersSection() {
       const res = await fetch(`/api/admin/users?${params.toString()}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to load users");
+      if (requestId !== latestRequest.current) return;
       setResult(json as UserListResponse);
+      setPage(json.page);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load users");
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
   }, []);
 
@@ -94,6 +101,7 @@ export function UsersSection() {
               <TableHead>Requests (mo)</TableHead>
               <TableHead>Cost (mo)</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,11 +138,14 @@ export function UsersSection() {
                     <span className="text-xs text-muted-foreground">{u.emailVerified ? "Verified" : "Unverified"}</span>
                   )}
                 </TableCell>
+                <TableCell onClick={(event) => event.stopPropagation()}>
+                  <DeleteUserDialog user={u} disabled={loading} onDeleted={() => fetchUsers(search, page)} />
+                </TableCell>
               </TableRow>
             ))}
             {(result?.users.length ?? 0) === 0 && !loading && (
               <TableRow>
-                <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
                   No users found.
                 </TableCell>
               </TableRow>
@@ -145,7 +156,7 @@ export function UsersSection() {
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Page {page + 1} of {totalPages} · {result?.total ?? 0} total
+          Page {page + 1} of {totalPages} · {result?.total ?? 0} total · {result?.activeUsers ?? 0} active · {result?.disabledUsers ?? 0} disabled
         </span>
         <div className="flex gap-1.5">
           <Button

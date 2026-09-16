@@ -78,4 +78,13 @@ describe("safeMailto", () => {
   it("rejects a non-email string", () => {
     expect(safeMailto("not an email")).toBeNull();
   });
+
+  it("does not turn address content into mailto headers", () => {
+    const link = safeMailto("jane@example.com?bcc=attacker@example.com");
+    // Invalid addresses may be rejected; accepted ones must never add headers.
+    expect(link === null || new URL(link).search === "").toBe(true);
+    const encoded = safeMailto("jane@example.com?subject=hello");
+    expect(encoded).not.toContain("?subject=");
+    expect(safeMailto("jane+jobs@example.com")).toBe("mailto:jane%2Bjobs@example.com");
+  });
 });

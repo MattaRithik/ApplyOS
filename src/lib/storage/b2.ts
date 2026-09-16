@@ -74,12 +74,14 @@ export function assertResumeObjectKeyOwnership(storageKey: string, userId: strin
 
 export async function createResumeUploadUrl(
   storageKey: string,
-  contentType: string
+  contentType: string,
+  contentLength: number
 ): Promise<{ url: string; expiresIn: number }> {
   const command = new PutObjectCommand({
     Bucket: getBucketName(),
     Key: storageKey,
     ContentType: contentType,
+    ContentLength: contentLength,
   });
   const url = await getSignedUrl(getB2Client(), command, { expiresIn: UPLOAD_URL_EXPIRY_SECONDS });
   return { url, expiresIn: UPLOAD_URL_EXPIRY_SECONDS };
@@ -124,8 +126,9 @@ export async function inspectResumeObject(
     const result = await getB2Client().send(
       new HeadObjectCommand({ Bucket: getBucketName(), Key: storageKey })
     );
+    if (!result.ETag) throw new Error("Storage did not return an object version.");
     const prefix = await getB2Client().send(
-      new GetObjectCommand({ Bucket: getBucketName(), Key: storageKey, Range: "bytes=0-7" })
+      new GetObjectCommand({ Bucket: getBucketName(), Key: storageKey, Range: "bytes=0-7", IfMatch: result.ETag })
     );
     const bytes = prefix.Body ? await prefix.Body.transformToByteArray() : new Uint8Array();
     return {

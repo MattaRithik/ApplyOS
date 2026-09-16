@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { isSameOriginMutation, readJsonBody, safeLocalPath } from "@/lib/security/request";
 
 describe("request security helpers", () => {
@@ -18,11 +18,28 @@ describe("request security helpers", () => {
     expect(isSameOriginMutation(request)).toBe(true);
   });
 
+  it("rejects sibling-site requests even when Origin is missing", () => {
+    expect(isSameOriginMutation(new Request("https://applyos.example/api", {
+      method: "POST", headers: { "Sec-Fetch-Site": "same-site" },
+    }))).toBe(false);
+    expect(isSameOriginMutation(new Request("https://applyos.example/api", {
+      method: "POST", headers: { Origin: "https://other.applyos.example" },
+    }))).toBe(false);
+  });
+
+  it("retains support for non-browser clients", () => {
+    expect(isSameOriginMutation(new Request("https://applyos.example/api", { method: "POST" }))).toBe(true);
+  });
+
   it("allows only local absolute redirect paths", () => {
     expect(safeLocalPath("/dashboard?tab=usage", "/fallback")).toBe("/dashboard?tab=usage");
     expect(safeLocalPath("//attacker.example", "/fallback")).toBe("/fallback");
     expect(safeLocalPath("https://attacker.example", "/fallback")).toBe("/fallback");
     expect(safeLocalPath("/ok\\@attacker.example", "/fallback")).toBe("/fallback");
+    expect(safeLocalPath("javascript:alert(document.cookie)", "/fallback")).toBe("/fallback");
+    expect(safeLocalPath("/a/..//attacker.example", "/fallback")).toBe("/fallback");
+    expect(safeLocalPath("/a/%2e%2e//attacker.example", "/fallback")).toBe("/fallback");
+    expect(safeLocalPath("/\n/attacker.example", "/fallback")).toBe("/fallback");
   });
 
   it("rejects malformed, wrongly typed, and oversized JSON", async () => {
@@ -47,5 +64,47 @@ describe("request security helpers", () => {
       20
     );
     expect(oversized).toMatchObject({ ok: false, status: 413 });
+  });
+
+  it.each([undefined, "1"])("cancels oversized streams with Content-Length %s before EOF", async (length) => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream({
+      start(controller) { controller.enqueue(new Uint8Array(33)); },
+      cancel,
+      // Deliberately never closes: reading the whole body would hang.
+    });
+    const request = new Request("https://applyos.example/api", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(length ? { "Content-Length": length } : {}) },
+      body: stream,
+      duplex: "half",
+    } as RequestInit);
+    expect(await readJsonBody(request, 32)).toMatchObject({ ok: false, status: 413 });
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it("counts UTF-8 bytes and accepts characters split between chunks", async () => {
+    const bytes = new TextEncoder().encode('"😀"');
+    const request = () => new Request("https://applyos.example/api", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(bytes.slice(0, 3));
+          controller.enqueue(bytes.slice(3));
+          controller.close();
+        },
+      }),
+      duplex: "half",
+    } as RequestInit);
+    expect(await readJsonBody(request(), bytes.length)).toEqual({ ok: true, value: "😀" });
+    expect(await readJsonBody(request(), bytes.length - 1)).toMatchObject({ ok: false, status: 413 });
+  });
+
+  it("rejects invalid UTF-8 rather than silently replacing it", async () => {
+    const request = new Request("https://applyos.example/api", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: new Uint8Array([34, 0xff, 34]),
+    });
+    expect(await readJsonBody(request)).toMatchObject({ ok: false, status: 400 });
   });
 });

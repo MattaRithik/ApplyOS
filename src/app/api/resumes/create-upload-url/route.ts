@@ -27,7 +27,7 @@ const uploadRequestSchema = z
  * Step 1 of the resume upload flow: verify the caller, validate the file,
  * reserve a `resumes` row, and mint a short-lived signed PUT URL for
  * Backblaze B2. The browser never sees B2 credentials — only this one
- * single-use, time-limited URL.
+ * object-scoped, time-limited URL.
  */
 export async function POST(request: Request) {
   if (!isSameOriginMutation(request)) {
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { url, expiresIn } = await createResumeUploadUrl(storageKey, canonicalType);
+    const { url, expiresIn } = await createResumeUploadUrl(storageKey, canonicalType, fileSize);
     return NextResponse.json({
       resume_id: resume.id,
       signed_upload_url: url,

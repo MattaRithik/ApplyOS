@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
+import { safeLocalPath } from "@/lib/utils/url";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const next = safeLocalPath(searchParams.get("next"), "/dashboard");
 
   const [loading, setLoading] = React.useState(false);
   const [email, setEmail] = React.useState("");

@@ -7,6 +7,7 @@ export type ApiRateLimitAction =
   | "resume_download"
   | "resume_delete"
   | "resume_rename"
+  | "export"
   | "admin_mutation";
 
 /** Atomic, database-backed rate limit. Database failures fail closed. */

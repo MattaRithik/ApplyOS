@@ -36,23 +36,29 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = isPublicPath(pathname);
 
+  function finish(nextResponse: NextResponse) {
+    // Keep refreshed/cleared session cookies even when authentication redirects.
+    if (nextResponse !== response) {
+      for (const cookie of response.cookies.getAll()) nextResponse.cookies.set(cookie);
+    }
+    nextResponse.headers.set("Cache-Control", "private, no-store");
+    return nextResponse;
+  }
+
   if (!user && !isPublic) {
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      return finish(NextResponse.json({ error: "Not authenticated" }, { status: 401 }));
+    }
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("next", pathname);
-    const redirectResponse = NextResponse.redirect(redirectUrl);
-    redirectResponse.headers.set("Cache-Control", "private, no-store");
-    return redirectResponse;
+    return finish(NextResponse.redirect(redirectUrl));
   }
 
   if (user && pathname === "/login") {
-    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
-    redirectResponse.headers.set("Cache-Control", "private, no-store");
-    return redirectResponse;
+    return finish(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 
-  if (!isPublic) response.headers.set("Cache-Control", "private, no-store");
-
-  return response;
+  return finish(response);
 }
 
 export const config = {

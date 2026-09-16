@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { StatusPicker } from "./status-picker";
 import { RelativeTime } from "./relative-time";
-import { formatShortUrl } from "@/lib/utils/url";
+import { formatShortUrl, safeHttpUrl } from "@/lib/utils/url";
 import { buildWhatsAppShareUrl, jobDropShareText } from "@/lib/utils/whatsapp";
 import { cn } from "@/lib/utils";
 import type { LinkMessage, LinkStatus } from "@/lib/types/database";
@@ -72,7 +72,7 @@ export function MessageCard({
         </div>
       </div>
       <a
-        href={message.url}
+        href={safeHttpUrl(message.url) ?? undefined}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 break-all text-sm font-medium text-[var(--blue-accent)] hover:underline"

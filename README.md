@@ -128,6 +128,10 @@ Open [http://localhost:3000](http://localhost:3000). Create an account from the 
 4. Deploy. Vercel builds with `next build` automatically — no extra config needed.
 5. Back in Supabase, add your production URL to **Authentication → URL Configuration → Redirect URLs** (needed for password reset).
 
+### September 2026 security update
+
+Apply `supabase/migrations/20260916120000_link_security_hardening.sql` after previous migrations and deploy with the updated `package-lock.json`. This preserves existing Job Drops data while tightening its database permissions; the feature remains hidden. Export generation now uses the existing database rate limiter (five exports per user per minute). See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for changes, checks, and deployment boundaries. `npm test` includes database authorization tests in a disposable local PostgreSQL engine and does not use production credentials.
+
 ## The AI job description parser
 
 `POST /api/ai-parser` (`src/app/api/ai-parser/route.ts`) accepts a pasted job URL + description and returns a comprehensive structured extraction — identity, location, employment, compensation, skills, experience/education, role content, immigration/sponsorship, and a set of AI-generated relevance classifications — grouped as nested objects (`src/lib/ai-parser/schema.ts`). Every field carries a provenance status (`explicit` / `normalized` / `inferred` / `uncertain` / `missing`) so inferred or uncertain values are never presented as verified facts.

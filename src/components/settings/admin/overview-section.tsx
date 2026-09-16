@@ -8,6 +8,8 @@ import { StatCard, formatUsd } from "@/components/settings/admin/stat-card";
 
 interface AdminOverview {
   totalUsers: number;
+  activeUsers: number;
+  disabledUsers: number;
   usersWithAiAccess: number;
   suspendedAiAccess: number;
   aiRequestsThisMonth: number;
@@ -50,7 +52,7 @@ export function OverviewSection() {
         <p className="text-sm text-muted-foreground">{loading ? "Loading overview…" : "No data."}</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          <StatCard label="Total users" value={overview.totalUsers} />
+          <StatCard label="Active users" value={overview.activeUsers} sub={`${overview.totalUsers} total · ${overview.disabledUsers} disabled`} />
           <StatCard label="AI access enabled" value={overview.usersWithAiAccess} />
           <StatCard label="AI access suspended" value={overview.suspendedAiAccess} />
           <StatCard label="AI requests this month" value={overview.aiRequestsThisMonth} />

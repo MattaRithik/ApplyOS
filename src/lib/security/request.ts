@@ -1,4 +1,5 @@
 import "server-only";
+export { safeLocalPath } from "@/lib/utils/url";
 
 const JSON_CONTENT_TYPE = "application/json";
 
@@ -16,7 +17,7 @@ export function isSameOriginMutation(request: Request): boolean {
   if (fetchSite === "cross-site") return false;
 
   const origin = request.headers.get("origin");
-  if (!origin) return true; // Non-browser clients do not always send Origin.
+  if (!origin) return !fetchSite || fetchSite === "same-origin" || fetchSite === "none";
 
   try {
     return new URL(origin).origin === new URL(request.url).origin;
@@ -37,15 +38,29 @@ export async function readJsonBody(request: Request, maxBytes = 64 * 1024): Prom
     return { ok: false, status: 413, error: "Request body is too large." };
   }
 
-  let text: string;
+  if (!request.body) return { ok: false, status: 400, error: "Invalid request body." };
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  let text = "";
+  let bytesRead = 0;
   try {
-    text = await request.text();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytesRead += value.byteLength;
+      if (bytesRead > maxBytes) {
+        // Do not wait for an attacker-controlled stream to finish cancelling.
+        void reader.cancel().catch(() => {});
+        return { ok: false, status: 413, error: "Request body is too large." };
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
   } catch {
+    void reader.cancel().catch(() => {});
     return { ok: false, status: 400, error: "Invalid request body." };
-  }
-
-  if (new TextEncoder().encode(text).byteLength > maxBytes) {
-    return { ok: false, status: 413, error: "Request body is too large." };
+  } finally {
+    reader.releaseLock();
   }
 
   try {
@@ -53,11 +68,4 @@ export async function readJsonBody(request: Request, maxBytes = 64 * 1024): Prom
   } catch {
     return { ok: false, status: 400, error: "Invalid JSON body." };
   }
-}
-
-/** Only local absolute paths may be used as post-authentication redirects. */
-export function safeLocalPath(value: string | null, fallback: string): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;
-  if (value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value)) return fallback;
-  return value;
 }
