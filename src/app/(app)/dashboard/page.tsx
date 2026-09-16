@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { getTimelinesContext } from "@/lib/data/timelines";
 import { getJobDropsSummary } from "@/lib/data/job-drops";
+import { features } from "@/lib/features";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
     getDashboardData(supabase, user.id),
     getTimelinesContext(supabase, user.id),
     supabase.from("profiles").select("user_category").eq("id", user.id).maybeSingle(),
-    getJobDropsSummary(supabase, user.id, user.email ?? null),
+    features.jobDrops ? getJobDropsSummary(supabase, user.id, user.email ?? null) : Promise.resolve(null),
   ]);
 
   const jobDropsSection = jobDropsSummary && (

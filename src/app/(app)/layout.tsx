@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/nav/app-shell";
+import { features } from "@/lib/features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -21,7 +22,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .eq("user_id", user.id)
       .eq("is_completed", false)
       .lte("due_date", new Date().toISOString().slice(0, 10)),
-    supabase.from("link_thread_participants").select("thread_id, last_read_at").eq("user_id", user.id).maybeSingle(),
+    features.jobDrops
+      ? supabase.from("link_thread_participants").select("thread_id, last_read_at").eq("user_id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   let jobDropsUnreadCount = 0;

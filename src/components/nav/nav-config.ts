@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { features } from "@/lib/features";
 import {
   LayoutDashboard,
   Briefcase,
@@ -24,12 +25,14 @@ export interface NavItem {
   accent?: boolean;
   /** ISO timestamp — shows a pulsing "New" tag until this date, then stops on its own. */
   newUntil?: string;
+  enabled?: boolean;
 }
 
-export const primaryNav: NavItem[] = [
+const primaryNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   {
     label: "Job Drops",
+    enabled: features.jobDrops,
     href: "/job-drops",
     icon: MessageCircle,
     badgeKey: "jobDropsUnread",
@@ -47,6 +50,8 @@ export const primaryNav: NavItem[] = [
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Export Center", href: "/export", icon: Download },
 ];
+
+export const primaryNav = primaryNavItems.filter((item) => item.enabled !== false);
 
 export const secondaryNav: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },

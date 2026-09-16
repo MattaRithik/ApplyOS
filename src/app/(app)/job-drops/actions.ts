@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { fetchAllAuthUsers, isBanned } from "@/lib/admin/users";
 import { uuidSchema } from "@/lib/validation/common";
+import { features } from "@/lib/features";
 
 export interface InvitablePerson {
   id: string;
@@ -19,6 +20,8 @@ export interface InvitablePerson {
  * thread with.
  */
 export async function listInvitablePeople(): Promise<InvitablePerson[]> {
+  if (!features.jobDrops) return [];
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,6 +52,8 @@ export async function listInvitablePeople(): Promise<InvitablePerson[]> {
  * feature goes through RLS directly from the browser client instead.
  */
 export async function addThreadPartner(partnerId: string) {
+  if (!features.jobDrops) throw new Error("Job Drops is currently unavailable.");
+
   uuidSchema.parse(partnerId);
 
   const supabase = await createClient();
@@ -103,6 +108,8 @@ export async function addThreadPartner(partnerId: string) {
 
 /** Marks the caller's thread as read up to now — drives the sidebar unread badge. */
 export async function markJobDropsRead() {
+  if (!features.jobDrops) return;
+
   const supabase = await createClient();
   const {
     data: { user },

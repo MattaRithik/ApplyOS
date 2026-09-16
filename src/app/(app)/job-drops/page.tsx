@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { features } from "@/lib/features";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AddPartnerCard } from "@/components/job-drops/add-partner-card";
@@ -7,6 +9,8 @@ import { getJobDropsSummary } from "@/lib/data/job-drops";
 import type { LinkMessage, LinkMessageStatus } from "@/lib/types/database";
 
 export default async function JobDropsPage() {
+  if (!features.jobDrops) redirect("/dashboard");
+
   const supabase = await createClient();
   const {
     data: { user },
