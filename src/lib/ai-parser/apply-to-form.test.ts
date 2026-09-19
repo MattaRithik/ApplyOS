@@ -314,3 +314,38 @@ describe("applyParsedResultToForm — notes formatting", () => {
     expect(next.notes).not.toMatch(/logo|show more options|clicked apply/i);
   });
 });
+
+describe("new parser form transfer", () => {
+  it("applies a normalized URL-detected source to an empty form", () => {
+    const result = buildResult({}, { "identity.sourcePlatform": { status: "normalized", evidence: "https://www.linkedin.com/jobs/view/123" } });
+    const current = emptyForm();
+    const keys = selectSafeFieldsToApply(result, current);
+    expect(keys.has("identity.sourcePlatform")).toBe(true);
+    expect(applyParsedResultToForm(current, result, keys).source).toBe("LinkedIn");
+  });
+
+  it("does not replace an existing source or apply an uncertain source", () => {
+    const result = buildResult({}, { "identity.sourcePlatform": { status: "normalized" } });
+    expect(selectSafeFieldsToApply(result, emptyForm({ source: "Referral" })).has("identity.sourcePlatform")).toBe(false);
+    result.provenance["identity.sourcePlatform"].status = "uncertain";
+    expect(selectSafeFieldsToApply(result, emptyForm()).has("identity.sourcePlatform")).toBe(false);
+  });
+
+  it("preserves limited sponsorship notes while selecting the available sponsorship option", () => {
+    const result = buildResult();
+    result.immigration.visaSponsorship = "available";
+    result.immigration.sponsorshipText = "Limited immigration sponsorship may be available.";
+    result.provenance["immigration.visaSponsorship"] = { status: "explicit" };
+    result.provenance["immigration.sponsorshipText"] = { status: "explicit" };
+    const current = emptyForm();
+    const next = applyParsedResultToForm(current, result, selectSafeFieldsToApply(result, current));
+    expect(next.visa_sponsorship_status).toBe("h1b_available");
+    expect(next.visa_sponsorship_notes).toBe(result.immigration.sponsorshipText);
+  });
+
+  it("does not translate an unclear policy into promised future sponsorship", () => {
+    const result = buildResult(); result.immigration.visaSponsorship = "unclear";
+    const next = applyParsedResultToForm(emptyForm(), result, new Set(["immigration.visaSponsorship"]));
+    expect(next.visa_sponsorship_status).toBe("not_mentioned");
+  });
+});

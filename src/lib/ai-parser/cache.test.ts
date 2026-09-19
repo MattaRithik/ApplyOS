@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { normalizeDescription, hashDescription } from "@/lib/ai-parser/cache";
+import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizeDescription, hashDescription, getCachedResult } from "@/lib/ai-parser/cache";
 
 describe("normalizeDescription", () => {
   it("converts CRLF line endings to LF", () => {
@@ -40,5 +41,21 @@ describe("hashDescription", () => {
     const hash = hashDescription("stable input");
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
     expect(hashDescription("stable input")).toBe(hash);
+  });
+});
+
+describe("future parser cache identity", () => {
+  it("only reads the new prompt version, leaving historical cache results untouched", async () => {
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    const supabase = { from: vi.fn().mockReturnValue(query) } as unknown as SupabaseClient;
+    expect(await getCachedResult(supabase, "user-1", "hash")).toBeNull();
+    expect(query.eq).toHaveBeenCalledWith("prompt_version", "2.0.0");
+    expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("separates identical text with different posting URLs", () => {
+    const text = "A software engineer role at Acme.";
+    expect(hashDescription(text, "https://linkedin.com/jobs/view/1")).not.toBe(hashDescription(text, "https://jobs.lever.co/acme/1"));
+    expect(hashDescription(text)).not.toBe(hashDescription(text, "https://linkedin.com/jobs/view/1"));
   });
 });

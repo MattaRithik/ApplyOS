@@ -32,7 +32,7 @@ const EMPLOYMENT_TYPE_MAP: Record<string, EmploymentType | null> = {
 const VISA_SPONSORSHIP_MAP: Record<string, VisaSponsorshipStatus | null> = {
   available: "h1b_available",
   not_available: "no_sponsorship",
-  unclear: "future_possible",
+  unclear: "not_mentioned",
   not_mentioned: "not_mentioned",
 };
 
@@ -72,7 +72,7 @@ const DIRECT_MAP: Record<string, { formKey: keyof ApplicationFormValues; transfo
  * Extra-conservative fields per the "blank is better than wrong" rule —
  * these only auto-apply when provenance is strictly "explicit" (never
  * "normalized"), since a wrong guess here (sponsorship, salary, a
- * recruiter's email, the source platform, location/workplace type) is
+ * recruiter's email, location/workplace type) is
  * actively misleading rather than just a missed convenience.
  */
 const RISKY_FIELDS = new Set<string>([
@@ -84,7 +84,6 @@ const RISKY_FIELDS = new Set<string>([
   "compensation.salaryMinimum",
   "compensation.salaryMaximum",
   "identity.recruiterEmail",
-  "identity.sourcePlatform",
   "location.rawLocation",
   "location.workplaceType",
 ]);
@@ -222,7 +221,7 @@ function isFormValueEmpty(value: unknown): boolean {
  * user to individually confirm each one — "blank is better than wrong":
  *
  *   - never a field the model itself flagged inferred/uncertain;
- *   - risky fields (sponsorship, salary, recruiter email, source platform,
+ *   - risky fields (sponsorship, salary, recruiter email,
  *     location/workplace type, ...) require strictly "explicit" provenance;
  *   - everything else accepts "explicit" or "normalized";
  *   - never a field that would overwrite a value already present in the

@@ -7,7 +7,7 @@ import { httpUrlSchema } from "@/lib/validation/common";
  */
 export const PARSER_SCHEMA_VERSION = "1.0.0";
 /** Bumped whenever the system/developer prompt text changes meaningfully. */
-export const PROMPT_VERSION = "1.0.0";
+export const PROMPT_VERSION = "2.0.0";
 /** Bumped whenever the primary-model/retry decision logic changes. */
 export const MODEL_STRATEGY_VERSION = "2.0.0";
 

@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   };
 
   const normalized = normalizeDescription(jobDescription);
-  const descriptionHash = hashDescription(normalized);
+  const descriptionHash = hashDescription(normalized, jobUrl);
 
   try {
     if (!forceRefresh) {

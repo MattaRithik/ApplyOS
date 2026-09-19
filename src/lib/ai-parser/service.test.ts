@@ -8,122 +8,10 @@ vi.mock("@/lib/ai-parser/client", () => ({
   }),
 }));
 
-function validRawResponse(overrides: Record<string, unknown> = {}) {
-  const base = {
-    identity: {
-      companyName: "Acme Corp",
-      jobTitle: "Software Engineer",
-      requisitionId: null,
-      sourcePlatform: null,
-      department: null,
-      team: null,
-      industry: null,
-      companyDescription: null,
-      recruiterName: null,
-      recruiterEmail: null,
-      hiringManagerName: null,
-    },
-    location: {
-      rawLocation: "New York, NY",
-      city: null,
-      stateOrRegion: null,
-      country: null,
-      workplaceType: "hybrid",
-      relocationAvailable: "not_mentioned",
-      travelRequirement: null,
-      allowedWorkLocations: null,
-    },
-    employment: {
-      employmentType: "full_time",
-      seniorityLevel: null,
-      roleCategory: null,
-      roleSubcategory: null,
-      managementRole: null,
-      internshipTerm: null,
-      expectedStartDate: null,
-    },
-    compensation: {
-      salaryMinimum: 120000,
-      salaryMaximum: 150000,
-      salaryCurrency: "USD",
-      salaryPeriod: "year",
-      bonusMentioned: null,
-      equityMentioned: null,
-      commissionMentioned: null,
-      compensationIsEstimated: null,
-      compensationText: null,
-    },
-    skills: {
-      requiredSkills: ["TypeScript"],
-      preferredSkills: null,
-      programmingLanguages: null,
-      frameworks: null,
-      libraries: null,
-      databases: null,
-      cloudPlatforms: null,
-      dataTools: null,
-      financeTools: null,
-      machineLearningTools: null,
-      developerTools: null,
-      methodologies: null,
-      domainKnowledge: null,
-      softSkills: null,
-      keywords: null,
-    },
-    experienceEducation: {
-      minimumYearsExperience: null,
-      maximumYearsExperience: null,
-      experienceText: null,
-      educationLevel: null,
-      fieldsOfStudy: null,
-      graduateDegreeRequired: null,
-      certificationsRequired: null,
-      certificationsPreferred: null,
-    },
-    roleContent: {
-      conciseSummary: "A role.",
-      responsibilities: null,
-      requiredQualifications: null,
-      preferredQualifications: null,
-      benefits: null,
-      interviewProcess: null,
-      applicationDeadline: null,
-      postingDate: null,
-      schedule: null,
-      shift: null,
-    },
-    immigration: {
-      visaSponsorship: "not_mentioned",
-      sponsorshipText: null,
-      workAuthorizationRequirement: null,
-      citizenshipRequirement: null,
-      securityClearanceRequirement: null,
-      exportControlRestriction: null,
-      backgroundCheckMentioned: null,
-    },
-    quantRelevance: {
-      quantResearchRelevance: null,
-      quantTradingRelevance: null,
-      quantDevelopmentRelevance: null,
-      dataScienceRelevance: null,
-      dataEngineeringRelevance: null,
-      softwareEngineeringRelevance: null,
-      equityResearchRelevance: null,
-      riskManagementRelevance: null,
-      portfolioManagementRelevance: null,
-      financeRelevance: null,
-    },
-    metadata: {
-      overallConfidence: 0.9,
-      uncertainFields: null,
-      warnings: null,
-      explicitlyMissingCriticalFields: null,
-      inferredFields: null,
-      evidence: null,
-    },
-  };
-  return { ...base, ...overrides };
-}
+import { validRawResponse } from "@/test/fixtures/ai-parser";
+import { rawAiJobParseSchema } from "@/lib/ai-parser/schema";
+import { selectSafeFieldsToApply } from "@/lib/ai-parser/apply-to-form";
+import type { ApplicationFormValues } from "@/components/applications/application-form";
 
 function responseFor(raw: unknown, usage = { input_tokens: 100, output_tokens: 50, total_tokens: 150, input_tokens_details: { cached_tokens: 0 } }) {
   return { output_text: JSON.stringify(raw), usage };
@@ -138,6 +26,33 @@ beforeEach(() => {
 });
 
 describe("parseJobDescription — single primary model, no confidence-based fallback", () => {
+  it("corrects provider mistakes before selecting fields for a new application", async () => {
+    const raw = rawAiJobParseSchema.parse(validRawResponse());
+    raw.compensation.salaryMinimum = 30000;
+    raw.compensation.salaryMaximum = 60000;
+    raw.location.workplaceType = "hybrid";
+    raw.identity.recruiterEmail = "talentacquisition@example.com";
+    raw.immigration.visaSponsorship = "not_available";
+    raw.experienceEducation.minimumYearsExperience = 2;
+    createMock.mockResolvedValueOnce(responseFor(raw));
+    const { parseJobDescription } = await import("@/lib/ai-parser/service");
+    const { result } = await parseJobDescription({
+      jobDescription: "Location: New York, United States. Pay: USD $30-$60.00 per hour. This role requires 5 days/week in office. Benefits: Hybrid working, dependent on role. Ideally 2+ years of experience. Limited immigration sponsorship may be available. For disability accommodations contact talentacquisition@example.com.",
+      jobUrl: "https://jobs.lever.co/acme/123",
+    });
+    expect(result.compensation).toMatchObject({ salaryMinimum: 30, salaryMaximum: 60, salaryCurrency: "USD", salaryPeriod: "hour" });
+    expect(result.location.workplaceType).toBe("onsite");
+    expect(result.identity.recruiterEmail).toBeNull();
+    expect(result.immigration.visaSponsorship).toBe("available");
+    expect(result.immigration.sponsorshipText).toBe("Limited immigration sponsorship may be available.");
+    expect(result.experienceEducation.minimumYearsExperience).toBeNull();
+    expect(result.identity.sourcePlatform).toBe("Lever");
+    const safe = selectSafeFieldsToApply(result, { source: "", salary_min: null, salary_max: null, work_mode: null, visa_sponsorship_status: "not_mentioned" } as ApplicationFormValues);
+    for (const field of ["identity.sourcePlatform", "compensation.salaryMinimum", "compensation.salaryMaximum", "location.workplaceType", "immigration.visaSponsorship"]) expect(safe.has(field)).toBe(true);
+    expect(safe.has("__recruiterContact")).toBe(false);
+    expect(result.parseMeta.promptVersion).toBe("2.0.0");
+  });
+
   it("makes exactly one OpenAI request for a normal successful parse", async () => {
     createMock.mockResolvedValueOnce(responseFor(validRawResponse()));
     const { parseJobDescription } = await import("@/lib/ai-parser/service");

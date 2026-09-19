@@ -10,6 +10,7 @@ import {
   type RawAiJobParse,
 } from "@/lib/ai-parser/schema";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai-parser/prompt";
+import { validateExtraction } from "@/lib/ai-parser/quality";
 import { runDeterministicPass, type DeterministicPartial } from "@/lib/ai-parser/deterministic";
 
 // Single-model strategy: gpt-5-mini is the primary (and only) parser model.
@@ -171,11 +172,6 @@ function mergeDeterministic(raw: RawAiJobParse, deterministic: DeterministicPart
   if (deterministic.location?.workplaceType != null) {
     merged.location.workplaceType = deterministic.location.workplaceType;
   }
-  if (deterministic.compensation) {
-    if (deterministic.compensation.salaryMinimum != null) merged.compensation.salaryMinimum = deterministic.compensation.salaryMinimum;
-    if (deterministic.compensation.salaryMaximum != null) merged.compensation.salaryMaximum = deterministic.compensation.salaryMaximum;
-    if (deterministic.compensation.salaryCurrency != null) merged.compensation.salaryCurrency = deterministic.compensation.salaryCurrency;
-  }
   if (deterministic.roleContent) {
     if (deterministic.roleContent.applicationDeadline != null) merged.roleContent.applicationDeadline = deterministic.roleContent.applicationDeadline;
     if (deterministic.roleContent.postingDate != null) merged.roleContent.postingDate = deterministic.roleContent.postingDate;
@@ -213,8 +209,8 @@ function buildProvenance(merged: RawAiJobParse, deterministicProvenance: Provena
     }
   }
 
-  // Deterministic entries always win — they were computed with regex/URL
-  // certainty, which outranks the AI's own self-report.
+  // Source detection and contextual validation override model self-report,
+  // including explicit uncertainty when the posting does not support a value.
   for (const [path, entry] of Object.entries(deterministicProvenance)) {
     provenance[path] = entry;
   }
@@ -297,8 +293,9 @@ export async function parseJobDescription({ jobDescription, jobUrl }: ParseJobDe
       : new ParserUnusableResultError(lastError ? `Primary model failed: ${lastError.message}` : "No usable model result was produced.");
   }
 
-  const merged = mergeDeterministic(finalCall.raw, deterministic.partial);
-  const provenance = buildProvenance(merged, deterministic.provenance);
+  const validated = validateExtraction(mergeDeterministic(finalCall.raw, deterministic.partial), deterministic.cleanedText);
+  const merged = validated.result;
+  const provenance = buildProvenance(merged, { ...deterministic.provenance, ...validated.provenance });
 
   const result: AiParserResult = {
     ...merged,

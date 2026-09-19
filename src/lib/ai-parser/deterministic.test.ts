@@ -275,3 +275,12 @@ Benefits
     expect(cleaned.startsWith("Acme Corp is hiring")).toBe(true);
   });
 });
+
+describe("contextual contact and source regressions", () => {
+  it("does not pick talentacquisition for reasonable adjustments", () => {
+    expect(runDeterministicPass("For reasonable adjustments during the application process, contact talentacquisition@example.com.").partial.identity?.recruiterEmail).toBeUndefined();
+  });
+  it("does not attribute a company domain containing lever to Lever", () => {
+    expect(runDeterministicPass("Job description", "https://careers.clever.com/jobs/1").partial.identity?.sourcePlatform).toBe("Company Website");
+  });
+});
