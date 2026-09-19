@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,12 @@ export function AddApplicationClient({
   const [submitting, setSubmitting] = React.useState(false);
   const [lastParsed, setLastParsed] = React.useState<AiParserApiResponse | null>(null);
 
+  React.useEffect(() => {
+    // Initialize in the browser so today follows the user's timezone, not the server's.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client-local date initialization after hydration
+    setValues((current) => ({ ...current, date_applied: current.date_applied || format(new Date(), "yyyy-MM-dd") }));
+  }, []);
+
   const handleApplyExtractedFields = (result: AiParserResult, accepted: Set<AcceptableFieldKey>) => {
     setValues((prev) => applyParsedResultToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, result, accepted));
     setParserOpen(false);
@@ -105,7 +112,7 @@ export function AddApplicationClient({
     <div>
       <GlassPanel className="p-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} />
+          <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} visaSponsorshipDropdown />
           <div className="flex items-center justify-end gap-2 border-t border-border/50 pt-4">
             <Button type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save Application"}

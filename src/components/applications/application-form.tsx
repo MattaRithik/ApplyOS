@@ -32,6 +32,7 @@ interface ApplicationFormProps {
   onChange: (values: ApplicationFormValues) => void;
   resumeOptions: { id: string; display_name: string }[];
   compact?: boolean;
+  visaSponsorshipDropdown?: boolean;
 }
 
 function Field({
@@ -53,7 +54,7 @@ function Field({
 
 const NONE = "__none__";
 
-export function ApplicationForm({ values, onChange, resumeOptions, compact }: ApplicationFormProps) {
+export function ApplicationForm({ values, onChange, resumeOptions, compact, visaSponsorshipDropdown }: ApplicationFormProps) {
   const [uploadedResumes, setUploadedResumes] = React.useState<{ id: string; display_name: string }[]>([]);
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -186,35 +187,53 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact }: Ap
       </div>
 
       <Field label="Visa sponsorship">
-        <RadioGroup
-          value={values.visa_sponsorship_status ?? "not_mentioned"}
-          onValueChange={(v) => set("visa_sponsorship_status", v as ApplicationFormValues["visa_sponsorship_status"])}
-          className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-        >
-          {VISA_SPONSORSHIP_STATUSES.map((opt) => {
-            const checked = (values.visa_sponsorship_status ?? "not_mentioned") === opt.value;
-            return (
-              <label
-                key={opt.value}
-                className={cn(
-                  "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-all duration-200",
-                  checked
-                    ? "border-primary/50 bg-primary/10 text-foreground shadow-[0_0_0_1px_var(--primary)_inset]"
-                    : "border-border/60 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
-                )}
-              >
-                <RadioGroupItem value={opt.value} />
-                {opt.label}
-              </label>
-            );
-          })}
-        </RadioGroup>
+        {visaSponsorshipDropdown ? (
+          <Select
+            items={VISA_SPONSORSHIP_STATUSES}
+            value={values.visa_sponsorship_status ?? "not_mentioned"}
+            onValueChange={(v) => set("visa_sponsorship_status", v ?? "not_mentioned")}
+          >
+            <SelectTrigger className="w-full sm:max-w-md" aria-label="Visa sponsorship">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VISA_SPONSORSHIP_STATUSES.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <RadioGroup
+            value={values.visa_sponsorship_status ?? "not_mentioned"}
+            onValueChange={(v) => set("visa_sponsorship_status", v as ApplicationFormValues["visa_sponsorship_status"])}
+            className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+          >
+            {VISA_SPONSORSHIP_STATUSES.map((opt) => {
+              const checked = (values.visa_sponsorship_status ?? "not_mentioned") === opt.value;
+              return (
+                <label
+                  key={opt.value}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-all duration-200",
+                    checked
+                      ? "border-primary/50 bg-primary/10 text-foreground shadow-[0_0_0_1px_var(--primary)_inset]"
+                      : "border-border/60 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
+                  )}
+                >
+                  <RadioGroupItem value={opt.value} />
+                  {opt.label}
+                </label>
+              );
+            })}
+          </RadioGroup>
+        )}
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Date applied">
           <Input
             type="date"
+            aria-label="Date applied"
             value={values.date_applied ?? ""}
             onChange={(e) => set("date_applied", e.target.value)}
           />
