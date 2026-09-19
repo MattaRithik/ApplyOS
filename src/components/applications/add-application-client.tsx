@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
@@ -55,11 +54,13 @@ export function AddApplicationClient({
   const [values, setValues] = React.useState<ApplicationFormValues>(DEFAULT_VALUES);
   const [jobUrl, setJobUrl] = React.useState("");
   const [jobDescription, setJobDescription] = React.useState("");
+  const [parserOpen, setParserOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const [lastParsed, setLastParsed] = React.useState<AiParserApiResponse | null>(null);
 
   const handleApplyExtractedFields = (result: AiParserResult, accepted: Set<AcceptableFieldKey>) => {
     setValues((prev) => applyParsedResultToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, result, accepted));
+    setParserOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,15 +115,7 @@ export function AddApplicationClient({
       </GlassPanel>
 
       {aiParserEnabled ? (
-        <AiParserLayout
-          title="AI Job Parser"
-          subtitle="Paste a posting to extract fields"
-          icon={
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--cyan-accent)] to-[var(--blue-accent)] text-white">
-              <Sparkles className="h-4 w-4" />
-            </span>
-          }
-        >
+        <AiParserLayout open={parserOpen} onOpenChange={setParserOpen}>
           <AiParserPanel
             jobUrl={jobUrl}
             jobDescription={jobDescription}
