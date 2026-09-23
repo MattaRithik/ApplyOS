@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GlassPanel } from "@/components/shared/glass-panel";
@@ -28,6 +29,8 @@ export function UserActivityTab({ userId }: { userId: string }) {
 function ActivityList({ userId, kind }: { userId: string; kind: ActivityKind }) {
   const [page, setPage] = React.useState(0);
   const [refresh, setRefresh] = React.useState(0);
+  const [search, setSearch] = React.useState("");
+  const [companySearch, setCompanySearch] = React.useState("");
   const [result, setResult] = React.useState<ActivityPage<AdminApplication | AdminParseAttempt> | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -39,7 +42,9 @@ function ActivityList({ userId, kind }: { userId: string; kind: ActivityKind }) 
       setError(null);
       setResult(null);
       try {
-        const response = await fetch(`/api/admin/users/${userId}/activity?kind=${kind}&page=${page}&pageSize=10`, {
+        const params = new URLSearchParams({ kind, page: String(page), pageSize: "10" });
+        if (kind === "applications" && companySearch) params.set("company", companySearch);
+        const response = await fetch(`/api/admin/users/${userId}/activity?${params}`, {
           cache: "no-store", signal: controller.signal,
         });
         const data = await response.json();
@@ -53,7 +58,13 @@ function ActivityList({ userId, kind }: { userId: string; kind: ActivityKind }) 
     }
     void fetchActivity();
     return () => controller.abort();
-  }, [userId, kind, page, refresh]);
+  }, [userId, kind, page, refresh, companySearch]);
+
+  function applySearch(value: string) {
+    setCompanySearch(value.trim());
+    setPage(0);
+    setRefresh((n) => n + 1);
+  }
 
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
   return (
@@ -64,16 +75,38 @@ function ActivityList({ userId, kind }: { userId: string; kind: ActivityKind }) 
         </p>
         <Button variant="outline" size="sm" disabled={loading} onClick={() => setRefresh((n) => n + 1)}>Refresh</Button>
       </div>
+      {kind === "applications" && (
+        <form
+          role="search"
+          aria-label="Search user applications by company"
+          onSubmit={(event) => { event.preventDefault(); applySearch(search); }}
+          className="flex flex-wrap items-center gap-2"
+        >
+          <Input
+            type="search"
+            aria-label="Company name"
+            placeholder="Search by company name…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            maxLength={200}
+            className="min-w-0 flex-1 sm:max-w-xs"
+          />
+          <Button type="submit" size="sm" variant="outline">Search</Button>
+          {(search || companySearch) && (
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setSearch(""); applySearch(""); }}>Clear</Button>
+          )}
+        </form>
+      )}
       {loading && <p role="status" className="py-6 text-center text-sm text-muted-foreground">Loading activity…</p>}
       {error && <p role="alert" className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
       {!loading && !error && result?.entries.length === 0 && (
-        <p className="py-6 text-center text-sm text-muted-foreground">{kind === "applications" ? "No applications on this page." : "No parsing attempts on this page."}</p>
+        <p role="status" className="py-6 text-center text-sm text-muted-foreground">{kind === "applications" ? companySearch ? `No applications found for “${companySearch}”.` : "No applications on this page." : "No parsing attempts on this page."}</p>
       )}
       {result?.entries.map((entry) => "company_name" in entry
         ? <ApplicationCard key={entry.id} application={entry} userId={userId} />
         : <ParseCard key={entry.id} attempt={entry} />)}
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>{result ? `${result.total} records · Page ${page + 1} of ${pages}` : `Page ${page + 1}`}</span>
+        <span aria-live="polite">{result ? `${result.total} ${companySearch ? "matching applications" : "records"} · Page ${page + 1} of ${pages}` : `Page ${page + 1}`}</span>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" disabled={loading || page === 0} onClick={() => setPage((p) => p - 1)}>Previous</Button>
           <Button size="sm" variant="outline" disabled={loading || !result || page + 1 >= pages} onClick={() => setPage((p) => p + 1)}>Next</Button>

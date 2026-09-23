@@ -10,6 +10,7 @@ const querySchema = z.object({
   kind: z.enum(["applications", "parsing"]).default("applications"),
   page: z.coerce.number().int().min(0).max(100_000).default(0),
   pageSize: z.coerce.number().int().min(1).max(50).default(10),
+  company: z.string().trim().max(200).default(""),
 }).strict();
 const headers = { "Cache-Control": "private, no-store" };
 
@@ -28,8 +29,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
   if (!id.success || !query.success) return NextResponse.json({ error: "Invalid activity request." }, { status: 400, headers });
 
   try {
-    const { kind, page, pageSize } = query.data;
-    const activity = await getUserActivity(id.data, kind, page, pageSize);
+    const { kind, page, pageSize, company } = query.data;
+    const activity = await getUserActivity(id.data, kind, page, pageSize, company);
     if (!activity) return NextResponse.json({ error: "User not found." }, { status: 404, headers });
     await recordAuditEvent({
       actorUserId: owner.id,

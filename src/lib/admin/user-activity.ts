@@ -42,7 +42,7 @@ const APPLICATION_COLUMNS = "id, company_name, job_title, job_url, job_descripti
 const PARSING_COLUMNS = "id, created_at, status, model, cache_hit, fallback_used, error_category, input_characters, input_tokens, output_tokens, total_tokens, estimated_total_cost_usd, latency_ms, request_id, parser_schema_version";
 
 /** Call only after requireOwner; scope every privileged query to the selected user. */
-export async function getUserActivity(userId: string, kind: ActivityKind, page: number, pageSize: number): Promise<ActivityPage<AdminApplication> | ActivityPage<AdminParseAttempt> | null> {
+export async function getUserActivity(userId: string, kind: ActivityKind, page: number, pageSize: number, companySearch = ""): Promise<ActivityPage<AdminApplication> | ActivityPage<AdminParseAttempt> | null> {
   const supabase = createServiceRoleClient();
   const { data: auth, error: authError } = await supabase.auth.admin.getUserById(userId);
   if (authError) {
@@ -53,8 +53,14 @@ export async function getUserActivity(userId: string, kind: ActivityKind, page: 
 
   const from = page * pageSize;
   if (kind === "applications") {
-    const { data, count, error } = await supabase.from("applications")
-      .select(`${APPLICATION_COLUMNS}, resume_id`, { count: "exact" }).eq("user_id", userId)
+    let query = supabase.from("applications")
+      .select(`${APPLICATION_COLUMNS}, resume_id`, { count: "exact" }).eq("user_id", userId);
+    const company = companySearch.trim();
+    if (company) {
+      const pattern = company.replace(/[\\%_]/g, "\\$&");
+      query = query.ilike("company_name", `%${pattern}%`);
+    }
+    const { data, count, error } = await query
       .order("created_at", { ascending: false }).order("id", { ascending: false })
       .range(from, from + pageSize - 1);
     if (error) throw new Error("Failed to load applications.");

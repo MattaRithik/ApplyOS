@@ -49,11 +49,23 @@ describe("owner-only user activity", () => {
     const response = await request(`?kind=${kind}&page=2&pageSize=5`);
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
-    expect(getUserActivityMock).toHaveBeenCalledWith(userId, kind, 2, 5);
+    expect(getUserActivityMock).toHaveBeenCalledWith(userId, kind, 2, 5, "");
     expect(recordAuditEventMock).toHaveBeenCalledWith({
       actorUserId: "owner-1", targetUserId: userId, actionType: `user_${kind}_viewed`,
       metadata: { page: 2, pageSize: 5, records: 1 }, requestId: expect.any(String),
     });
+  });
+
+  it("passes a trimmed company search to the user-scoped query without adding it to the audit log", async () => {
+    const response = await request("?company=%20Acme%20%26%20Co%20&page=1");
+    expect(response.status).toBe(200);
+    expect(getUserActivityMock).toHaveBeenCalledWith(userId, "applications", 1, 10, "Acme & Co");
+    expect(recordAuditEventMock.mock.calls[0][0].metadata).toEqual({ page: 1, pageSize: 10, records: 1 });
+  });
+
+  it("rejects company searches longer than 200 characters", async () => {
+    expect((await request(`?company=${"a".repeat(201)}`)).status).toBe(400);
+    expect(getUserActivityMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 only for a missing user", async () => {

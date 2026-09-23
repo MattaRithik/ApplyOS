@@ -10,6 +10,7 @@ const { getUserActivity } = await import("./user-activity");
 function query(result: { data: unknown[] | null; count?: number; error: unknown }) {
   const builder = {
     select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(), range: vi.fn().mockResolvedValue(result),
     in: vi.fn().mockResolvedValue(result),
   };
@@ -29,8 +30,34 @@ describe("privileged activity data scoping", () => {
     expect(getUserById).toHaveBeenCalledWith("selected-user");
     expect(from).toHaveBeenCalledWith("applications");
     expect(applications.eq.mock.calls).toEqual([["user_id", "selected-user"]]);
+    expect(applications.ilike).not.toHaveBeenCalled();
     expect(applications.range).toHaveBeenCalledWith(20, 29);
     expect(result).toEqual({ entries: [{ id: "app-1", is_archived: true, resume: null }], total: 42, page: 2, pageSize: 10 });
+  });
+
+  it("filters companies before pagination while retaining user scoping and matching totals", async () => {
+    const applications = query({ data: [{ id: "app-1", company_name: "Acme Bank", is_archived: true }], count: 12, error: null });
+    from.mockReturnValue(applications);
+    const result = await getUserActivity("selected-user", "applications", 1, 10, "  acme  ");
+    expect(applications.eq).toHaveBeenCalledWith("user_id", "selected-user");
+    expect(applications.ilike).toHaveBeenCalledWith("company_name", "%acme%");
+    expect(applications.ilike.mock.invocationCallOrder[0]).toBeLessThan(applications.range.mock.invocationCallOrder[0]);
+    expect(applications.range).toHaveBeenCalledWith(10, 19);
+    expect(result).toMatchObject({ total: 12, page: 1, entries: [{ company_name: "Acme Bank", is_archived: true }] });
+  });
+
+  it("escapes SQL pattern characters in company names", async () => {
+    const applications = query({ data: [], count: 0, error: null });
+    from.mockReturnValue(applications);
+    await getUserActivity("selected-user", "applications", 0, 10, "100%_Acme\\Labs");
+    expect(applications.ilike).toHaveBeenCalledWith("company_name", "%100\\%\\_Acme\\\\Labs%");
+  });
+
+  it("clears the company filter for a blank search", async () => {
+    const applications = query({ data: [], count: 0, error: null });
+    from.mockReturnValue(applications);
+    await getUserActivity("selected-user", "applications", 0, 10, "   ");
+    expect(applications.ilike).not.toHaveBeenCalled();
   });
 
   it("reads posting context only for the selected user's paginated usage ids", async () => {
