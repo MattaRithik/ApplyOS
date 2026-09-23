@@ -93,8 +93,9 @@ export function SettingsClient({
             <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Target role</Label>
-            <Input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. New Grad SWE" />
+            <Label className="mb-1.5 block text-xs text-muted-foreground">Target roles</Label>
+            <Input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="Risk, Credit Risk, Market Risk, Model Validation" maxLength={1000} />
+            <p className="mt-2 text-xs text-muted-foreground">Enter short role names separated by commas (up to 15). Used only to suggest priority for future follow-ups when you parse a job. You can always adjust the score. Changes apply to future parses.</p>
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Job search start date</Label>

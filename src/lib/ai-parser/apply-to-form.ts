@@ -1,3 +1,4 @@
+import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import type { AiParserResult, FieldProvenanceStatus } from "@/lib/ai-parser/schema";
 import type { ApplicationFormValues } from "@/components/applications/application-form";
 import { EMPTY_HR_CONTACT } from "@/components/applications/types";
@@ -227,7 +228,7 @@ function isFormValueEmpty(value: unknown): boolean {
  *   - never a field that would overwrite a value already present in the
  *     current form (the user's own typed input always wins).
  */
-export function selectSafeFieldsToApply(result: AiParserResult, current: ApplicationFormValues): Set<AcceptableFieldKey> {
+export function selectSafeFieldsToApply(result: AiParserResult, current: ApplicationFormValues, preservePriority = false): Set<AcceptableFieldKey> {
   const safe = new Set<AcceptableFieldKey>();
 
   const isAcceptableStatus = (path: string, status: FieldProvenanceStatus | undefined): boolean => {
@@ -265,6 +266,8 @@ export function selectSafeFieldsToApply(result: AiParserResult, current: Applica
   ) {
     safe.add(SYNTHETIC_DEADLINE_KEY);
   }
+
+  if (!preservePriority && result.priorityMatch?.score != null && (current.priority_score == null || current.priority_score === 50)) safe.add("priorityMatch.score");
 
   return safe;
 }
@@ -318,6 +321,10 @@ export function applyParsedResultToForm(
   };
 
   for (const key of acceptedKeys) {
+    if (key === "priorityMatch.score") {
+      if (result.priorityMatch?.score != null) next.priority_score = result.priorityMatch.score;
+      continue;
+    }
     if (key === SYNTHETIC_DEADLINE_KEY) {
       const iso = parseDeadlineToIso(result.roleContent.applicationDeadline);
       if (iso) next.follow_up_date = iso;
@@ -351,7 +358,7 @@ export function applyParsedResultToForm(
 
     const spec = NOTES_FIELDS[key];
     if (spec) {
-      bySection[spec.section].push({ label: spec.label, value });
+      bySection[spec.section].push({ label: result.employment.employmentType === "internship" ? spec.label.replace("Salary", "Stipend") : spec.label, value });
     }
   }
 
@@ -360,8 +367,8 @@ export function applyParsedResultToForm(
   );
 
   if (sectionBlocks.length > 0) {
-    const parsedBlock = `— Parsed from job description —\n\n${sectionBlocks.join("\n\n")}`;
-    next.notes = [current.notes, parsedBlock].filter(Boolean).join("\n\n");
+    const parsedBlock = sectionBlocks.join("\n\n");
+    next.notes = [cleanApplicationNotes(current.notes ?? ""), parsedBlock].filter(Boolean).join("\n\n");
   }
 
   return next;

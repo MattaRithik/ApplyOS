@@ -13,7 +13,7 @@ create extension if not exists "pgcrypto";
 do $$ begin
   create type application_status as enum (
     'saved', 'planning_to_apply', 'applied', 'referral_requested',
-    'hr_contacted', 'recruiter_screen', 'oa_assessment', 'first_round',
+    'hr_contacted', 'recruiter_screen', 'oa_assessment', 'ai_interview', 'first_round',
     'technical_round', 'superday_final_round', 'offer', 'accepted',
     'rejected', 'withdrawn', 'ghosted'
   );
@@ -59,11 +59,15 @@ exception when duplicate_object then null; end $$;
 
 do $$ begin
   create type interview_round_type as enum (
-    'phone_screen', 'recruiter_screen', 'oa_assessment', 'first_round',
+    'phone_screen', 'recruiter_screen', 'oa_assessment', 'ai_interview', 'first_round',
     'technical', 'behavioral', 'system_design', 'case_study',
     'superday', 'final_round', 'other'
   );
 exception when duplicate_object then null; end $$;
+
+-- Existing installations also need these enum additions.
+alter type application_status add value if not exists 'ai_interview' after 'oa_assessment';
+alter type interview_round_type add value if not exists 'ai_interview' after 'oa_assessment';
 
 do $$ begin
   create type interview_result as enum (

@@ -6,7 +6,7 @@ import type { ApplicationStatus } from "@/lib/types/database";
 
 const INTERVIEW_STATUSES: ApplicationStatus[] = [
   "recruiter_screen",
-  "oa_assessment",
+  "oa_assessment", "ai_interview",
   "first_round",
   "technical_round",
   "superday_final_round",

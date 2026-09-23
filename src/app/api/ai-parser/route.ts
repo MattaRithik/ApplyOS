@@ -1,3 +1,5 @@
+import { ensureProfile } from "@/lib/profiles/ensure-profile";
+import { parseTargetRoles } from "@/lib/ai-parser/target-roles";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -57,6 +59,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Job description is too long (max ${limit} characters).` }, { status: 413 });
   }
 
+  const { data: profile, error: profileError } = await ensureProfile(supabase, user);
+  if (profileError) return NextResponse.json({ error: "Could not load target roles. Please try again." }, { status: 503 });
+  const targetRoles = parseTargetRoles(profile?.target_role).slice(0, 15);
+
   const budget = await checkMonthlyBudget(user.id, limits.monthlyBudgetUsd);
   if (!budget.ok) {
     return NextResponse.json({ error: "The monthly AI parsing budget has been reached." }, { status: 429 });
@@ -79,7 +85,7 @@ export async function POST(request: Request) {
   };
 
   const normalized = normalizeDescription(jobDescription);
-  const descriptionHash = hashDescription(normalized, jobUrl);
+  const descriptionHash = hashDescription(normalized, jobUrl, targetRoles);
 
   try {
     if (!forceRefresh) {
@@ -119,7 +125,7 @@ export async function POST(request: Request) {
 
     let outcome;
     try {
-      outcome = await parseJobDescription({ jobDescription: normalized, jobUrl });
+      outcome = await parseJobDescription({ jobDescription: normalized, jobUrl, targetRoles });
     } catch (err) {
       if (err instanceof ParserProviderError) {
         console.error(`[ai-parser] request=${requestId} provider_error retryable=${err.retryable}`);

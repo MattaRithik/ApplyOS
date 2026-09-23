@@ -53,6 +53,7 @@ export function AddApplicationClient({
 }) {
   const router = useRouter();
   const [values, setValues] = React.useState<ApplicationFormValues>(DEFAULT_VALUES);
+  const [priorityEdited, setPriorityEdited] = React.useState(false);
   const [jobUrl, setJobUrl] = React.useState("");
   const [jobDescription, setJobDescription] = React.useState("");
   const [parserOpen, setParserOpen] = React.useState(false);
@@ -84,8 +85,8 @@ export function AddApplicationClient({
         ...applicationFields,
         job_url: values.job_url || jobUrl || null,
         job_description: values.job_description || jobDescription || null,
-        salary_min: values.salary_min || null,
-        salary_max: values.salary_max || null,
+        salary_min: values.salary_min ?? null,
+        salary_max: values.salary_max ?? null,
         date_applied: values.date_applied || null,
         follow_up_date: values.follow_up_date || null,
         resume_id: values.resume_id || null,
@@ -112,7 +113,7 @@ export function AddApplicationClient({
     <div>
       <GlassPanel className="p-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} visaSponsorshipDropdown />
+          <ApplicationForm values={values} onChange={setValues} onPriorityChange={() => setPriorityEdited(true)} resumeOptions={resumeOptions} visaSponsorshipDropdown />
           <div className="flex items-center justify-end gap-2 border-t border-border/50 pt-4">
             <Button type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save Application"}
@@ -128,6 +129,7 @@ export function AddApplicationClient({
             jobDescription={jobDescription}
             aiParserEnabled={aiParserEnabled}
             currentValues={values}
+            preservePriority={priorityEdited}
             onJobUrlChange={setJobUrl}
             onJobDescriptionChange={setJobDescription}
             onParsed={setLastParsed}

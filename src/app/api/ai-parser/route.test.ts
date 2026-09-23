@@ -1,7 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+const { getProfileMock } = vi.hoisted(() => ({ getProfileMock: vi.fn() }));
+
+vi.mock("@/lib/profiles/ensure-profile", () => ({ ensureProfile: (...args: unknown[]) => getProfileMock(...args) }));
+
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({}),
+  createClient: async () => ({ from: () => ({ select: () => ({ eq: () => ({ single: getProfileMock }) }) }) }),
 }));
 
 class FakeParserAuthError extends Error {
@@ -81,6 +85,7 @@ function makeRequest(body: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  getProfileMock.mockResolvedValue({ data: { target_role: "Risk, Credit Risk" }, error: null });
   checkMonthlyBudgetMock.mockResolvedValue({ ok: true, spentUsd: 0, limitUsd: null });
   acquireParseSlotMock.mockResolvedValue({ ok: true, usageRowId: "row-1" });
   getCachedResultMock.mockResolvedValue(null);
@@ -223,4 +228,14 @@ describe("parser attempt context", () => {
     expect(response.status).toBe(200);
     expect(finalizeUsageRowMock).toHaveBeenCalledWith("row-1", expect.objectContaining({ status: "cache_hit" }));
   });
+});
+
+
+it("does not silently parse without preferences when the profile cannot be loaded", async () => {
+  requireAIParserAccessMock.mockResolvedValueOnce({ user: { id: "user-1" }, limits: { dailyRequestLimit: 100, monthlyBudgetUsd: null } });
+  getProfileMock.mockResolvedValueOnce({ data: null, error: { message: "Unavailable" } });
+  const response = await POST(makeRequest({ jobDescription: JOB_DESCRIPTION }));
+  expect(response.status).toBe(503);
+  expect(parseJobDescriptionMock).not.toHaveBeenCalled();
+  expect(acquireParseSlotMock).not.toHaveBeenCalled();
 });

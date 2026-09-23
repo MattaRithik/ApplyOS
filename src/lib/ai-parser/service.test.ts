@@ -50,7 +50,7 @@ describe("parseJobDescription — single primary model, no confidence-based fall
     const safe = selectSafeFieldsToApply(result, { source: "", salary_min: null, salary_max: null, work_mode: null, visa_sponsorship_status: "not_mentioned" } as ApplicationFormValues);
     for (const field of ["identity.sourcePlatform", "compensation.salaryMinimum", "compensation.salaryMaximum", "location.workplaceType", "immigration.visaSponsorship"]) expect(safe.has(field)).toBe(true);
     expect(safe.has("__recruiterContact")).toBe(false);
-    expect(result.parseMeta.promptVersion).toBe("2.0.0");
+    expect(result.parseMeta.promptVersion).toBe("2.1.0");
   });
 
   it("makes exactly one OpenAI request for a normal successful parse", async () => {
@@ -189,5 +189,26 @@ describe("parseJobDescription — single primary model, no confidence-based fall
     expect(outcome.usage.totalOutputTokens).toBe(70);
     expect(outcome.usage.totalTokens).toBe(210);
     expect(outcome.usage.totalCachedInputTokens).toBe(5);
+  });
+});
+
+describe("target-role priority in the complete parse", () => {
+  it("scores saved targets in the same request and records the preferences and AI provenance", async () => {
+    createMock.mockResolvedValueOnce(responseFor(validRawResponse({ priorityMatch: { score: 94, matchedTargetRole: "Credit Risk", explanation: "The role focuses on credit exposure and underwriting." } })));
+    const { parseJobDescription } = await import("@/lib/ai-parser/service");
+    const { result } = await parseJobDescription({ jobDescription: LONG_DESCRIPTION, targetRoles: ["Credit Risk", "Market Risk"] });
+    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(createMock.mock.calls[0][0].input)).toContain("Credit Risk");
+    expect(result.priorityMatch).toMatchObject({ score: 94, targetRoles: ["Credit Risk", "Market Risk"] });
+    expect(result.provenance["priorityMatch.score"].status).toBe("inferred");
+    expect(result.identity.companyName).toBe("Acme Corp");
+    expect(result.compensation).toBeDefined();
+  });
+
+  it.each([{ targetRoles: [] }, { targetRoles: ["Credit Risk"] }])("rejects invented matches when preferences are $targetRoles", async ({ targetRoles }) => {
+    createMock.mockResolvedValueOnce(responseFor(validRawResponse({ priorityMatch: { score: 100, matchedTargetRole: "Unrequested Role", explanation: "Unsupported" } })));
+    const { parseJobDescription } = await import("@/lib/ai-parser/service");
+    const { result } = await parseJobDescription({ jobDescription: LONG_DESCRIPTION, targetRoles });
+    expect(result.priorityMatch).toBeNull();
   });
 });

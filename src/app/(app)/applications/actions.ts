@@ -1,5 +1,6 @@
 "use server";
 
+import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus, VisaSponsorshipStatus, WorkMode, EmploymentType } from "@/lib/types/database";
@@ -70,6 +71,7 @@ async function findOrCreateCompany(userId: string, companyName: string) {
 
 export async function createApplication(input: ApplicationInput) {
   assertAllowedKeys(input, APPLICATION_INPUT_KEYS);
+  if (typeof input.notes === "string") input = { ...input, notes: cleanApplicationNotes(input.notes) };
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,6 +103,7 @@ export async function createApplication(input: ApplicationInput) {
 
 export async function updateApplication(id: string, input: Partial<ApplicationInput>) {
   assertAllowedKeys(input, APPLICATION_INPUT_KEYS);
+  if (typeof input.notes === "string") input = { ...input, notes: cleanApplicationNotes(input.notes) };
   const supabase = await createClient();
   const {
     data: { user },
@@ -187,7 +190,7 @@ export async function saveParsedJobDetails(
   const { identity, location, employment, compensation, skills, experienceEducation, roleContent, immigration, metadata } = result;
 
   const salaryRange =
-    compensation.salaryMinimum || compensation.salaryMaximum
+    compensation.salaryMinimum != null || compensation.salaryMaximum != null
       ? [compensation.salaryMinimum, compensation.salaryMaximum].filter((v) => v !== null).join(" - ")
       : null;
 
@@ -227,6 +230,7 @@ export async function saveParsedJobDetails(
     description_hash: apiResponse.descriptionHash,
     processing_time_ms: result.parseMeta.latencyMs,
     warnings: metadata.warnings ?? [],
+    priority_score: result.priorityMatch?.score ?? null,
     full_result: { result, provenance: result.provenance },
   });
   if (error) throw new Error("Failed to save parsed job details.");

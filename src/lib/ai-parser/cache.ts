@@ -16,8 +16,8 @@ export function normalizeDescription(text: string): string {
     .trim();
 }
 
-export function hashDescription(normalizedText: string, jobUrl?: string): string {
-  return createHash("sha256").update(JSON.stringify({ description: normalizedText, jobUrl: jobUrl?.trim() || null })).digest("hex");
+export function hashDescription(normalizedText: string, jobUrl?: string, targetRoles: string[] = []): string {
+  return createHash("sha256").update(JSON.stringify({ description: normalizedText, jobUrl: jobUrl?.trim() || null, targetRoles: [...new Set(targetRoles.map((role) => role.toLowerCase()))].sort() })).digest("hex");
 }
 
 interface CacheRow {

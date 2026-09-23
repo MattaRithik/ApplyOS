@@ -349,3 +349,35 @@ describe("new parser form transfer", () => {
     expect(next.visa_sponsorship_status).toBe("not_mentioned");
   });
 });
+
+describe("role-aware priority and stipend", () => {
+  it("applies the suggested priority including a zero score, while keeping manual priorities", () => {
+    const result = buildResult({ priorityMatch: { score: 0, matchedTargetRole: "Risk", explanation: "Unrelated role" } });
+    const empty = emptyForm();
+    expect(applyParsedResultToForm(empty, result, selectSafeFieldsToApply(result, empty)).priority_score).toBe(0);
+    const manual = emptyForm({ priority_score: 85 });
+    expect(selectSafeFieldsToApply(result, manual).has("priorityMatch.score")).toBe(false);
+    expect(applyParsedResultToForm(manual, result, selectSafeFieldsToApply(result, manual)).priority_score).toBe(85);
+    expect(selectSafeFieldsToApply(result, empty, true).has("priorityMatch.score")).toBe(false);
+    expect(applyParsedResultToForm(manual, result, new Set(["priorityMatch.score"])).priority_score).toBe(0);
+  });
+
+  it("leaves priority alone when no target-role match is available", () => {
+    const result = buildResult({ priorityMatch: null });
+    const form = emptyForm();
+    expect(applyParsedResultToForm(form, result, selectSafeFieldsToApply(result, form)).priority_score).toBe(50);
+  });
+
+  it("keeps an internship's actual rate and period rather than annualizing it", () => {
+    const result = buildResult();
+    result.employment.employmentType = "internship";
+    result.compensation.salaryMinimum = 35;
+    result.compensation.salaryMaximum = 45;
+    result.compensation.salaryPeriod = "hour";
+    const form = applyParsedResultToForm(emptyForm(), result, new Set(["employment.employmentType", "compensation.salaryMinimum", "compensation.salaryMaximum", "compensation.salaryPeriod"]));
+    expect(form.employment_type).toBe("internship");
+    expect(form.salary_min).toBe(35);
+    expect(form.salary_max).toBe(45);
+    expect(form.notes).toContain("Stipend Period: hour");
+  });
+});

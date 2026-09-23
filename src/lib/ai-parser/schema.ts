@@ -5,9 +5,9 @@ import { httpUrlSchema } from "@/lib/validation/common";
  * Bumped whenever the extraction schema shape changes in a way that would
  * make previously-cached results stale/incompatible.
  */
-export const PARSER_SCHEMA_VERSION = "1.0.0";
+export const PARSER_SCHEMA_VERSION = "1.1.0";
 /** Bumped whenever the system/developer prompt text changes meaningfully. */
-export const PROMPT_VERSION = "2.0.0";
+export const PROMPT_VERSION = "2.1.0";
 /** Bumped whenever the primary-model/retry decision logic changes. */
 export const MODEL_STRATEGY_VERSION = "2.0.0";
 
@@ -199,6 +199,12 @@ const metadataSchema = z
   })
   .strict();
 
+const priorityMatchSchema = z.object({
+  score: z.number().int().min(0).max(100).nullable(),
+  matchedTargetRole: nStr(60),
+  explanation: nStr(600),
+}).strict().nullable();
+
 export const rawAiJobParseSchema = z
   .object({
     identity: identitySchema,
@@ -211,6 +217,7 @@ export const rawAiJobParseSchema = z
     immigration: immigrationSchema,
     quantRelevance: quantRelevanceSchema,
     metadata: metadataSchema,
+    priorityMatch: priorityMatchSchema,
   })
   .strict();
 
@@ -286,6 +293,8 @@ export interface ParseMetadataInfo {
 
 /** Full internal result: raw AI groups (deterministic-merged) + provenance + parse metadata. */
 export interface AiParserResult {
+  /** Optional for saved reports generated before target-role matching existed. */
+  priorityMatch?: (NonNullable<z.infer<typeof priorityMatchSchema>> & { targetRoles?: string[] }) | null;
   identity: IdentityGroup;
   location: LocationGroup;
   employment: EmploymentGroup;

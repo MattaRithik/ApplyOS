@@ -8,6 +8,7 @@ import { CommandPalette } from "@/components/command-palette/command-palette";
 import { PageTransition } from "@/components/shared/page-transition";
 import { primaryNav, secondaryNav } from "@/components/nav/nav-config";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
+import { TargetRolesDialog } from "@/components/onboarding/target-roles-dialog";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -18,6 +19,7 @@ interface AppShellProps {
   followUpsDueCount?: number;
   jobDropsUnreadCount?: number;
   showOnboarding?: boolean;
+  showTargetRoles?: boolean;
 }
 
 export function AppShell({
@@ -28,9 +30,16 @@ export function AppShell({
   followUpsDueCount,
   jobDropsUnreadCount,
   showOnboarding,
+  showTargetRoles,
 }: AppShellProps) {
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [onboardingOpen, setOnboardingOpen] = React.useState(!!showOnboarding);
+  const [targetRolesDone, setTargetRolesDone] = React.useState(false);
+  const collapsed = React.useSyncExternalStore(subscribeSidebar, getSidebarSnapshot, () => false);
+  const toggleSidebar = () => {
+    try { localStorage.setItem("applyos-sidebar-collapsed", String(!collapsed)); } catch { /* Storage may be unavailable. */ }
+    window.dispatchEvent(new Event("sidebar-change"));
+  };
   const pathname = usePathname();
   const isJobDrops = pathname === "/job-drops";
 
@@ -41,9 +50,9 @@ export function AppShell({
 
   return (
     <div className={cn("flex min-h-screen w-full", isJobDrops && "h-dvh min-h-0 overflow-hidden")}>
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 p-3 md:block">
+      <aside className={cn("sticky top-0 hidden h-screen shrink-0 p-3 md:block transition-[width] motion-reduce:transition-none", collapsed ? "w-24" : "w-72")}>
         <div className="glass-nav glass-inset-highlight h-full rounded-2xl">
-          <SidebarNav followUpsDueCount={followUpsDueCount} jobDropsUnreadCount={jobDropsUnreadCount} />
+          <SidebarNav collapsed={collapsed} onToggleCollapse={toggleSidebar} followUpsDueCount={followUpsDueCount} jobDropsUnreadCount={jobDropsUnreadCount} />
         </div>
       </aside>
 
@@ -63,7 +72,17 @@ export function AppShell({
       </div>
 
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-      <OnboardingFlow open={onboardingOpen} onOpenChange={setOnboardingOpen} />
+      <TargetRolesDialog open={!!showTargetRoles && !targetRolesDone} onDone={() => setTargetRolesDone(true)} />
+      <OnboardingFlow open={onboardingOpen && (!showTargetRoles || targetRolesDone)} onOpenChange={setOnboardingOpen} />
     </div>
   );
+}
+
+function subscribeSidebar(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("sidebar-change", callback);
+  return () => { window.removeEventListener("storage", callback); window.removeEventListener("sidebar-change", callback); };
+}
+function getSidebarSnapshot() {
+  try { return localStorage.getItem("applyos-sidebar-collapsed") === "true"; } catch { return false; }
 }

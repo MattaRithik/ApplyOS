@@ -17,7 +17,7 @@ import type { Application, ApplicationStatus, InterviewRound, FollowUp } from "@
 const TERMINAL_STATUSES: ApplicationStatus[] = ["rejected", "withdrawn", "ghosted", "accepted"];
 const INTERVIEW_STATUSES: ApplicationStatus[] = [
   "recruiter_screen",
-  "oa_assessment",
+  "oa_assessment", "ai_interview",
   "first_round",
   "technical_round",
   "superday_final_round",
@@ -27,7 +27,7 @@ const INTERVIEW_STATUSES: ApplicationStatus[] = [
 const PROGRESSED_STATUSES: ApplicationStatus[] = [
   "hr_contacted",
   "recruiter_screen",
-  "oa_assessment",
+  "oa_assessment", "ai_interview",
   "first_round",
   "technical_round",
   "superday_final_round",
@@ -201,7 +201,7 @@ export async function getDashboardData(
     "referral_requested",
     "hr_contacted",
     "recruiter_screen",
-    "oa_assessment",
+    "oa_assessment", "ai_interview",
     "first_round",
     "technical_round",
     "superday_final_round",
@@ -220,8 +220,8 @@ export async function getDashboardData(
 
   const funnelStages: { stage: string; statuses: ApplicationStatus[] }[] = [
     { stage: "Applied", statuses: ["applied", ...INTERVIEW_STATUSES, "rejected", "withdrawn", "ghosted"] },
-    { stage: "Recruiter Screen", statuses: ["recruiter_screen", "oa_assessment", "first_round", "technical_round", "superday_final_round", "offer", "accepted"] },
-    { stage: "Interview Rounds", statuses: ["first_round", "technical_round", "superday_final_round", "offer", "accepted"] },
+    { stage: "Recruiter Screen", statuses: ["recruiter_screen", "oa_assessment", "ai_interview", "first_round", "technical_round", "superday_final_round", "offer", "accepted"] },
+    { stage: "Interview Rounds", statuses: ["ai_interview", "first_round", "technical_round", "superday_final_round", "offer", "accepted"] },
     { stage: "Final Round", statuses: ["superday_final_round", "offer", "accepted"] },
     { stage: "Offer", statuses: ["offer", "accepted"] },
   ];

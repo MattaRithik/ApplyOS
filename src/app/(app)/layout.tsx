@@ -1,3 +1,5 @@
+import { needsTargetRolesSetup } from "@/lib/ai-parser/target-roles";
+import { ensureProfile } from "@/lib/profiles/ensure-profile";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/nav/app-shell";
@@ -15,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const [{ data: profile }, { count: followUpsDueCount }, { data: jobDropsMembership }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    ensureProfile(supabase, user),
     supabase
       .from("follow_ups")
       .select("id", { count: "exact", head: true })
@@ -47,6 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       followUpsDueCount={followUpsDueCount ?? 0}
       jobDropsUnreadCount={jobDropsUnreadCount}
       showOnboarding={profile?.onboarding_status === "not_started"}
+      showTargetRoles={needsTargetRolesSetup(profile)}
     >
       {children}
     </AppShell>

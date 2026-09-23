@@ -10,6 +10,7 @@ export type ApplicationStatus =
   | "hr_contacted"
   | "recruiter_screen"
   | "oa_assessment"
+  | "ai_interview"
   | "first_round"
   | "technical_round"
   | "superday_final_round"
@@ -59,6 +60,7 @@ export type InterviewRoundType =
   | "phone_screen"
   | "recruiter_screen"
   | "oa_assessment"
+  | "ai_interview"
   | "first_round"
   | "technical"
   | "behavioral"
@@ -478,6 +480,7 @@ export const APPLICATION_STATUSES: { value: ApplicationStatus; label: string }[]
   { value: "hr_contacted", label: "HR Contacted" },
   { value: "recruiter_screen", label: "Recruiter Screen" },
   { value: "oa_assessment", label: "OA / Assessment" },
+  { value: "ai_interview", label: "AI Interview" },
   { value: "first_round", label: "First Round" },
   { value: "technical_round", label: "Technical Round" },
   { value: "superday_final_round", label: "Superday / Final Round" },
@@ -514,6 +517,7 @@ export const INTERVIEW_ROUND_TYPES: { value: InterviewRoundType; label: string }
   { value: "phone_screen", label: "Phone Screen" },
   { value: "recruiter_screen", label: "Recruiter Screen" },
   { value: "oa_assessment", label: "OA / Assessment" },
+  { value: "ai_interview", label: "AI Interview" },
   { value: "first_round", label: "First Round" },
   { value: "technical", label: "Technical" },
   { value: "behavioral", label: "Behavioral" },

@@ -121,6 +121,7 @@ export function EditApplicationDialog({
                 jobDescription={jobDescription}
                 aiParserEnabled={aiParserEnabled}
                 currentValues={values}
+                preservePriority
                 onJobUrlChange={setJobUrl}
                 onJobDescriptionChange={setJobDescription}
                 onParsed={setLastParsed}

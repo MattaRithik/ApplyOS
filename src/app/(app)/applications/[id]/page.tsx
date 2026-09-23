@@ -16,7 +16,7 @@ export default async function ApplicationDetailPage({
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: application }, { data: resumes }, { data: interviewRounds }, { data: statusHistory }, { data: notes }, hrContacts, aiParserEnabled] =
+  const [{ data: application }, { data: resumes }, { data: interviewRounds }, { data: statusHistory }, { data: notes }, hrContacts, aiParserEnabled, parsedDetails] =
     await Promise.all([
       supabase
         .from("applications")
@@ -46,6 +46,9 @@ export default async function ApplicationDetailPage({
         .order("created_at", { ascending: false }),
       getApplicationHrContacts(id),
       hasAIParserAccess(supabase),
+      supabase.from("parsed_job_details").select("*")
+        .eq("application_id", id).eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
     ]);
 
   if (!application) notFound();
@@ -59,6 +62,8 @@ export default async function ApplicationDetailPage({
       notes={notes ?? []}
       hrContacts={hrContacts}
       aiParserEnabled={aiParserEnabled}
+      parsedDetails={parsedDetails.data ?? []}
+      parsedDetailsLoadFailed={!!parsedDetails.error}
     />
   );
 }

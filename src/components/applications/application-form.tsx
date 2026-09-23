@@ -1,8 +1,9 @@
 "use client";
 
+import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import * as React from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { ChevronDown, FileText, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,7 @@ interface ApplicationFormProps {
   onChange: (values: ApplicationFormValues) => void;
   resumeOptions: { id: string; display_name: string }[];
   compact?: boolean;
+  onPriorityChange?: () => void;
   visaSponsorshipDropdown?: boolean;
 }
 
@@ -52,9 +54,43 @@ function Field({
   );
 }
 
+function CollapsibleTextField({ title, value, onChange, placeholder }: {
+  title: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const id = React.useId();
+  return (
+    <details className="group rounded-xl border border-border/60 bg-background/20">
+      <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <FileText aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium">{title}</span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {value.trim() ? `${value.length.toLocaleString()} characters` : "No content yet"}
+            <span className="group-open:hidden"> · Expand to view or edit</span>
+          </span>
+        </span>
+        <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+      </summary>
+      <div className="border-t border-border/40 p-3 sm:p-4">
+        <Label htmlFor={id} className="sr-only">{title}</Label>
+        <Textarea
+          id={id}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="h-56 max-h-80 min-h-32 resize-y overflow-y-auto field-sizing-fixed"
+        />
+      </div>
+    </details>
+  );
+}
+
 const NONE = "__none__";
 
-export function ApplicationForm({ values, onChange, resumeOptions, compact, visaSponsorshipDropdown }: ApplicationFormProps) {
+export function ApplicationForm({ values, onChange, resumeOptions, compact, visaSponsorshipDropdown, onPriorityChange }: ApplicationFormProps) {
   const [uploadedResumes, setUploadedResumes] = React.useState<{ id: string; display_name: string }[]>([]);
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -167,14 +203,14 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact, visa
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Salary min">
+        <Field label={values.employment_type === "internship" ? "Stipend min" : "Salary min"}>
           <Input
             type="number"
             value={values.salary_min ?? ""}
             onChange={(e) => set("salary_min", e.target.value ? Number(e.target.value) : null)}
           />
         </Field>
-        <Field label="Salary max">
+        <Field label={values.employment_type === "internship" ? "Stipend max" : "Salary max"}>
           <Input
             type="number"
             value={values.salary_max ?? ""}
@@ -264,11 +300,13 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact, visa
       <Field label={`Priority score: ${values.priority_score ?? 0}`}>
         <Slider
           value={[values.priority_score ?? 0]}
-          onValueChange={(v) => set("priority_score", Array.isArray(v) ? v[0] : v)}
+          onValueChange={(v) => { onPriorityChange?.(); set("priority_score", Array.isArray(v) ? v[0] : v); }}
           max={100}
-          step={5}
+          step={1}
         />
       </Field>
+
+      <p className="text-xs text-muted-foreground">Priority helps organize follow-ups. Parsing can suggest a score based on your target roles in Settings → Profile; you can adjust it here.</p>
 
       <Field label="Resume used">
         <div className="flex flex-wrap items-center gap-2">
@@ -415,18 +453,19 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact, visa
         />
       </Field>
 
-      <Field label="Notes">
-        <Textarea rows={3} value={values.notes ?? ""} onChange={(e) => set("notes", e.target.value)} />
-      </Field>
+      <CollapsibleTextField
+        title="Notes"
+        value={cleanApplicationNotes(values.notes ?? "")}
+        onChange={(value) => set("notes", value)}
+        placeholder="Add your notes or review the details from the parser…"
+      />
 
-      <Field label="Job description">
-        <Textarea
-          rows={6}
-          value={values.job_description ?? ""}
-          onChange={(e) => set("job_description", e.target.value)}
-          placeholder="Paste the full job description…"
-        />
-      </Field>
+      <CollapsibleTextField
+        title="Job description"
+        value={values.job_description ?? ""}
+        onChange={(value) => set("job_description", value)}
+        placeholder="Paste the full job description…"
+      />
     </div>
   );
 }

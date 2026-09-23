@@ -197,7 +197,7 @@ function buildProvenance(merged: RawAiJobParse, deterministicProvenance: Provena
       let status: ProvenanceMap[string]["status"];
       if (value === null || (Array.isArray(value) && value.length === 0)) {
         status = "missing";
-      } else if (inferredSet.has(path)) {
+      } else if (groupKey === "priorityMatch" || inferredSet.has(path)) {
         status = "inferred";
       } else if (uncertainSet.has(path)) {
         status = "uncertain";
@@ -221,6 +221,7 @@ function buildProvenance(merged: RawAiJobParse, deterministicProvenance: Provena
 export interface ParseJobDescriptionArgs {
   jobDescription: string;
   jobUrl?: string;
+  targetRoles?: string[];
 }
 
 export interface ParseJobDescriptionOutcome {
@@ -247,12 +248,12 @@ export interface ParseJobDescriptionOutcome {
  * immediately with zero retries. `metadata.overallConfidence` is never
  * consulted here — it is UI-facing metadata only.
  */
-export async function parseJobDescription({ jobDescription, jobUrl }: ParseJobDescriptionArgs): Promise<ParseJobDescriptionOutcome> {
+export async function parseJobDescription({ jobDescription, jobUrl, targetRoles = [] }: ParseJobDescriptionArgs): Promise<ParseJobDescriptionOutcome> {
   const startedAt = Date.now();
   const deterministic = runDeterministicPass(jobDescription, jobUrl);
 
   const systemPrompt = buildSystemPrompt();
-  const userPrompt = buildUserPrompt(deterministic.cleanedText, jobUrl);
+  const userPrompt = buildUserPrompt(deterministic.cleanedText, jobUrl, targetRoles);
 
   const modelCalls: ParseJobDescriptionOutcome["usage"]["modelCalls"] = [];
   const primaryModel = DEFAULT_MODEL;
@@ -295,10 +296,13 @@ export async function parseJobDescription({ jobDescription, jobUrl }: ParseJobDe
 
   const validated = validateExtraction(mergeDeterministic(finalCall.raw, deterministic.partial), deterministic.cleanedText);
   const merged = validated.result;
+  // Never accept a fabricated target or assign priority without saved preferences.
+  if (!targetRoles.length || !merged.priorityMatch?.matchedTargetRole || !targetRoles.includes(merged.priorityMatch.matchedTargetRole)) merged.priorityMatch = null;
   const provenance = buildProvenance(merged, { ...deterministic.provenance, ...validated.provenance });
 
   const result: AiParserResult = {
     ...merged,
+    priorityMatch: merged.priorityMatch ? { ...merged.priorityMatch, targetRoles } : null,
     provenance,
     parseMeta: {
       modelUsed: primaryModel,

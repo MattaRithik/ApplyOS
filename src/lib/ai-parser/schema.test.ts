@@ -26,6 +26,7 @@ function findDisallowedKeywords(node: unknown, path = "$", found: string[] = [])
 
 function validRawResponse() {
   return {
+    priorityMatch: null,
     identity: {
       companyName: "Acme Corp",
       jobTitle: "Software Engineer",

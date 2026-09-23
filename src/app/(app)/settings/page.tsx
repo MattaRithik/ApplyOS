@@ -1,3 +1,4 @@
+import { ensureProfile } from "@/lib/profiles/ensure-profile";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsClient } from "@/components/settings/settings-client";
 import { getTimelinesContext } from "@/lib/data/timelines";
@@ -12,7 +13,7 @@ export default async function SettingsPage() {
   if (!user) return null;
 
   const [{ data: profile }, timelinesContext, aiParserEnabled, isOwnerAccount] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    ensureProfile(supabase, user),
     getTimelinesContext(supabase, user.id),
     hasAIParserAccess(supabase),
     isOwner(supabase),

@@ -1,5 +1,6 @@
 export function validRawResponse(overrides: Record<string, unknown> = {}) {
   const base = {
+    priorityMatch: null,
     identity: {
       companyName: "Acme Corp",
       jobTitle: "Software Engineer",

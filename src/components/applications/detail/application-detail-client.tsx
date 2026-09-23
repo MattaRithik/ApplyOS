@@ -1,5 +1,6 @@
 "use client";
 
+import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
-import { APPLICATION_STATUSES, type ApplicationStatus, type InterviewRound, type Note, type ApplicationStatusHistory } from "@/lib/types/database";
+import { APPLICATION_STATUSES, type ApplicationStatus, type InterviewRound, type Note, type ApplicationStatusHistory, type ParsedJobDetails } from "@/lib/types/database";
 import { deleteApplication, updateApplicationStatus } from "@/app/(app)/applications/actions";
 import { EditApplicationDialog } from "@/components/applications/detail/edit-application-dialog";
 import { InterviewRoundsSection } from "@/components/applications/detail/interview-rounds-section";
@@ -30,6 +31,8 @@ import { StatusHistorySection } from "@/components/applications/detail/status-hi
 import type { ApplicationWithResume, HrContactDraft } from "@/components/applications/types";
 import { safeHttpUrl, formatShortUrl } from "@/lib/utils/url";
 
+import { SavedParsedDetails } from "@/components/applications/detail/saved-parsed-details";
+
 interface Props {
   application: ApplicationWithResume;
   resumeOptions: { id: string; display_name: string }[];
@@ -38,6 +41,8 @@ interface Props {
   notes: Note[];
   hrContacts: HrContactDraft[];
   aiParserEnabled: boolean;
+  parsedDetails: ParsedJobDetails[];
+  parsedDetailsLoadFailed: boolean;
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
@@ -61,6 +66,8 @@ export function ApplicationDetailClient({
   notes,
   hrContacts,
   aiParserEnabled,
+  parsedDetails,
+  parsedDetailsLoadFailed,
 }: Props) {
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -84,7 +91,7 @@ export function ApplicationDetailClient({
   };
 
   const salary =
-    application.salary_min || application.salary_max
+    application.salary_min != null || application.salary_max != null
       ? `${application.salary_currency ?? "USD"} ${application.salary_min?.toLocaleString() ?? "?"} – ${application.salary_max?.toLocaleString() ?? "?"}`
       : null;
 
@@ -175,7 +182,7 @@ export function ApplicationDetailClient({
             }
           />
           <InfoRow icon={FileText} label="Resume" value={application.resume?.display_name} />
-          <InfoRow icon={DollarSign} label="Salary" value={salary} />
+          <InfoRow icon={DollarSign} label={application.employment_type === "internship" ? "Stipend" : "Salary"} value={salary} />
           <InfoRow icon={User} label="Referral" value={referral || null} />
           <InfoRow icon={FileText} label="Date applied" value={application.date_applied && format(new Date(application.date_applied), "MMM d, yyyy")} />
           <InfoRow icon={FileText} label="Follow-up" value={application.follow_up_date && format(new Date(application.follow_up_date), "MMM d, yyyy")} />
@@ -189,7 +196,7 @@ export function ApplicationDetailClient({
 
         {application.notes && (
           <div className="mt-4 rounded-lg border border-border/40 bg-muted/30 p-3 text-sm whitespace-pre-wrap">
-            {application.notes}
+            {cleanApplicationNotes(application.notes)}
           </div>
         )}
 
@@ -200,6 +207,8 @@ export function ApplicationDetailClient({
           </details>
         )}
       </GlassPanel>
+
+      <SavedParsedDetails reports={parsedDetails} loadFailed={parsedDetailsLoadFailed} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <InterviewRoundsSection applicationId={application.id} rounds={interviewRounds} />

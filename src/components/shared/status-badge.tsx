@@ -9,6 +9,7 @@ const STATUS_STYLES: Record<ApplicationStatus, string> = {
   hr_contacted: "bg-[var(--cyan-accent)]/15 text-[var(--cyan-accent)] border-[var(--cyan-accent)]/30",
   recruiter_screen: "bg-[var(--amber-accent)]/15 text-[var(--amber-accent)] border-[var(--amber-accent)]/30",
   oa_assessment: "bg-[var(--amber-accent)]/15 text-[var(--amber-accent)] border-[var(--amber-accent)]/30",
+  ai_interview: "bg-[var(--amber-accent)]/15 text-[var(--amber-accent)] border-[var(--amber-accent)]/30",
   first_round: "bg-[var(--amber-accent)]/20 text-[var(--amber-accent)] border-[var(--amber-accent)]/35",
   technical_round: "bg-[var(--amber-accent)]/20 text-[var(--amber-accent)] border-[var(--amber-accent)]/35",
   superday_final_round: "bg-[var(--emerald-accent)]/15 text-[var(--emerald-accent)] border-[var(--emerald-accent)]/30",
