@@ -374,6 +374,7 @@ describe("role-aware priority and stipend", () => {
     result.compensation.salaryMinimum = 35;
     result.compensation.salaryMaximum = 45;
     result.compensation.salaryPeriod = "hour";
+    result.compensation.compensationText = "Stipend: $35–$45 per hour.";
     const form = applyParsedResultToForm(emptyForm(), result, new Set(["employment.employmentType", "compensation.salaryMinimum", "compensation.salaryMaximum", "compensation.salaryPeriod"]));
     expect(form.employment_type).toBe("internship");
     expect(form.salary_min).toBe(35);

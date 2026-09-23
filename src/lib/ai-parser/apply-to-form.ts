@@ -1,3 +1,4 @@
+import { compensationLabel } from "@/lib/utils/compensation-label";
 import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import type { AiParserResult, FieldProvenanceStatus } from "@/lib/ai-parser/schema";
 import type { ApplicationFormValues } from "@/components/applications/application-form";
@@ -188,6 +189,7 @@ export const ALL_FIELD_LABELS: Record<string, string> = {
   "identity.recruiterEmail": "Recruiter Email",
 };
 
+export const SYNTHETIC_EMPLOYMENT_KEY = "__confirmedEmploymentType";
 export const SYNTHETIC_DEADLINE_KEY = "roleContent.applicationDeadline";
 export const SYNTHETIC_RECRUITER_CONTACT_KEY = "__recruiterContact";
 
@@ -321,6 +323,11 @@ export function applyParsedResultToForm(
   };
 
   for (const key of acceptedKeys) {
+    if (key === SYNTHETIC_EMPLOYMENT_KEY) {
+      const employmentType = EMPLOYMENT_TYPE_MAP[result.employment.employmentType];
+      if (employmentType && result.provenance["employment.employmentType"]?.status === "explicit") next.employment_type = employmentType;
+      continue;
+    }
     if (key === "priorityMatch.score") {
       if (result.priorityMatch?.score != null) next.priority_score = result.priorityMatch.score;
       continue;
@@ -358,7 +365,7 @@ export function applyParsedResultToForm(
 
     const spec = NOTES_FIELDS[key];
     if (spec) {
-      bySection[spec.section].push({ label: result.employment.employmentType === "internship" ? spec.label.replace("Salary", "Stipend") : spec.label, value });
+      bySection[spec.section].push({ label: spec.label.replace("Salary", compensationLabel(result.compensation.compensationText)), value });
     }
   }
 

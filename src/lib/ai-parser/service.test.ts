@@ -50,7 +50,7 @@ describe("parseJobDescription — single primary model, no confidence-based fall
     const safe = selectSafeFieldsToApply(result, { source: "", salary_min: null, salary_max: null, work_mode: null, visa_sponsorship_status: "not_mentioned" } as ApplicationFormValues);
     for (const field of ["identity.sourcePlatform", "compensation.salaryMinimum", "compensation.salaryMaximum", "location.workplaceType", "immigration.visaSponsorship"]) expect(safe.has(field)).toBe(true);
     expect(safe.has("__recruiterContact")).toBe(false);
-    expect(result.parseMeta.promptVersion).toBe("2.1.0");
+    expect(result.parseMeta.promptVersion).toBe("2.2.0");
   });
 
   it("makes exactly one OpenAI request for a normal successful parse", async () => {

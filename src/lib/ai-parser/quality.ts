@@ -1,3 +1,4 @@
+import { validateEmployment } from "./employment";
 import type { RawAiJobParse, ProvenanceMap } from "@/lib/ai-parser/schema";
 import { recruitingEmailEvidence } from "@/lib/ai-parser/deterministic";
 import { validateCompensation } from "@/lib/ai-parser/compensation";
@@ -17,6 +18,7 @@ function quotedEvidence(raw: RawAiJobParse, path: string, text: string): string 
 export function validateExtraction(raw: RawAiJobParse, text: string): { result: RawAiJobParse; provenance: ProvenanceMap } {
   const result = structuredClone(raw);
   const provenance: ProvenanceMap = {};
+  Object.assign(provenance, validateEmployment(result, text));
   const warnings = new Set(result.metadata.warnings ?? []);
   const pay = validateCompensation(result.compensation, result.location, text);
   result.compensation = pay.compensation;

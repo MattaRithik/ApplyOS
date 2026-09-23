@@ -49,7 +49,7 @@ describe("future parser cache identity", () => {
     const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
     const supabase = { from: vi.fn().mockReturnValue(query) } as unknown as SupabaseClient;
     expect(await getCachedResult(supabase, "user-1", "hash")).toBeNull();
-    expect(query.eq).toHaveBeenCalledWith("prompt_version", "2.1.0");
+    expect(query.eq).toHaveBeenCalledWith("prompt_version", "2.2.0");
     expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
   });
 

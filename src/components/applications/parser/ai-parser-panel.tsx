@@ -25,6 +25,7 @@ import type { AiParserApiResponse, AiParserResult } from "@/lib/ai-parser/schema
 import { cleanJobPostingDescription, extractLikelyJobPostingUrl } from "@/lib/ai-parser/deterministic";
 import {
   selectSafeFieldsToApply,
+  SYNTHETIC_EMPLOYMENT_KEY,
   type AcceptableFieldKey,
 } from "@/lib/ai-parser/apply-to-form";
 import { ParserActivity } from "@/components/applications/parser/parser-activity";
@@ -144,6 +145,10 @@ export function AiParserPanel({
     toast.success(`Applied ${safeKeys.size} safe field${safeKeys.size === 1 ? "" : "s"} to the form.`);
   };
 
+  const employmentType = response?.result.employment.employmentType;
+  const employmentLabels: Record<string, string> = { full_time: "Full time", part_time: "Part time", internship: "Internship", contract: "Contract", temporary: "Temporary", seasonal: "Seasonal", apprenticeship: "Apprenticeship", unknown: "Not confirmed" };
+  const employmentSource = response?.result.provenance["employment.employmentType"];
+  const canCorrectEmployment = employmentSource?.status === "explicit" && employmentType && ["full_time", "part_time", "internship", "contract", "temporary"].includes(employmentType) && currentValues.employment_type && currentValues.employment_type !== employmentType;
   const warnings = response?.result.metadata.warnings ?? [];
   const safeJobUrl = safeHttpUrl(jobUrl);
 
@@ -257,6 +262,15 @@ export function AiParserPanel({
           <div>
             <h3 className="text-lg font-semibold tracking-tight">Review the complete extraction</h3>
             <p className="mt-1 text-sm text-muted-foreground">{safeKeys.size} fields can fill your form. Every extracted detail is available below and is saved when you save the application.</p>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-border/60 bg-background/25 p-4">
+            <p className="text-sm font-medium">Employment type: {employmentLabels[employmentType ?? "unknown"] ?? "Not confirmed"}</p>
+            {employmentSource?.evidence && <p className="whitespace-pre-wrap text-xs text-muted-foreground">Posting says: “{employmentSource.evidence}”</p>}
+            {canCorrectEmployment && <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Your form currently says {employmentLabels[currentValues.employment_type!] ?? currentValues.employment_type}.</p>
+              <Button size="sm" variant="outline" onClick={() => onApply(response.result, new Set([...safeKeys, SYNTHETIC_EMPLOYMENT_KEY]))}>Use {employmentLabels[employmentType!]}</Button>
+            </div>}
           </div>
 
           {warnings.length > 0 && (

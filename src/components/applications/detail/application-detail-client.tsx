@@ -1,5 +1,6 @@
 "use client";
 
+import { compensationLabel } from "@/lib/utils/compensation-label";
 import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import * as React from "react";
 import Link from "next/link";
@@ -182,7 +183,7 @@ export function ApplicationDetailClient({
             }
           />
           <InfoRow icon={FileText} label="Resume" value={application.resume?.display_name} />
-          <InfoRow icon={DollarSign} label={application.employment_type === "internship" ? "Stipend" : "Salary"} value={salary} />
+          <InfoRow icon={DollarSign} label={compensationLabel(application.job_description)} value={salary} />
           <InfoRow icon={User} label="Referral" value={referral || null} />
           <InfoRow icon={FileText} label="Date applied" value={application.date_applied && format(new Date(application.date_applied), "MMM d, yyyy")} />
           <InfoRow icon={FileText} label="Follow-up" value={application.follow_up_date && format(new Date(application.follow_up_date), "MMM d, yyyy")} />

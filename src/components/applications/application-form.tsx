@@ -1,5 +1,6 @@
 "use client";
 
+import { compensationLabel } from "@/lib/utils/compensation-label";
 import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import * as React from "react";
 import { toast } from "sonner";
@@ -203,14 +204,14 @@ export function ApplicationForm({ values, onChange, resumeOptions, compact, visa
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label={values.employment_type === "internship" ? "Stipend min" : "Salary min"}>
+        <Field label={`${compensationLabel(values.job_description)} min`}>
           <Input
             type="number"
             value={values.salary_min ?? ""}
             onChange={(e) => set("salary_min", e.target.value ? Number(e.target.value) : null)}
           />
         </Field>
-        <Field label={values.employment_type === "internship" ? "Stipend max" : "Salary max"}>
+        <Field label={`${compensationLabel(values.job_description)} max`}>
           <Input
             type="number"
             value={values.salary_max ?? ""}

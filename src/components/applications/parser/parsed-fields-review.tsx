@@ -1,5 +1,6 @@
 "use client";
 
+import { compensationLabel } from "@/lib/utils/compensation-label";
 import * as React from "react";
 import { ChevronDown, Copy, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ export function ParsedFieldsReview({ result, safePaths }: { result: unknown; saf
   const [expanded, setExpanded] = React.useState(new Set(["identity", "location", "compensation", "immigration", "priorityMatch"]));
   const sections = React.useMemo(() => buildReportSections(result), [result]);
   const report = unwrapParsedReport(result);
-  const isInternship = isRecord(report.employment) && report.employment.employmentType === "internship";
+  const isStipend = isRecord(report.compensation) && typeof report.compensation.compensationText === "string" && compensationLabel(report.compensation.compensationText) === "Stipend";
   const provenance = isRecord(report.provenance) ? report.provenance : {};
   const query = search.trim().toLowerCase();
   const visible = sections.map((section) => ({ ...section, fields: section.fields.filter((field) =>
@@ -57,7 +58,7 @@ export function ParsedFieldsReview({ result, safePaths }: { result: unknown; saf
                 const fillsForm = safePaths?.has(field.path) || (safePaths?.has("__recruiterContact") && ["identity.recruiterName", "identity.recruiterEmail"].includes(field.path));
                 return (
                   <div key={field.path} className="grid gap-1.5 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:gap-4">
-                    <div className="min-w-0"><p className="break-words text-xs font-medium text-muted-foreground">{isInternship && section.key === "compensation" ? field.label.replace(/^Salary/, "Stipend") : field.label}</p>
+                    <div className="min-w-0"><p className="break-words text-xs font-medium text-muted-foreground">{isStipend && section.key === "compensation" ? field.label.replace(/^Salary/, "Stipend") : field.label}</p>
                       {fillsForm && <p className="mt-1 text-[11px] font-medium text-primary">Fills form</p>}
                       {source && typeof source.status === "string" && <p className="mt-1 text-[11px] text-muted-foreground">{SOURCE_LABELS[source.status] ?? source.status}</p>}
                     </div>
