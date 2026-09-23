@@ -48,7 +48,8 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+        "group relative flex shrink-0 items-center rounded-xl text-sm font-medium transition-colors",
+        collapsed ? "mx-auto size-10 justify-center p-0" : "gap-3 px-3 py-2.5",
         active
           ? "text-primary-foreground"
           : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
@@ -69,7 +70,7 @@ function NavLink({
           highlighted && "drop-shadow-[0_0_8px_var(--amber-accent)]"
         )}
       />
-      <span className={cn("relative z-10 truncate", collapsed && "sr-only")}>{item.label}</span>
+      <span className={collapsed ? "sr-only" : "relative z-10 truncate"}>{item.label}</span>
       {hasUnread && collapsed && <span aria-hidden="true" className="absolute right-1 top-1 z-10 size-1.5 rounded-full bg-primary" />}
       {hasUnread && !collapsed && (
         <Badge
@@ -104,9 +105,9 @@ export function SidebarNav({ followUpsDueCount, jobDropsUnreadCount, onNavigate,
   };
 
   return (
-    <div className={cn("flex h-full flex-col gap-4", collapsed ? "p-2" : "p-4")}>
-      <Link href="/dashboard" aria-label="ApplyOS home" className={cn("flex items-center gap-2.5 pt-1", !collapsed && "px-2")}>
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--blue-accent)] via-[var(--cyan-accent)] to-[var(--emerald-accent)] text-white shadow-md">
+    <div className={cn("flex h-full min-h-0 flex-col gap-4", collapsed ? "p-2" : "p-4")}>
+      <Link href="/dashboard" aria-label="ApplyOS home" className={cn("flex shrink-0 items-center pt-1", collapsed ? "justify-center" : "gap-2.5 px-2")}>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--blue-accent)] via-[var(--cyan-accent)] to-[var(--emerald-accent)] text-white shadow-md">
           <LogoMark className="h-5 w-5" />
         </span>
         <div className={cn("leading-tight", collapsed && "sr-only")}>
@@ -115,10 +116,10 @@ export function SidebarNav({ followUpsDueCount, jobDropsUnreadCount, onNavigate,
         </div>
       </Link>
 
-      {onToggleCollapse && <Button variant="ghost" size={collapsed ? "icon" : "sm"} onClick={onToggleCollapse} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!collapsed} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+      {onToggleCollapse && <Button variant="ghost" size={collapsed ? "icon" : "sm"} className={collapsed ? "size-10 self-center" : undefined} onClick={onToggleCollapse} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!collapsed} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
         {collapsed ? <PanelLeftOpen className="size-4" /> : <><PanelLeftClose className="size-4" /><span>Collapse sidebar</span></>}
       </Button>}
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto scrollbar-thin pr-1">
+      <nav className={cn("flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto scrollbar-thin", collapsed ? "[scrollbar-gutter:stable_both-edges]" : "pr-1")}>
         {primaryNav.map((item) => (
           <NavLink
             key={item.href}
@@ -131,7 +132,7 @@ export function SidebarNav({ followUpsDueCount, jobDropsUnreadCount, onNavigate,
         ))}
       </nav>
 
-      <div className="flex flex-col gap-1 border-t border-sidebar-border pt-3">
+      <div className="flex shrink-0 flex-col gap-1 border-t border-sidebar-border pt-3">
         {secondaryNav.map((item) => (
           <NavLink collapsed={collapsed} key={item.href} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
         ))}
