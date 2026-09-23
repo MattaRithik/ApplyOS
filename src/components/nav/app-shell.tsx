@@ -35,7 +35,7 @@ export function AppShell({
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [onboardingOpen, setOnboardingOpen] = React.useState(!!showOnboarding);
   const [targetRolesDone, setTargetRolesDone] = React.useState(false);
-  const collapsed = React.useSyncExternalStore(subscribeSidebar, getSidebarSnapshot, () => false);
+  const collapsed = React.useSyncExternalStore(subscribeSidebar, getSidebarSnapshot, () => true);
   const toggleSidebar = () => {
     try { localStorage.setItem("applyos-sidebar-collapsed", String(!collapsed)); } catch { /* Storage may be unavailable. */ }
     window.dispatchEvent(new Event("sidebar-change"));
@@ -84,5 +84,6 @@ function subscribeSidebar(callback: () => void) {
   return () => { window.removeEventListener("storage", callback); window.removeEventListener("sidebar-change", callback); };
 }
 function getSidebarSnapshot() {
-  try { return localStorage.getItem("applyos-sidebar-collapsed") === "true"; } catch { return false; }
+  // Start collapsed unless the user explicitly saved an expanded sidebar.
+  try { return localStorage.getItem("applyos-sidebar-collapsed") !== "false"; } catch { return true; }
 }
