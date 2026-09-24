@@ -42,23 +42,8 @@ export interface AdminUserListPage {
   pageSize: number;
 }
 
-export interface AdminUserActivityRow {
-  id: string;
-  createdAt: string;
-  model: string | null;
-  status: string;
-  cacheHit: boolean;
-  fallbackUsed: boolean;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  totalTokens: number | null;
-  estimatedCostUsd: number | null;
-  latencyMs: number | null;
-}
-
 export interface AdminUserDetail extends AdminUserSummary {
   usageAllTime: { requests: number; estimatedCostUsd: number };
-  recentActivity: AdminUserActivityRow[];
 }
 
 function monthStartUtc(): string {
@@ -175,28 +160,19 @@ export async function getUserDetail(userId: string): Promise<AdminUserDetail | n
   if (error || !authData?.user) return null;
   const u = authData.user;
 
-  const [profileResult, role, entitlement, monthResult, allTimeResult, recentResult] = await Promise.all([
+  const [profileResult, role, entitlement, monthResult, allTimeResult] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
     getUserRole(userId),
     getEntitlement(userId),
     supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId).gte("created_at", monthStartUtc()),
     supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId),
-    supabase
-      .from("ai_parser_usage")
-      .select(
-        "id, created_at, model, status, cache_hit, fallback_used, input_tokens, output_tokens, total_tokens, estimated_total_cost_usd, latency_ms"
-      )
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20),
   ]);
-  if (profileResult.error || monthResult.error || allTimeResult.error || recentResult.error) {
+  if (profileResult.error || monthResult.error || allTimeResult.error) {
     throw new Error("Failed to load administrative user detail.");
   }
   const profile = profileResult.data;
   const monthRows = monthResult.data;
   const allTimeRows = allTimeResult.data;
-  const recentRows = recentResult.data;
 
   const sumCost = (rows: { estimated_total_cost_usd: number | null }[] | null) =>
     (rows ?? []).reduce((s, r) => s + Number(r.estimated_total_cost_usd ?? 0), 0);
@@ -220,19 +196,6 @@ export async function getUserDetail(userId: string): Promise<AdminUserDetail | n
     },
     usageThisMonth: { requests: (monthRows ?? []).length, estimatedCostUsd: sumCost(monthRows) },
     usageAllTime: { requests: (allTimeRows ?? []).length, estimatedCostUsd: sumCost(allTimeRows) },
-    recentActivity: (recentRows ?? []).map((r) => ({
-      id: r.id,
-      createdAt: r.created_at,
-      model: r.model,
-      status: r.status,
-      cacheHit: r.cache_hit,
-      fallbackUsed: r.fallback_used,
-      inputTokens: r.input_tokens,
-      outputTokens: r.output_tokens,
-      totalTokens: r.total_tokens,
-      estimatedCostUsd: r.estimated_total_cost_usd,
-      latencyMs: r.latency_ms,
-    })),
   };
 }
 

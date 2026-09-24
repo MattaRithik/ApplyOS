@@ -1,21 +1,13 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
-export type AdminActionType =
-  | "ai_access_granted"
-  | "ai_access_revoked"
-  | "ai_access_suspended"
-  | "ai_access_reactivated"
-  | "ai_limits_updated"
-  | "password_reset_sent"
-  | "sessions_revoked"
-  | "user_disabled"
-  | "user_enabled"
-  | "user_deletion_requested"
-  | "user_deleted"
-  | "user_applications_viewed"
-  | "user_application_resume_opened"
-  | "user_parsing_viewed";
+const ADMIN_ACTION_TYPES = [
+  "ai_access_granted", "ai_access_revoked", "ai_access_suspended",
+  "ai_access_reactivated", "ai_limits_updated", "password_reset_sent",
+  "sessions_revoked", "user_disabled", "user_enabled",
+  "user_deletion_requested", "user_deleted",
+] as const;
+export type AdminActionType = typeof ADMIN_ACTION_TYPES[number];
 
 export interface RecordAuditEventInput {
   actorUserId: string;
@@ -80,6 +72,7 @@ export async function listAuditLog(page: number, pageSize: number): Promise<Audi
   const { data, count, error } = await supabase
     .from("admin_audit_log")
     .select("id, actor_user_id, action_type, target_user_id, metadata, request_id, created_at", { count: "exact" })
+    .in("action_type", [...ADMIN_ACTION_TYPES])
     .order("created_at", { ascending: false })
     .range(from, to);
   if (error) throw new Error("Failed to read the administrative audit log.");

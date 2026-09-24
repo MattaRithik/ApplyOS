@@ -29,8 +29,6 @@ import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { formatUsd } from "@/components/settings/admin/stat-card";
 import type { AdminUserDetail } from "@/lib/admin/users";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UserActivityTab } from "@/components/settings/admin/user-activity-tab";
 import { DeleteUserDialog } from "@/components/settings/admin/delete-user-dialog";
 
 interface Props {
@@ -143,15 +141,7 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
         ) : loading || !detail ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : (
-          <Tabs key={userId} defaultValue="access" className="min-w-0">
-            <TabsList className="w-full" aria-label="User details">
-              <TabsTrigger value="access" className="text-xs sm:text-sm">Account & AI access</TabsTrigger>
-              <TabsTrigger value="activity" className="text-xs sm:text-sm">Applications & parsing</TabsTrigger>
-            </TabsList>
-            <TabsContent value="activity">
-              <UserActivityTab userId={userId} />
-            </TabsContent>
-            <TabsContent value="access" className="space-y-4">
+          <div className="space-y-4">
             <GlassPanel className="grid grid-cols-2 gap-2 p-3 text-xs sm:grid-cols-4">
               <div>
                 <p className="text-muted-foreground">Role</p>
@@ -246,32 +236,6 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                   <p className="font-semibold">{formatUsd(detail.usageAllTime.estimatedCostUsd)}</p>
                 </GlassPanel>
               </div>
-              {detail.recentActivity.length > 0 && (
-                <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border/40">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="text-[10px] uppercase text-muted-foreground">
-                        <th className="p-1.5">Time</th>
-                        <th className="p-1.5">Model</th>
-                        <th className="p-1.5">Status</th>
-                        <th className="p-1.5">Cache</th>
-                        <th className="p-1.5">Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail.recentActivity.map((r) => (
-                        <tr key={r.id} className="border-t border-border/30">
-                          <td className="p-1.5 whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</td>
-                          <td className="p-1.5">{r.model ?? "—"}</td>
-                          <td className="p-1.5">{r.status}</td>
-                          <td className="p-1.5">{r.cacheHit ? "Yes" : "No"}</td>
-                          <td className="p-1.5">{r.estimatedCostUsd != null ? formatUsd(r.estimatedCostUsd) : "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -307,8 +271,7 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                 }} />
               </GlassPanel>
             </div>
-            </TabsContent>
-          </Tabs>
+          </div>
         )}
 
         <DialogFooter showCloseButton />
