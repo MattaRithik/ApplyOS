@@ -147,3 +147,15 @@ export async function isOwner(supabase: SupabaseClient): Promise<boolean> {
     return false;
   }
 }
+
+/** Presence is restricted to the single configured, verified owner identity,
+ * including when another account has a database owner role. */
+export async function requirePrimaryOwner(supabase: SupabaseClient): Promise<User> {
+  const user = await requireAuthenticatedUser(supabase);
+  if (!isEmailVerified(user) || !isOwnerEmailMatch(user)) {
+    throw new AdminAuthError("Owner access required.", 403);
+  }
+  await ensureOwnerBootstrap(user).catch(() => {});
+  if (await getUserRole(user.id) !== "owner") throw new AdminAuthError("Owner access required.", 403);
+  return user;
+}

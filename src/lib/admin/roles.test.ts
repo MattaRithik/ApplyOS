@@ -159,3 +159,24 @@ describe("requireOwner / isOwner", () => {
     await expect(isOwner(fakeSupabase(makeUser()))).resolves.toBe(false);
   });
 });
+
+describe("single identity presence access", () => {
+  it.each([
+    { email: "another@example.com" },
+    { email_confirmed_at: null },
+  ])("rejects a different or unverified identity before privileged queries: %j", async (overrides) => {
+    const { requirePrimaryOwner } = await import("@/lib/admin/roles");
+    await expect(requirePrimaryOwner(fakeSupabase(makeUser(overrides)))).rejects.toMatchObject({ status: 403 });
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+  it("denies access when no owner email is configured", async () => {
+    delete process.env.APP_OWNER_EMAIL;
+    const { requirePrimaryOwner } = await import("@/lib/admin/roles");
+    await expect(requirePrimaryOwner(fakeSupabase(makeUser()))).rejects.toMatchObject({ status: 403 });
+  });
+  it("accepts the verified configured owner with an active role", async () => {
+    fromMock.mockReturnValue(makeQueryBuilder({ data: { role: "owner", revoked_at: null, enabled: true, suspended_at: null }, error: null }));
+    const { requirePrimaryOwner } = await import("@/lib/admin/roles");
+    expect((await requirePrimaryOwner(fakeSupabase(makeUser()))).id).toBe("user-1");
+  });
+});

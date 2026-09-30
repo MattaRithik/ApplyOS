@@ -8,7 +8,8 @@ export type ApiRateLimitAction =
   | "resume_delete"
   | "resume_rename"
   | "export"
-  | "admin_mutation";
+  | "admin_mutation"
+  | "presence";
 
 /** Atomic, database-backed rate limit. Database failures fail closed. */
 export async function consumeApiRateLimit(

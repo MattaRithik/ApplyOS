@@ -6,9 +6,12 @@ import { OverviewSection } from "@/components/settings/admin/overview-section";
 import { UsersSection } from "@/components/settings/admin/users-section";
 import { AuditLogSection } from "@/components/settings/admin/audit-log-section";
 
+import { PresenceSection } from "@/components/settings/admin/presence-section";
+
 const SECTIONS = [
   { value: "overview", label: "Overview" },
   { value: "users", label: "Users & AI Access" },
+  { value: "presence", label: "Live Activity" },
   { value: "audit", label: "Audit Log" },
 ] as const;
 
@@ -23,7 +26,7 @@ export function AdministrationPanel() {
         <p className="text-sm font-semibold">Administration</p>
         <p className="text-xs text-muted-foreground">
           Owner-only controls for account access, AI parser entitlements, and security actions.
-          Manage accounts, AI access, and estimated API costs. User applications, resumes, and activity are private.
+          Manage accounts, AI access, and estimated API costs. View signed-in connection activity. User applications and resumes remain private.
         </p>
       </div>
 
@@ -46,6 +49,7 @@ export function AdministrationPanel() {
 
       {section === "overview" && <OverviewSection />}
       {section === "users" && <UsersSection />}
+      {section === "presence" && <PresenceSection />}
       {section === "audit" && <AuditLogSection />}
     </div>
   );

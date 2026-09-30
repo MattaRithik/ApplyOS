@@ -234,6 +234,12 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
             Excel or CSV at any time from the Export Center. There&apos;s no lock-in: if you leave, you take your data
             with you.
           </p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            For account security, signed-in sessions report their current page section, tab visibility,
+            recent interaction time, IP address, approximate IP location, and browser information.
+            Only the site owner can view this activity. We keep the latest state per tab; sessions
+            inactive for more than 24 hours are removed when the activity service next runs.
+          </p>
           <div className="mt-5 flex items-center justify-center gap-2">
             <Download className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Export anytime, in your account settings</span>

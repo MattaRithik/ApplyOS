@@ -149,7 +149,11 @@ The account whose verified email matches `APP_OWNER_EMAIL` gets an **Administrat
 
 Administrators cannot inspect users' applications, companies they applied to, resumes, or parsing history. The application/parsing tab and recent parser activity table are removed; the former admin activity and resume-viewing endpoints return 404 without accessing user data. Historical inspection audit events are excluded from the admin audit view. Users' own application and parsing features are unchanged.
 
-**No new Supabase migration is required for this change.** The existing database schema and storage remain unchanged; no encryption/passphrase setup or data cleanup is required.
+**Live Activity:** Apply `supabase/migrations/20260930090000_owner_presence.sql` before deploying this feature. Settings → Administration → Live Activity shows the latest 200 signed-in tab sessions from the past 24 hours. Reads require both the verified `APP_OWNER_EMAIL` identity and an active owner role; admins, users, and other owner-role accounts are denied. RLS and revoked grants prevent direct browser access to the table. Heartbeats derive the user ID/email from the authenticated server session and are rate limited; they never accept a user identity from the body.
+
+The browser sends a heartbeat every 15 seconds and on navigation/visibility changes. The dashboard refreshes every 15 seconds and updates elapsed-time labels each second. Sessions are offline after 45 seconds without contact and idle after 60 seconds without interaction. Browser throttling, network loss, and client-supplied signals mean this is approximate presence, not proof that a person is looking at the screen. Multiple tabs appear separately. Only a page section is collected, with no IDs, query strings, form contents, or browsing outside ApplyOS.
+
+Network details use [Vercel request headers](https://vercel.com/docs/headers/request-headers) only when `VERCEL=1`; local/self-hosted deployments display unavailable rather than trusting arbitrary forwarding headers. Location is approximate and VPNs/proxies can obscure it. Only the latest state is retained per tab. Records inactive for 24 hours are hidden and pruned on the next heartbeat or owner read; this is activity-driven cleanup, not a wall-clock deletion guarantee. The landing page privacy section describes this monitoring.
 
 ## Resume storage — Backblaze B2
 

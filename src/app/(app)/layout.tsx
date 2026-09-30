@@ -3,6 +3,7 @@ import { ensureProfile } from "@/lib/profiles/ensure-profile";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/nav/app-shell";
+import { ActivityHeartbeat } from "@/components/presence/activity-heartbeat";
 import { features } from "@/lib/features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -51,6 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       showOnboarding={profile?.onboarding_status === "not_started"}
       showTargetRoles={needsTargetRolesSetup(profile)}
     >
+      <ActivityHeartbeat userId={user.id} />
       {children}
     </AppShell>
   );
