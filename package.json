@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:presence-runtime": "node --unhandled-rejections=strict scripts/check-presence-runtime.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1084.0",

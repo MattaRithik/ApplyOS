@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { heartbeatFailure, setHeartbeatError } from "@/lib/presence/client-status";
 import { HEARTBEAT_MS, IDLE_MS, pageSection } from "@/lib/presence/shared";
 
 export function ActivityHeartbeat({ userId }: { userId: string }) {
@@ -26,10 +27,14 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
       void fetch("/api/presence", {
         method: "POST", credentials: "same-origin", cache: "no-store", keepalive: true,
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(10_000),
         body: JSON.stringify({ sessionId, page: pageRef.current, visible: document.visibilityState === "visible", closed,
           idleSeconds: Math.min(86400, Math.floor((Date.now() - lastInteraction) / 1000)) }),
-      }).then((response) => { if (response.status === 401) stopped = true; })
-        .catch(() => {}).finally(() => { pending = false; });
+      }).then((response) => {
+        if (!stopped && !closed) setHeartbeatError(response.ok ? null : heartbeatFailure(response.status));
+      }).catch(() => {
+        if (!stopped && !closed) setHeartbeatError("The request timed out or could not reach the server.");
+      }).finally(() => { pending = false; });
     };
     const interaction = () => {
       const wasIdle = Date.now() - lastInteraction >= IDLE_MS;

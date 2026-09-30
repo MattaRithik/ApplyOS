@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AdminAuthError, requireAuthenticatedUser } from "@/lib/admin/roles";
@@ -7,10 +6,10 @@ import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 import { connectionDetails, heartbeatSchema, prunePresence } from "@/lib/presence/server";
 
 const headers = { "Cache-Control": "private, no-store" };
-export async function recordHeartbeat(request: Request, remoteAddress?: string, sessionClient?: SupabaseClient) {
+export async function recordHeartbeat(request: Request) {
   if (!isSameOriginMutation(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403, headers });
   try {
-    const user = await requireAuthenticatedUser(sessionClient ?? await createClient());
+    const user = await requireAuthenticatedUser(await createClient());
     const body = await readJsonBody(request, 2048);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status, headers });
     const parsed = heartbeatSchema.safeParse(body.value);
@@ -29,7 +28,7 @@ export async function recordHeartbeat(request: Request, remoteAddress?: string, 
       closed: parsed.data.closed,
       last_seen_at: new Date(now).toISOString(),
       last_active_at: new Date(now - parsed.data.idleSeconds * 1000).toISOString(),
-      ...connectionDetails(request, remoteAddress),
+      ...connectionDetails(request),
     }, { onConflict: "user_id,session_id" });
     if (error) throw new Error("Presence write failed.");
     return new NextResponse(null, { status: 204, headers });

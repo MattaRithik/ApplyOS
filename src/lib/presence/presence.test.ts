@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { connectionDetails, heartbeatSchema } from "./server";
-import { pageSection, presenceStatus, type PresenceSession } from "./shared";
+import { formatLastContact, pageSection, presenceStatus, type PresenceSession } from "./shared";
 
 afterEach(() => vi.unstubAllEnvs());
 describe("presence data boundaries", () => {
@@ -20,23 +20,23 @@ describe("presence data boundaries", () => {
     expect(connectionDetails(new Request("http://localhost", { headers: { "x-vercel-forwarded-for": "1.2.3.4", "x-vercel-ip-city": "Fake" } })))
       .toMatchObject({ ip_address: null, location: null });
   });
-  it.each(["127.0.0.1", "::1", "192.168.1.50"])("captures the actual local connection %s", (ip) => {
+  it.each(["127.0.0.1", "::1", "192.168.1.50"])("shows development IP %s", (ip) => {
     vi.stubEnv("VERCEL", "");
-    const request = new Request("http://localhost", { headers: { "x-forwarded-for": "8.8.8.8", "x-real-ip": "9.9.9.9" } });
-    expect(connectionDetails(request, ip)).toMatchObject({ ip_address: ip, location: null });
+    vi.stubEnv("NODE_ENV", "development");
+    expect(connectionDetails(new Request("http://localhost", { headers: { "x-forwarded-for": ip } })))
+      .toMatchObject({ ip_address: ip, location: null });
   });
-  it("normalizes IPv4-mapped sockets and rejects invalid socket values", () => {
+  it("does not trust development forwarding headers in production", () => {
     vi.stubEnv("VERCEL", "");
-    const request = new Request("http://localhost");
-    expect(connectionDetails(request, "::ffff:127.0.0.1").ip_address).toBe("127.0.0.1");
-    expect(connectionDetails(request, "invalid").ip_address).toBeNull();
+    vi.stubEnv("NODE_ENV", "production");
+    expect(connectionDetails(new Request("https://app.test", { headers: { "x-forwarded-for": "8.8.8.8" } })).ip_address).toBeNull();
   });
   it("uses validated Vercel fallbacks and never substitutes the proxy socket", () => {
     vi.stubEnv("VERCEL", "1");
     const request = new Request("https://app.test", { headers: { "x-vercel-forwarded-for": "invalid", "x-real-ip": "203.0.113.9" } });
-    expect(connectionDetails(request, "127.0.0.1").ip_address).toBe("203.0.113.9");
+    expect(connectionDetails(request).ip_address).toBe("203.0.113.9");
     expect(connectionDetails(new Request("https://app.test", { headers: { "x-forwarded-for": "2001:db8::2" } })).ip_address).toBe("2001:db8::2");
-    expect(connectionDetails(new Request("https://app.test"), "127.0.0.1").ip_address).toBeNull();
+    expect(connectionDetails(new Request("https://app.test")).ip_address).toBeNull();
   });
   it("validates Vercel IP and safely decodes approximate location", () => {
     vi.stubEnv("VERCEL", "1");
@@ -53,5 +53,12 @@ describe("presence data boundaries", () => {
     expect(presenceStatus({ ...row, last_active_at: new Date(now - 60000).toISOString() }, now)).toBe("Idle");
     expect(presenceStatus(row, now + 45000)).toBe("Offline");
     expect(presenceStatus({ ...row, closed: true }, now)).toBe("Offline");
+  });
+});
+
+describe("last report labels", () => {
+  const time = "2026-09-30T00:00:00Z";
+  it.each([[0, "Just now"], [20, "20s ago"], [125, "2m 5s ago"], [61690, "17h 8m ago"], [90000, "1d 1h ago"]])("formats %s seconds as %s", (seconds, expected) => {
+    expect(formatLastContact(time, Date.parse(time) + Number(seconds) * 1000)).toBe(expected);
   });
 });

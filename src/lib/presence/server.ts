@@ -20,15 +20,18 @@ function validIp(value: string | null | undefined): string | null {
   return ip;
 }
 
-export function connectionDetails(request: Request, remoteAddress?: string) {
+export function connectionDetails(request: Request) {
   const onVercel = process.env.VERCEL === "1";
-  // Vercel overwrites these headers at its edge. Elsewhere use the actual
-  // Node socket peer, never arbitrary client-supplied forwarding headers.
+  // Vercel overwrites these headers at its edge. In development Next fills
+  // x-forwarded-for from the socket when absent. That development value is
+  // diagnostic only and must never be used for authorization.
   const ip = onVercel
     ? validIp(request.headers.get("x-vercel-forwarded-for"))
       ?? validIp(request.headers.get("x-real-ip"))
       ?? validIp(request.headers.get("x-forwarded-for"))
-    : validIp(remoteAddress);
+    : process.env.NODE_ENV === "development"
+      ? validIp(request.headers.get("x-forwarded-for"))
+      : null;
   const parts = onVercel ? ["x-vercel-ip-city", "x-vercel-ip-country-region", "x-vercel-ip-country"].map((name) => {
     try { return decodeURIComponent(request.headers.get(name) ?? "").slice(0, 100); }
     catch { return ""; }

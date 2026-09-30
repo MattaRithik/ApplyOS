@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), owner: vi.fn(), limit: vi.fn(), from: vi.fn(), upsert: vi.fn(), prune: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}), createServiceRoleClient: () => ({ from: mocks.from }) }));
 vi.mock("@/lib/admin/roles", async (original) => ({ ...await original<object>(), requireAuthenticatedUser: mocks.auth, requirePrimaryOwner: mocks.owner }));
 vi.mock("@/lib/security/rate-limit", () => ({ consumeApiRateLimit: mocks.limit }));
 vi.mock("@/lib/presence/server", async (original) => ({ ...await original<object>(), prunePresence: mocks.prune }));
 import { AdminAuthError } from "@/lib/admin/roles";
-import { recordHeartbeat as POST } from "@/lib/presence/heartbeat";
+import { POST } from "./route";
 import { GET } from "../admin/presence/route";
 const body = { sessionId: "00000000-0000-4000-8000-000000000001", page: "dashboard", visible: true, closed: false, idleSeconds: 0 };
 const request = (value = body, origin = "https://app.test") => new Request("https://app.test/api/presence", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(value) });
@@ -18,7 +18,19 @@ beforeEach(() => {
   mocks.prune.mockResolvedValue(undefined);
   mocks.from.mockReturnValue({ upsert: mocks.upsert });
 });
+afterEach(() => vi.unstubAllEnvs());
 describe("authenticated heartbeat", () => {
+  it("persists a Vercel client IP from a successful authenticated report", async () => {
+    vi.stubEnv("VERCEL", "1");
+    const incoming = request();
+    incoming.headers.set("x-vercel-forwarded-for", "203.0.113.42");
+    incoming.headers.set("x-vercel-ip-city", "New%20York");
+    incoming.headers.set("x-vercel-ip-country", "US");
+    expect((await POST(incoming)).status).toBe(204);
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: "actual-user", ip_address: "203.0.113.42", location: "New York, US",
+    }), { onConflict: "user_id,session_id" });
+  });
   it("rejects anonymous callers without touching the database", async () => {
     mocks.auth.mockRejectedValue(new AdminAuthError("Not authenticated.", 401));
     expect((await POST(request())).status).toBe(401);
