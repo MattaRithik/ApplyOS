@@ -17,7 +17,7 @@ import { safeLocalPath } from "@/lib/utils/url";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = safeLocalPath(searchParams.get("next"), "/dashboard");
+  const next = safeLocalPath(searchParams?.get("next") ?? null, "/dashboard");
 
   const [loading, setLoading] = React.useState(false);
   const [email, setEmail] = React.useState("");

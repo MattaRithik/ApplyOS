@@ -5,7 +5,7 @@ vi.mock("@/lib/admin/roles", async (original) => ({ ...await original<object>(),
 vi.mock("@/lib/security/rate-limit", () => ({ consumeApiRateLimit: mocks.limit }));
 vi.mock("@/lib/presence/server", async (original) => ({ ...await original<object>(), prunePresence: mocks.prune }));
 import { AdminAuthError } from "@/lib/admin/roles";
-import { POST } from "./route";
+import { recordHeartbeat as POST } from "@/lib/presence/heartbeat";
 import { GET } from "../admin/presence/route";
 const body = { sessionId: "00000000-0000-4000-8000-000000000001", page: "dashboard", visible: true, closed: false, idleSeconds: 0 };
 const request = (value = body, origin = "https://app.test") => new Request("https://app.test/api/presence", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(value) });

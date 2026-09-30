@@ -40,7 +40,7 @@ export function AppShell({
     try { localStorage.setItem("applyos-sidebar-collapsed", String(!collapsed)); } catch { /* Storage may be unavailable. */ }
     window.dispatchEvent(new Event("sidebar-change"));
   };
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const isJobDrops = pathname === "/job-drops";
 
   const pageTitle =

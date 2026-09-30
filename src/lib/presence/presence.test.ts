@@ -20,6 +20,24 @@ describe("presence data boundaries", () => {
     expect(connectionDetails(new Request("http://localhost", { headers: { "x-vercel-forwarded-for": "1.2.3.4", "x-vercel-ip-city": "Fake" } })))
       .toMatchObject({ ip_address: null, location: null });
   });
+  it.each(["127.0.0.1", "::1", "192.168.1.50"])("captures the actual local connection %s", (ip) => {
+    vi.stubEnv("VERCEL", "");
+    const request = new Request("http://localhost", { headers: { "x-forwarded-for": "8.8.8.8", "x-real-ip": "9.9.9.9" } });
+    expect(connectionDetails(request, ip)).toMatchObject({ ip_address: ip, location: null });
+  });
+  it("normalizes IPv4-mapped sockets and rejects invalid socket values", () => {
+    vi.stubEnv("VERCEL", "");
+    const request = new Request("http://localhost");
+    expect(connectionDetails(request, "::ffff:127.0.0.1").ip_address).toBe("127.0.0.1");
+    expect(connectionDetails(request, "invalid").ip_address).toBeNull();
+  });
+  it("uses validated Vercel fallbacks and never substitutes the proxy socket", () => {
+    vi.stubEnv("VERCEL", "1");
+    const request = new Request("https://app.test", { headers: { "x-vercel-forwarded-for": "invalid", "x-real-ip": "203.0.113.9" } });
+    expect(connectionDetails(request, "127.0.0.1").ip_address).toBe("203.0.113.9");
+    expect(connectionDetails(new Request("https://app.test", { headers: { "x-forwarded-for": "2001:db8::2" } })).ip_address).toBe("2001:db8::2");
+    expect(connectionDetails(new Request("https://app.test"), "127.0.0.1").ip_address).toBeNull();
+  });
   it("validates Vercel IP and safely decodes approximate location", () => {
     vi.stubEnv("VERCEL", "1");
     expect(connectionDetails(new Request("https://app.test", { headers: { "x-vercel-forwarded-for": "2001:db8::1", "x-vercel-ip-city": "New%20York", "x-vercel-ip-country": "US" } })))

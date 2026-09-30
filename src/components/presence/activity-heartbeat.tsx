@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { HEARTBEAT_MS, IDLE_MS, pageSection } from "@/lib/presence/shared";
 
 export function ActivityHeartbeat({ userId }: { userId: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const sendRef = useRef<(() => void) | null>(null);
   const pageRef = useRef(pageSection(pathname));
   useEffect(() => {

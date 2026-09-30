@@ -93,7 +93,7 @@ function NavLink({
 }
 
 export function SidebarNav({ followUpsDueCount, jobDropsUnreadCount, onNavigate, collapsed = false, onToggleCollapse }: SidebarNavProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);
