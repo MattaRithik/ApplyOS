@@ -75,6 +75,8 @@ describe("owner-only feed", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(query.limit).toHaveBeenCalledWith(200);
+    expect(query.gte).not.toHaveBeenCalled();
+    expect(mocks.prune).not.toHaveBeenCalled();
     expect((await response.json()).sessions).toEqual([body]);
   });
 });

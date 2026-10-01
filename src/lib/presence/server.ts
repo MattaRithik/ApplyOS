@@ -1,7 +1,6 @@
 import "server-only";
 import { isIP } from "node:net";
 import { z } from "zod";
-import { createServiceRoleClient } from "@/lib/supabase/server";
 import { PAGE_SECTIONS } from "./shared";
 
 export const heartbeatSchema = z.object({
@@ -41,10 +40,4 @@ export function connectionDetails(request: Request) {
     location: parts.length ? parts.join(", ") : null,
     user_agent: request.headers.get("user-agent")?.slice(0, 512) ?? null,
   };
-}
-
-export async function prunePresence() {
-  const { error } = await createServiceRoleClient().from("user_presence")
-    .delete().lt("last_seen_at", new Date(Date.now() - 86400_000).toISOString());
-  if (error) throw new Error("Presence cleanup failed.");
 }

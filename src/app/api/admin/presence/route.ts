@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { requirePrimaryOwner, AdminAuthError } from "@/lib/admin/roles";
-import { prunePresence } from "@/lib/presence/server";
 const headers = { "Cache-Control": "private, no-store" };
 export async function GET() {
   try {
     await requirePrimaryOwner(await createClient());
-    await prunePresence();
     const { data, error } = await createServiceRoleClient().from("user_presence")
       .select("user_id, session_id, email, page, visible, closed, last_seen_at, last_active_at, ip_address, location, user_agent")
-      .gte("last_seen_at", new Date(Date.now() - 86400_000).toISOString())
       .order("last_seen_at", { ascending: false }).limit(200);
     if (error) throw new Error("Presence read failed.");
     return NextResponse.json({ sessions: data ?? [], serverTime: new Date().toISOString() }, { headers });

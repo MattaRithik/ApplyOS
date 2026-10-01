@@ -3,7 +3,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AdminAuthError, requireAuthenticatedUser } from "@/lib/admin/roles";
 import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
 import { consumeApiRateLimit } from "@/lib/security/rate-limit";
-import { connectionDetails, heartbeatSchema, prunePresence } from "@/lib/presence/server";
+import { connectionDetails, heartbeatSchema } from "@/lib/presence/server";
 
 const headers = { "Cache-Control": "private, no-store" };
 export async function recordHeartbeat(request: Request) {
@@ -18,7 +18,6 @@ export async function recordHeartbeat(request: Request) {
       return NextResponse.json({ error: "Too many heartbeats." }, { status: 429, headers });
     }
     const now = Date.now();
-    await prunePresence();
     const { error } = await createServiceRoleClient().from("user_presence").upsert({
       user_id: user.id,
       email: user.email ?? null,

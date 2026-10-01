@@ -1,4 +1,5 @@
 "use client";
+import { PresenceHistory } from "./presence-history";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { HEARTBEAT_MS, formatLastContact, presenceStatus, type PresenceSession } from "@/lib/presence/shared";
 
@@ -49,7 +50,7 @@ export function PresenceSection() {
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-semibold">Signed-in activity · {online} users online</h3>
-        <p className="text-xs text-muted-foreground">Only your configured owner account can read this feed. Latest 200 tab sessions from the past 24 hours.</p>
+        <p className="text-xs text-muted-foreground">Only your configured owner account can read this feed. Latest 200 tab sessions. Older recorded events are available in Activity history below.</p>
         <p className="mt-1 text-xs text-muted-foreground">Refreshes every 15 seconds. Last report means time since the tab contacted the server, not time spent viewing. Active means a visible tab with recent interaction; it does not confirm attention. Background tabs may stop reporting. Offline after 45 seconds without contact.</p>
         {updated && <p className="mt-1 text-xs text-muted-foreground">Last refreshed {new Date(updated).toLocaleTimeString()}</p>}
       </div>
@@ -66,7 +67,7 @@ export function PresenceSection() {
                 <td className="p-3"><span className={status === "Active" ? "text-emerald-500" : "text-muted-foreground"}>{status}</span></td>
                 <td className="p-3">{session.page}</td>
                 <td className="whitespace-nowrap p-3" title={new Date(session.last_seen_at).toLocaleString()}>{formatLastContact(session.last_seen_at, now)}</td>
-                <td className="whitespace-nowrap p-3">{new Date(session.last_active_at).toLocaleTimeString()}</td>
+                <td className="whitespace-nowrap p-3">{new Date(session.last_active_at).toLocaleString()}</td>
                 <td className="whitespace-nowrap p-3 font-mono" title={session.ip_address ? undefined : "No IP was recorded for this tab session. A successful new report is needed; historical IPs cannot be recovered."}>{session.ip_address || "Not recorded"}</td>
                 <td className="p-3">{session.location || "Unavailable"}</td>
                 <td className="max-w-64 break-words p-3">{session.user_agent || "Unavailable"}</td>
@@ -75,6 +76,7 @@ export function PresenceSection() {
           </table>
         </div>
       )}
+      <PresenceHistory />
       <p className="text-xs text-muted-foreground">IP locations are approximate and can reflect a VPN or proxy. Page sections and browser activity are reported by the browser and are not proof of identity.</p>
     </div>
   );
