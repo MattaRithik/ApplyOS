@@ -50,7 +50,7 @@ export function PresenceSection() {
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-semibold">Signed-in activity · {online} users online</h3>
-        <p className="text-xs text-muted-foreground">Only your configured owner account can read this feed. Latest 200 tab sessions. Older recorded events are available in Activity history below.</p>
+        <p className="text-xs text-muted-foreground">Only your configured owner account can read this feed. Your own activity is excluded. Latest 200 tab sessions. Older recorded events are available in Activity history below.</p>
         <p className="mt-1 text-xs text-muted-foreground">Refreshes every 15 seconds. Last report means time since the tab contacted the server, not time spent viewing. Active means a visible tab with recent interaction; it does not confirm attention. Background tabs may stop reporting. Offline after 45 seconds without contact.</p>
         {updated && <p className="mt-1 text-xs text-muted-foreground">Last refreshed {new Date(updated).toLocaleTimeString()}</p>}
       </div>
@@ -59,11 +59,11 @@ export function PresenceSection() {
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : !updated ? <p className="text-sm text-muted-foreground">Loading activity…</p> : sessions.length === 0 ? <p className="text-sm text-muted-foreground">No recent signed-in sessions.</p> : (
         <div className="overflow-x-auto rounded-xl border border-border/50">
           <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40"><tr>{["Account", "Status", "Page", "Last report", "Last interaction", "IP address", "Approx. location", "Browser / device"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
+            <thead className="bg-muted/40"><tr>{["Profile", "Status", "Page", "Last report", "Last interaction", "IP address", "Approx. location", "Browser / device"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
             <tbody>{sessions.map((session) => {
               const status = presenceStatus(session, now);
               return <tr key={`${session.user_id}:${session.session_id}`} className="border-t border-border/40">
-                <td className="p-3">{session.email || session.user_id}</td>
+                <td className="p-3">{session.profile_name}</td>
                 <td className="p-3"><span className={status === "Active" ? "text-emerald-500" : "text-muted-foreground"}>{status}</span></td>
                 <td className="p-3">{session.page}</td>
                 <td className="whitespace-nowrap p-3" title={new Date(session.last_seen_at).toLocaleString()}>{formatLastContact(session.last_seen_at, now)}</td>

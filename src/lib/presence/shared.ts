@@ -9,7 +9,7 @@ export function pageSection(path: string): (typeof PAGE_SECTIONS)[number] {
 export interface PresenceSession {
   user_id: string;
   session_id: string;
-  email: string | null;
+  profile_name: string;
   page: string;
   visible: boolean;
   closed: boolean;

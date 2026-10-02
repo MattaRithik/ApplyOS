@@ -20,6 +20,12 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("authenticated heartbeat", () => {
+  it("does not record the configured admin, including requests from older tabs", async () => {
+    vi.stubEnv("APP_OWNER_EMAIL", " ACTUAL@example.com ");
+    expect((await POST(request())).status).toBe(204);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
   it("persists a Vercel client IP from a successful authenticated report", async () => {
     vi.stubEnv("VERCEL", "1");
     const incoming = request();
@@ -67,16 +73,20 @@ describe("owner-only feed", () => {
     expect(mocks.prune).not.toHaveBeenCalled();
   });
   it("returns a bounded uncached feed for the configured owner", async () => {
-    const query = { select: vi.fn(), gte: vi.fn(), order: vi.fn(), limit: vi.fn() };
-    query.select.mockReturnValue(query); query.gte.mockReturnValue(query); query.order.mockReturnValue(query);
-    query.limit.mockResolvedValue({ data: [body], error: null });
-    mocks.from.mockReturnValue(query);
+    const query = { select: vi.fn(), neq: vi.fn(), gte: vi.fn(), order: vi.fn(), limit: vi.fn() };
+    query.neq.mockReturnValue(query); query.select.mockReturnValue(query); query.gte.mockReturnValue(query); query.order.mockReturnValue(query);
+    query.limit.mockResolvedValue({ data: [{ ...body, user_id: "actual-user" }], error: null });
+    mocks.from.mockImplementation((table) => table === "profiles"
+      ? { select: () => ({ in: async () => ({ data: [{ id: "actual-user", full_name: "DP" }], error: null }) }) }
+      : query);
     const response = await GET();
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(query.neq).toHaveBeenCalledWith("user_id", "owner");
+    expect(query.select.mock.calls[0][0]).not.toContain("email");
     expect(query.limit).toHaveBeenCalledWith(200);
     expect(query.gte).not.toHaveBeenCalled();
     expect(mocks.prune).not.toHaveBeenCalled();
-    expect((await response.json()).sessions).toEqual([body]);
+    expect((await response.json()).sessions).toEqual([{ ...body, user_id: "actual-user", profile_name: "DP" }]);
   });
 });

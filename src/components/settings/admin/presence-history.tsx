@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ActivityEvent {
   id: number;
-  email: string | null;
+  profile_name: string;
   user_id: string;
   page: string;
   status: string;
@@ -51,10 +51,10 @@ export function PresenceHistory() {
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {events.length > 0 && <div className="overflow-x-auto rounded-xl border border-border/50">
       <table className="w-full text-left text-xs">
-        <thead className="bg-muted/40"><tr>{["Reported at", "Account", "Page", "Reported status"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
+        <thead className="bg-muted/40"><tr>{["Reported at", "Profile", "Page", "Reported status"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
         <tbody>{events.map((event) => <tr key={event.id} className="border-t border-border/40">
           <td className="whitespace-nowrap p-3">{new Date(event.recorded_at).toLocaleString()}</td>
-          <td className="p-3">{event.email || event.user_id}</td>
+          <td className="p-3">{event.profile_name}</td>
           <td className="p-3">{event.page}</td>
           <td className="p-3">{event.status}</td>
         </tr>)}</tbody>

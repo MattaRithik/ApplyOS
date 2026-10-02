@@ -5,11 +5,14 @@ import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
 import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 import { connectionDetails, heartbeatSchema } from "@/lib/presence/server";
 
+import { isActivityExcluded } from "./profiles";
+
 const headers = { "Cache-Control": "private, no-store" };
 export async function recordHeartbeat(request: Request) {
   if (!isSameOriginMutation(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403, headers });
   try {
     const user = await requireAuthenticatedUser(await createClient());
+    if (isActivityExcluded(user)) return new NextResponse(null, { status: 204, headers });
     const body = await readJsonBody(request, 2048);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status, headers });
     const parsed = heartbeatSchema.safeParse(body.value);
