@@ -47,11 +47,11 @@ export function PresenceHistory() {
       <h3 className="text-sm font-semibold">Activity history</h3>
       <button type="button" className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => { setLoading(true); setError(null); void load(); }}>Refresh history</button>
     </div>
-    <p className="text-xs text-muted-foreground">Recorded page changes, tab status changes, and resumed connections are retained without an automatic time limit. Times show when the server received each report. History starts when tracking was enabled; previously deleted records cannot be recovered. This is not a log of every click, login attempt, or application error.</p>
+    <p className="text-xs text-muted-foreground">Recorded page changes, tab status changes, resumed connections, and saved feature actions are retained without an automatic time limit. Times show when the server received each report. History starts when tracking was enabled; previously deleted records cannot be recovered. Feature actions describe successful saved changes and generated exports; their page column names the feature, not necessarily the page open at the time. Typed text, individual clicks, failed logins, and application errors are not captured.</p>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {events.length > 0 && <div className="overflow-x-auto rounded-xl border border-border/50">
       <table className="w-full text-left text-xs">
-        <thead className="bg-muted/40"><tr>{["Reported at", "Profile", "Page", "Reported status"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
+        <thead className="bg-muted/40"><tr>{["Reported at", "Profile", "Page", "Status / action"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
         <tbody>{events.map((event) => <tr key={event.id} className="border-t border-border/40">
           <td className="whitespace-nowrap p-3">{new Date(event.recorded_at).toLocaleString()}</td>
           <td className="p-3">{event.profile_name}</td>

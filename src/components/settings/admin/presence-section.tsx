@@ -1,4 +1,5 @@
 "use client";
+import { PageUsage } from "./page-usage";
 import { PresenceHistory } from "./presence-history";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { HEARTBEAT_MS, formatLastContact, presenceStatus, type PresenceSession } from "@/lib/presence/shared";
@@ -51,7 +52,7 @@ export function PresenceSection() {
       <div>
         <h3 className="text-sm font-semibold">Signed-in activity · {online} users online</h3>
         <p className="text-xs text-muted-foreground">Only your configured owner account can read this feed. Your own activity is excluded. Latest 200 tab sessions. Older recorded events are available in Activity history below.</p>
-        <p className="mt-1 text-xs text-muted-foreground">Refreshes every 15 seconds. Last report means time since the tab contacted the server, not time spent viewing. Active means a visible tab with recent interaction; it does not confirm attention. Background tabs may stop reporting. Offline after 45 seconds without contact.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Refreshes every 15 seconds. Last report means time since the tab contacted the server, not time spent viewing. Active means a focused, visible tab with recent interaction; it does not confirm attention. Background tabs may stop reporting. Offline after 45 seconds without contact.</p>
         {updated && <p className="mt-1 text-xs text-muted-foreground">Last refreshed {new Date(updated).toLocaleTimeString()}</p>}
       </div>
       {heartbeat.error && <p role="alert" className="text-sm text-destructive">This tab is not reporting activity: {heartbeat.error} Retrying automatically.</p>}
@@ -76,6 +77,7 @@ export function PresenceSection() {
           </table>
         </div>
       )}
+      <PageUsage />
       <PresenceHistory />
       <p className="text-xs text-muted-foreground">IP locations are approximate and can reflect a VPN or proxy. Page sections and browser activity are reported by the browser and are not proof of identity.</p>
     </div>
