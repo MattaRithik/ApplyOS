@@ -29,11 +29,10 @@ export function presenceStatus(session: PresenceSession, now: number) {
 export function formatLastContact(timestamp: string, now: number): string {
   const elapsed = Math.max(0, Math.floor((now - Date.parse(timestamp)) / 1000));
   if (!Number.isFinite(elapsed)) return "Unknown";
-  if (elapsed < 5) return "Just now";
-  if (elapsed < 60) return `${elapsed}s ago`;
+  if (elapsed < 60) return "Just now";
   const minutes = Math.floor(elapsed / 60);
-  if (minutes < 60) return `${minutes}m ${elapsed % 60}s ago`;
+  if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ${minutes % 60}m ago`;
-  return `${Math.floor(hours / 24)}d ${hours % 24}h ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }

@@ -58,7 +58,7 @@ describe("presence data boundaries", () => {
 
 describe("last report labels", () => {
   const time = "2026-09-30T00:00:00Z";
-  it.each([[0, "Just now"], [20, "20s ago"], [125, "2m 5s ago"], [61690, "17h 8m ago"], [90000, "1d 1h ago"]])("formats %s seconds as %s", (seconds, expected) => {
+  it.each([[0, "Just now"], [20, "Just now"], [59, "Just now"], [60, "1m ago"], [125, "2m ago"], [3600, "1h ago"], [61690, "17h ago"], [86400, "1d ago"], [90000, "1d ago"]])("formats %s seconds as %s", (seconds, expected) => {
     expect(formatLastContact(time, Date.parse(time) + Number(seconds) * 1000)).toBe(expected);
   });
 });

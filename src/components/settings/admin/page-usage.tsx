@@ -8,7 +8,7 @@ interface Visit extends UsageRow { id: number; started_at: string; last_report_a
 interface Summary extends UsageRow { visits: number }
 function duration(seconds: number) {
   const total = Math.floor(seconds);
-  return total >= 3600 ? `${Math.floor(total / 3600)}h ${Math.floor(total % 3600 / 60)}m` : `${Math.floor(total / 60)}m ${total % 60}s`;
+  return total >= 3600 ? `${Math.floor(total / 3600)}h ${Math.floor(total % 3600 / 60)}m` : total < 60 ? "<1m" : `${Math.floor(total / 60)}m`;
 }
 export function PageUsage() {
   const [request, setRequest] = useState({ before: "", revision: 0 });
@@ -38,7 +38,7 @@ export function PageUsage() {
       <h3 className="text-sm font-semibold">Time spent by page</h3>
       <button className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => load()}>Refresh usage</button>
     </div>
-    <p className="text-xs text-muted-foreground">Estimates begin when duration tracking is enabled. Active time counts focused, visible intervals within 60 seconds of an interaction; visible time includes idle time. Missing reports of 45 seconds or more are excluded. These are per-tab estimates, not proof of attention or exact total time online. Refresh to see new reports.</p>
+    <p className="text-xs text-muted-foreground">Estimated time by page. Active time includes recent interaction; visible time includes idle time.</p>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {data && <>
       <p className="text-xs font-medium">Visits started in the last 30 days · most active time first</p>
@@ -48,15 +48,16 @@ export function PageUsage() {
           <td className="p-3">{row.profile_name}</td><td className="p-3">{row.page}</td><td className="p-3">{row.visits}</td><td className="p-3">{duration(row.active_seconds)}</td><td className="p-3">{duration(row.visible_seconds)}</td>
         </tr>)}</tbody>
       </table></div>
-      <p className="text-xs font-medium">Individual visits · all recorded dates</p>
+      <details className="space-y-3"><summary className="cursor-pointer text-xs font-medium">View individual visits</summary>
       <div className="overflow-x-auto rounded-xl border border-border/50"><table className="w-full text-left text-xs">
         <thead className="bg-muted/40"><tr>{["Profile", "Page", "First report", "Last measured report", "Active time", "Visible time"].map((label) => <th key={label} className="p-3">{label}</th>)}</tr></thead>
         <tbody>{data.visits.map((row) => <tr key={row.id} className="border-t border-border/40">
-          <td className="p-3">{row.profile_name}</td><td className="p-3">{row.page}</td><td className="whitespace-nowrap p-3">{new Date(row.started_at).toLocaleString()}</td><td className="whitespace-nowrap p-3">{new Date(row.last_report_at).toLocaleString()}</td><td className="p-3">{duration(row.active_seconds)}</td><td className="p-3">{duration(row.visible_seconds)}</td>
+          <td className="p-3">{row.profile_name}</td><td className="p-3">{row.page}</td><td className="whitespace-nowrap p-3">{new Date(row.started_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td><td className="whitespace-nowrap p-3">{new Date(row.last_report_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td><td className="p-3">{duration(row.active_seconds)}</td><td className="p-3">{duration(row.visible_seconds)}</td>
         </tr>)}</tbody>
       </table></div>
       {data.visits.length === 0 && <p className="text-xs text-muted-foreground">No measured visits yet.</p>}
       {data.nextCursor && <button className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => load(data.nextCursor!)}>Load older visits</button>}
+      </details>
     </>}
     {loading && <p className="text-xs text-muted-foreground">Loading usage…</p>}
   </div>;
