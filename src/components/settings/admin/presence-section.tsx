@@ -1,9 +1,7 @@
 "use client";
 import { PageUsage } from "./page-usage";
 import { useEffect, useState } from "react";
-import { HEARTBEAT_MS, OFFLINE_MS, type PresenceSession } from "@/lib/presence/shared";
-
-
+import { HEARTBEAT_MS, summarizePresence, type PresenceSession } from "@/lib/presence/shared";
 
 export function PresenceSection() {
   const [sessions, setSessions] = useState<PresenceSession[]>([]);
@@ -44,25 +42,13 @@ export function PresenceSection() {
     document.addEventListener("visibilitychange", refresh);
     return () => { controller.abort(); clearInterval(poll); clearInterval(tick); document.removeEventListener("visibilitychange", refresh); };
   }, []);
-  const users = Array.from(sessions.reduce((byUser, session) => {
-    const isOnline = !session.closed && now - Date.parse(session.last_seen_at) < OFFLINE_MS;
-    const previous = byUser.get(session.user_id);
-    if (!previous) byUser.set(session.user_id, { ...session, isOnline });
-    else {
-      previous.isOnline ||= isOnline;
-      if (Date.parse(session.last_seen_at) > Date.parse(previous.last_seen_at)) {
-        previous.last_seen_at = session.last_seen_at;
-      }
-    }
-    return byUser;
-  }, new Map<string, PresenceSession & { isOnline: boolean }>()).values())
-    .sort((a, b) => Number(b.isOnline) - Number(a.isOnline) || Date.parse(b.last_seen_at) - Date.parse(a.last_seen_at));
+  const users = summarizePresence(sessions, now);
   const online = users.filter((user) => user.isOnline).length;
   return (
     <div className="space-y-5">
       <div>
         <h3 className="text-sm font-semibold">Live Activity · {online} online</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Online now and last seen, by user.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Online means interacting in a focused tab within the past minute.</p>
       </div>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : !updated ? <p className="text-sm text-muted-foreground">Loading activity…</p> : users.length === 0 ? <p className="text-sm text-muted-foreground">No activity yet.</p> : (
         <div className="overflow-x-auto rounded-xl border border-border/50">
@@ -73,7 +59,7 @@ export function PresenceSection() {
                 <td className="p-3">{user.profile_name}</td>
                 <td className="whitespace-nowrap p-3">
                   {user.isOnline ? <span className="inline-flex items-center gap-2 text-emerald-500"><span className="size-2 rounded-full bg-emerald-500" />Online now</span> :
-                    <span className="text-muted-foreground">{new Date(user.last_seen_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</span>}
+                    <span className="text-muted-foreground">{new Date(user.last_active_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</span>}
                 </td>
               </tr>
             ))}</tbody>

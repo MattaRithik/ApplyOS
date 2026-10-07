@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { connectionDetails, heartbeatSchema } from "./server";
-import { formatLastContact, pageSection, presenceStatus, type PresenceSession } from "./shared";
+import { formatLastContact, pageSection, presenceStatus, summarizePresence, type PresenceSession } from "./shared";
 
 afterEach(() => vi.unstubAllEnvs());
 describe("presence data boundaries", () => {
@@ -53,6 +53,37 @@ describe("presence data boundaries", () => {
     expect(presenceStatus({ ...row, last_active_at: new Date(now - 60000).toISOString() }, now)).toBe("Idle");
     expect(presenceStatus(row, now + 45000)).toBe("Offline");
     expect(presenceStatus({ ...row, closed: true }, now)).toBe("Offline");
+  });
+});
+
+describe("user online summary", () => {
+  const now = Date.parse("2026-10-07T19:43:00Z");
+  const session = {
+    user_id: "user-1", profile_name: "DP", session_id: "tab-1",
+    last_seen_at: new Date(now).toISOString(), last_active_at: new Date(now - 10000).toISOString(),
+    visible: true, closed: false,
+  } as PresenceSession;
+
+  it.each([
+    ["background", { visible: false }],
+    ["idle", { last_active_at: new Date(now - 60000).toISOString() }],
+    ["closed", { closed: true }],
+    ["stale", { last_seen_at: new Date(now - 45000).toISOString() }],
+  ])("does not show a %s tab as online", (_, overrides) => {
+    expect(summarizePresence([{ ...session, ...overrides }], now)[0].isOnline).toBe(false);
+  });
+
+  it("counts the user once when any tab has recent visible interaction", () => {
+    const background = { ...session, session_id: "tab-2", visible: false, last_active_at: new Date(now - 3600000).toISOString() };
+    const [user] = summarizePresence([background, session], now);
+    expect(user).toMatchObject({ isOnline: true, last_active_at: session.last_active_at });
+    expect(summarizePresence([background, session], now)).toHaveLength(1);
+  });
+
+  it("uses the latest interaction across tabs rather than background report times", () => {
+    const older = { ...session, closed: true, last_seen_at: new Date(now - 30000).toISOString() };
+    const background = { ...session, session_id: "tab-2", visible: false, last_active_at: new Date(now - 3600000).toISOString() };
+    expect(summarizePresence([background, older], now)[0]).toMatchObject({ isOnline: false, last_active_at: older.last_active_at });
   });
 });
 

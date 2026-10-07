@@ -25,6 +25,28 @@ export function presenceStatus(session: PresenceSession, now: number) {
   return now - Date.parse(session.last_active_at) >= IDLE_MS ? "Idle" : "Active";
 }
 
+/** One user row; background reports never count as interaction or online time. */
+export function summarizePresence(sessions: PresenceSession[], now: number) {
+  const users = new Map<string, { user_id: string; profile_name: string; isOnline: boolean; last_active_at: string }>();
+  for (const session of sessions) {
+    const isOnline = presenceStatus(session, now) === "Active";
+    const previous = users.get(session.user_id);
+    if (!previous) {
+      users.set(session.user_id, {
+        user_id: session.user_id, profile_name: session.profile_name,
+        isOnline, last_active_at: session.last_active_at,
+      });
+    } else {
+      previous.isOnline ||= isOnline;
+      if (Date.parse(session.last_active_at) > Date.parse(previous.last_active_at)) {
+        previous.last_active_at = session.last_active_at;
+      }
+    }
+  }
+  return [...users.values()].sort((a, b) => Number(b.isOnline) - Number(a.isOnline)
+    || Date.parse(b.last_active_at) - Date.parse(a.last_active_at));
+}
+
 /** Elapsed time since the last report, not duration spent viewing a page. */
 export function formatLastContact(timestamp: string, now: number): string {
   const elapsed = Math.max(0, Math.floor((now - Date.parse(timestamp)) / 1000));
