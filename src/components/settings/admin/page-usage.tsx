@@ -1,14 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
+import type { VisitActivity } from "@/lib/presence/visit-activity";
 interface UsageRow {
   user_id: string; profile_name: string; page: string;
   visible_seconds: number; active_seconds: number;
 }
-interface Visit extends UsageRow { id: number; started_at: string; last_report_at: string }
+interface Visit extends UsageRow { id: number; started_at: string; last_report_at: string; activity: VisitActivity }
 interface Summary extends UsageRow { visits: number }
 function duration(seconds: number) {
   const total = Math.floor(seconds);
   return total >= 3600 ? `${Math.floor(total / 3600)}h ${Math.floor(total % 3600 / 60)}m` : total < 60 ? "<1m" : `${Math.floor(total / 60)}m`;
+}
+function activitySummary(activity: VisitActivity) {
+  return [
+    activity.added && `${activity.added} added`,
+    activity.updated && `${activity.updated} updated`,
+    activity.parsed && `${activity.parsed} parsed`,
+  ].filter(Boolean).join(" · ") || "No recorded changes";
 }
 export function PageUsage() {
   const [request, setRequest] = useState({ before: "", revision: 0 });
@@ -48,11 +56,12 @@ export function PageUsage() {
           <td className="p-3">{row.profile_name}</td><td className="p-3">{row.page}</td><td className="p-3">{row.visits}</td><td className="p-3">{duration(row.active_seconds)}</td><td className="p-3">{duration(row.visible_seconds)}</td>
         </tr>)}</tbody>
       </table></div>
-      <details className="space-y-3"><summary className="cursor-pointer text-xs font-medium">View individual visits</summary>
+      <details className="space-y-3"><summary className="cursor-pointer text-xs font-medium">View visits and activity</summary>
+      <p className="text-xs text-muted-foreground">Applications added, updated, and successfully parsed during each user's time window.</p>
       <div className="overflow-x-auto rounded-xl border border-border/50"><table className="w-full text-left text-xs">
-        <thead className="bg-muted/40"><tr>{["Profile", "Page", "First report", "Last measured report", "Active time", "Visible time"].map((label) => <th key={label} className="p-3">{label}</th>)}</tr></thead>
+        <thead className="bg-muted/40"><tr>{["Profile", "Page", "Started", "Last report", "Activity", "Active time", "Visible time"].map((label) => <th key={label} className="p-3">{label}</th>)}</tr></thead>
         <tbody>{data.visits.map((row) => <tr key={row.id} className="border-t border-border/40">
-          <td className="p-3">{row.profile_name}</td><td className="p-3">{row.page}</td><td className="whitespace-nowrap p-3">{new Date(row.started_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td><td className="whitespace-nowrap p-3">{new Date(row.last_report_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td><td className="p-3">{duration(row.active_seconds)}</td><td className="p-3">{duration(row.visible_seconds)}</td>
+          <td className="p-3">{row.profile_name}</td><td className="p-3">{row.page}</td><td className="whitespace-nowrap p-3">{new Date(row.started_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td><td className="whitespace-nowrap p-3">{new Date(row.last_report_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td><td className="whitespace-nowrap p-3">{activitySummary(row.activity)}</td><td className="p-3">{duration(row.active_seconds)}</td><td className="p-3">{duration(row.visible_seconds)}</td>
         </tr>)}</tbody>
       </table></div>
       {data.visits.length === 0 && <p className="text-xs text-muted-foreground">No measured visits yet.</p>}

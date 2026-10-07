@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { requirePrimaryOwner, AdminAuthError } from "@/lib/admin/roles";
 import { withProfileNames } from "@/lib/presence/profiles";
+import { withVisitActivity } from "@/lib/presence/visit-activity";
 const headers = { "Cache-Control": "private, no-store" };
 export async function GET(request: Request) {
   try {
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
       db.rpc("page_usage_summary", { since_at: since, excluded_user: owner.id }),
     ]);
     if (visits.error || summary.error) throw new Error("Usage read failed.");
-    const rows = await withProfileNames((visits.data ?? []).slice(0, 100));
+    const rows = await withProfileNames(await withVisitActivity(db, (visits.data ?? []).slice(0, 100)));
     return NextResponse.json({ visits: rows, summary: await withProfileNames(summary.data ?? []), since,
       nextCursor: (visits.data?.length ?? 0) > 100 ? String(rows.at(-1)!.id) : null }, { headers });
   } catch (error) {
