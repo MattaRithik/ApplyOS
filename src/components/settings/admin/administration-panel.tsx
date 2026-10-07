@@ -8,10 +8,13 @@ import { AuditLogSection } from "@/components/settings/admin/audit-log-section";
 
 import { PresenceSection } from "@/components/settings/admin/presence-section";
 
+import { DownloadsSection } from "./downloads-section";
+
 const SECTIONS = [
   { value: "overview", label: "Overview" },
   { value: "users", label: "Users & AI Access" },
   { value: "presence", label: "Live Activity" },
+  { value: "downloads", label: "Downloads" },
   { value: "audit", label: "Audit Log" },
 ] as const;
 
@@ -50,6 +53,7 @@ export function AdministrationPanel() {
       {section === "overview" && <OverviewSection />}
       {section === "users" && <UsersSection />}
       {section === "presence" && <PresenceSection />}
+      {section === "downloads" && <DownloadsSection />}
       {section === "audit" && <AuditLogSection />}
     </div>
   );

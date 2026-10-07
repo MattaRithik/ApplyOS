@@ -1,3 +1,4 @@
+import { recordDownload } from "@/lib/admin/downloads";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -91,6 +92,8 @@ export async function GET(request: Request) {
     extension === "csv"
       ? "text/csv; charset=utf-8"
       : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+  await recordDownload(user.id, "export", `${filename}.${extension}`);
 
   return new NextResponse(fileBuffer as BodyInit, {
     headers: {

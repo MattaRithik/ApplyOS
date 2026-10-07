@@ -1,3 +1,4 @@
+import { recordDownload } from "@/lib/admin/downloads";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -53,6 +54,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       ? canonicalMimeType(resume.file_extension)
       : "application/octet-stream";
     const { url, expiresIn } = await createResumeDownloadUrl(resume.storage_key, downloadFileName, disposition, contentType);
+
+    if (disposition === "attachment") await recordDownload(user.id, "resume", downloadFileName);
 
     return NextResponse.json({ url, expires_in: expiresIn, file_name: downloadFileName });
   } catch {
