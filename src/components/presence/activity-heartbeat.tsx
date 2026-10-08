@@ -16,7 +16,7 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
   useEffect(() => {
     // Each tab/mount gets a fresh identifier; never persist an auth token.
     const sessionId = crypto.randomUUID();
-    let lastInteraction = Date.now();
+    let lastInteraction: number | null = null;
     let stopped = false;
     let queue = Promise.resolve();
     let lastSent = 0;
@@ -26,7 +26,8 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
       // Snapshot transitions immediately and send them in order, including tab close.
       const body = JSON.stringify({ sessionId, page: pageRef.current,
         visible: document.visibilityState === "visible" && document.hasFocus(), closed,
-        idleSeconds: Math.min(86400, Math.floor((Date.now() - lastInteraction) / 1000)) });
+        idleSeconds: lastInteraction === null ? 86400 : Math.min(86400, Math.floor((Date.now() - lastInteraction) / 1000)),
+        interactionAt: lastInteraction === null ? null : new Date(lastInteraction).toISOString() });
       queue = queue.then(async () => {
         try {
           const response = await fetch("/api/presence", {
@@ -40,10 +41,12 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
         }
       });
     };
-    const interaction = () => {
-      const wasIdle = Date.now() - lastInteraction >= IDLE_MS;
+    const interaction = (event: Event) => {
+      if (!event.isTrusted || document.visibilityState !== "visible" || !document.hasFocus()) return;
+      const firstInteraction = lastInteraction === null;
+      const wasIdle = firstInteraction || Date.now() - lastInteraction! >= IDLE_MS;
       lastInteraction = Date.now();
-      if (wasIdle && Date.now() - lastSent > 2000) send();
+      if (firstInteraction || (wasIdle && Date.now() - lastSent > 2000)) send();
     };
     const visibility = () => { send(); };
     const pagehide = () => { send(true); };
@@ -51,7 +54,7 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
     sendRef.current = () => { send(); };
     send();
     const timer = window.setInterval(send, HEARTBEAT_MS);
-    const events = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart"];
+    const events = ["pointerdown", "keydown", "scroll", "touchstart"];
     events.forEach((event) => window.addEventListener(event, interaction, { passive: true }));
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("focus", visibility);

@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const db = createServiceRoleClient();
     let query = db.from("user_page_visits")
       .select("id, user_id, page, started_at, last_report_at, visible_seconds, active_seconds")
-      .neq("user_id", owner.id).order("id", { ascending: false }).limit(101);
+      .neq("user_id", owner.id).gt("active_seconds", 0).order("id", { ascending: false }).limit(101);
     if (before) query = query.lt("id", before);
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const [visits, summary] = await Promise.all([

@@ -14,7 +14,7 @@ export interface PresenceSession {
   visible: boolean;
   closed: boolean;
   last_seen_at: string;
-  last_active_at: string;
+  last_active_at: string | null;
   ip_address: string | null;
   location: string | null;
   user_agent: string | null;
@@ -22,12 +22,12 @@ export interface PresenceSession {
 export function presenceStatus(session: PresenceSession, now: number) {
   if (session.closed || now - Date.parse(session.last_seen_at) >= OFFLINE_MS) return "Offline";
   if (!session.visible) return "Background";
-  return now - Date.parse(session.last_active_at) >= IDLE_MS ? "Idle" : "Active";
+  return session.last_active_at === null || now - Date.parse(session.last_active_at) >= IDLE_MS ? "Idle" : "Active";
 }
 
 /** One user row; background reports never count as interaction or online time. */
 export function summarizePresence(sessions: PresenceSession[], now: number) {
-  const users = new Map<string, { user_id: string; profile_name: string; isOnline: boolean; last_active_at: string }>();
+  const users = new Map<string, { user_id: string; profile_name: string; isOnline: boolean; last_active_at: string | null }>();
   for (const session of sessions) {
     const isOnline = presenceStatus(session, now) === "Active";
     const previous = users.get(session.user_id);
@@ -38,13 +38,13 @@ export function summarizePresence(sessions: PresenceSession[], now: number) {
       });
     } else {
       previous.isOnline ||= isOnline;
-      if (Date.parse(session.last_active_at) > Date.parse(previous.last_active_at)) {
+      if (session.last_active_at && (!previous.last_active_at || Date.parse(session.last_active_at) > Date.parse(previous.last_active_at))) {
         previous.last_active_at = session.last_active_at;
       }
     }
   }
   return [...users.values()].sort((a, b) => Number(b.isOnline) - Number(a.isOnline)
-    || Date.parse(b.last_active_at) - Date.parse(a.last_active_at));
+    || (b.last_active_at ? Date.parse(b.last_active_at) : 0) - (a.last_active_at ? Date.parse(a.last_active_at) : 0));
 }
 
 /** Elapsed time since the last report, not duration spent viewing a page. */

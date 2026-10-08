@@ -50,6 +50,7 @@ describe("presence data boundaries", () => {
     const row = { last_seen_at: new Date(now).toISOString(), last_active_at: new Date(now).toISOString(), visible: true, closed: false } as PresenceSession;
     expect(presenceStatus(row, now)).toBe("Active");
     expect(presenceStatus({ ...row, visible: false }, now)).toBe("Background");
+    expect(presenceStatus({ ...row, last_active_at: null }, now)).toBe("Idle");
     expect(presenceStatus({ ...row, last_active_at: new Date(now - 60000).toISOString() }, now)).toBe("Idle");
     expect(presenceStatus(row, now + 45000)).toBe("Offline");
     expect(presenceStatus({ ...row, closed: true }, now)).toBe("Offline");
@@ -66,6 +67,7 @@ describe("user online summary", () => {
 
   it.each([
     ["background", { visible: false }],
+    ["uninteracted", { last_active_at: null }],
     ["idle", { last_active_at: new Date(now - 60000).toISOString() }],
     ["closed", { closed: true }],
     ["stale", { last_seen_at: new Date(now - 45000).toISOString() }],
@@ -84,6 +86,11 @@ describe("user online summary", () => {
     const older = { ...session, closed: true, last_seen_at: new Date(now - 30000).toISOString() };
     const background = { ...session, session_id: "tab-2", visible: false, last_active_at: new Date(now - 3600000).toISOString() };
     expect(summarizePresence([background, older], now)[0]).toMatchObject({ isOnline: false, last_active_at: older.last_active_at });
+  });
+  it("does not replace a known interaction with a newly opened tab", () => {
+    const untouched = { ...session, session_id: "new-tab", last_active_at: null };
+    expect(summarizePresence([untouched], now)[0]).toMatchObject({ isOnline: false, last_active_at: null });
+    expect(summarizePresence([untouched, session], now)[0]).toMatchObject({ isOnline: true, last_active_at: session.last_active_at });
   });
 });
 

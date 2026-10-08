@@ -9,6 +9,7 @@ export const heartbeatSchema = z.object({
   visible: z.boolean(),
   closed: z.boolean(),
   idleSeconds: z.number().int().min(0).max(86400),
+  interactionAt: z.string().datetime({ offset: true }).nullable().optional(),
 }).strict();
 
 function validIp(value: string | null | undefined): string | null {

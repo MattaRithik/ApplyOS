@@ -1,5 +1,6 @@
 "use client";
 import { PageUsage } from "./page-usage";
+import { PresenceHistory } from "./presence-history";
 import { useEffect, useState } from "react";
 import { HEARTBEAT_MS, summarizePresence, type PresenceSession } from "@/lib/presence/shared";
 
@@ -59,13 +60,14 @@ export function PresenceSection() {
                 <td className="p-3">{user.profile_name}</td>
                 <td className="whitespace-nowrap p-3">
                   {user.isOnline ? <span className="inline-flex items-center gap-2 text-emerald-500"><span className="size-2 rounded-full bg-emerald-500" />Online now</span> :
-                    <span className="text-muted-foreground">{new Date(user.last_active_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</span>}
+                    <span className="text-muted-foreground">{user.last_active_at ? new Date(user.last_active_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "No interaction recorded"}</span>}
                 </td>
               </tr>
             ))}</tbody>
           </table>
         </div>
       )}
+      <PresenceHistory />
       <PageUsage />
     </div>
   );

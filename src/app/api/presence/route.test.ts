@@ -8,7 +8,7 @@ import { AdminAuthError } from "@/lib/admin/roles";
 import { POST } from "./route";
 import { GET } from "../admin/presence/route";
 const body = { sessionId: "00000000-0000-4000-8000-000000000001", page: "dashboard", visible: true, closed: false, idleSeconds: 0 };
-const request = (value = body, origin = "https://app.test") => new Request("https://app.test/api/presence", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(value) });
+const request = (value: object = body, origin = "https://app.test") => new Request("https://app.test/api/presence", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(value) });
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({ id: "actual-user", email: "actual@example.com" });
@@ -20,6 +20,20 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("authenticated heartbeat", () => {
+  it("does not invent an interaction when the page loads", async () => {
+    expect((await POST(request({ ...body, interactionAt: null }))).status).toBe(204);
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ last_active_at: null }), expect.any(Object));
+  });
+  it("keeps the exact interaction timestamp across unchanged reports", async () => {
+    const interactionAt = new Date(Date.now() - 30000).toISOString();
+    await POST(request({ ...body, interactionAt, idleSeconds: 30 }));
+    await POST(request({ ...body, interactionAt, idleSeconds: 31 }));
+    expect(mocks.upsert.mock.calls.map(([row]) => row.last_active_at)).toEqual([interactionAt, interactionAt]);
+  });
+  it("rejects future interaction times before writing presence", async () => {
+    expect((await POST(request({ ...body, interactionAt: new Date(Date.now() + 60000).toISOString() }))).status).toBe(400);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
   it("does not record the configured admin, including requests from older tabs", async () => {
     vi.stubEnv("APP_OWNER_EMAIL", " ACTUAL@example.com ");
     expect((await POST(request())).status).toBe(204);

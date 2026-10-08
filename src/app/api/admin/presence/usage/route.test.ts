@@ -24,14 +24,15 @@ describe("owner page usage", () => {
   });
   it("excludes the owner before pagination and returns profile names and aggregate usage", async () => {
     const data = Array.from({ length: 101 }, (_, i) => ({ id: 200 - i, user_id: "dp", page: "applications" }));
-    const query = { select: vi.fn(), neq: vi.fn(), order: vi.fn(), limit: vi.fn(), lt: vi.fn(), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve) };
-    for (const fn of [query.select, query.neq, query.order, query.limit, query.lt]) fn.mockReturnValue(query);
+    const query = { select: vi.fn(), neq: vi.fn(), gt: vi.fn(), order: vi.fn(), limit: vi.fn(), lt: vi.fn(), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve) };
+    for (const fn of [query.select, query.neq, query.gt, query.order, query.limit, query.lt]) fn.mockReturnValue(query);
     mocks.from.mockImplementation((table) => table === "profiles" ? { select: () => ({ in: async () => ({ data: [{ id: "dp", full_name: "DP" }], error: null }) }) } : query);
     mocks.rpc.mockResolvedValue({ data: [{ user_id: "dp", page: "applications", active_seconds: 60, visible_seconds: 90, visits: 2 }], error: null });
     const response = await GET(request("?before=201"));
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(query.neq).toHaveBeenCalledWith("user_id", "owner");
+    expect(query.gt).toHaveBeenCalledWith("active_seconds", 0);
     expect(query.lt).toHaveBeenCalledWith("id", "201");
     expect(mocks.rpc).toHaveBeenCalledWith("page_usage_summary", { since_at: expect.any(String), excluded_user: "owner" });
     const result = await response.json();

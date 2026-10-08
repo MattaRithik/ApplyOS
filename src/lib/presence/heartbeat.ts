@@ -21,6 +21,15 @@ export async function recordHeartbeat(request: Request) {
       return NextResponse.json({ error: "Too many heartbeats." }, { status: 429, headers });
     }
     const now = Date.now();
+    // New clients send a stable timestamp only after genuine interaction.
+    // Keep the older idleSeconds contract until existing tabs have reloaded.
+    const interactionAt = parsed.data.interactionAt;
+    if (interactionAt && Date.parse(interactionAt) > now + 5000) {
+      return NextResponse.json({ error: "Invalid interaction time." }, { status: 400, headers });
+    }
+    const lastActiveAt = interactionAt === undefined
+      ? new Date(now - parsed.data.idleSeconds * 1000).toISOString()
+      : interactionAt === null ? null : new Date(Math.min(now, Date.parse(interactionAt))).toISOString();
     const { error } = await createServiceRoleClient().from("user_presence").upsert({
       user_id: user.id,
       email: user.email ?? null,
@@ -29,7 +38,7 @@ export async function recordHeartbeat(request: Request) {
       visible: parsed.data.visible,
       closed: parsed.data.closed,
       last_seen_at: new Date(now).toISOString(),
-      last_active_at: new Date(now - parsed.data.idleSeconds * 1000).toISOString(),
+      last_active_at: lastActiveAt,
       ...connectionDetails(request),
     }, { onConflict: "user_id,session_id" });
     if (error) throw new Error("Presence write failed.");

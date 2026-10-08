@@ -1,11 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { HEARTBEAT_MS } from "@/lib/presence/shared";
 
 interface ActivityEvent {
-  id: number;
+  id: string;
   profile_name: string;
-  user_id: string;
-  page: string;
   status: string;
   recorded_at: string;
 }
@@ -16,7 +15,9 @@ export function PresenceHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef<AbortController | null>(null);
-  const load = useCallback(async (before: string | null = null) => {
+  const pausedRef = useRef(false);
+  const load = useCallback(async (before: string | null = null, automatic = false) => {
+    if (automatic && (pausedRef.current || document.visibilityState !== "visible" || requestRef.current)) return;
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -25,43 +26,43 @@ export function PresenceHistory() {
         cache: "no-store", signal: controller.signal,
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Unable to load activity history.");
+      if (!response.ok) throw new Error(result.error || "Unable to load activity.");
       if (controller.signal.aborted) return;
       setError(null);
       setEvents((previous) => before ? [...previous, ...result.events] : result.events);
       setCursor(result.nextCursor);
     } catch (err) {
-      if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Unable to load activity history.");
+      if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Unable to load activity.");
     } finally {
       if (!controller.signal.aborted) setLoading(false);
+      if (requestRef.current === controller) requestRef.current = null;
     }
   }, []);
   useEffect(() => {
-    // State updates in load follow the asynchronous history request.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- state follows an asynchronous request
     void load();
-    return () => requestRef.current?.abort();
+    const timer = window.setInterval(() => { void load(null, true); }, HEARTBEAT_MS);
+    return () => { requestRef.current?.abort(); clearInterval(timer); };
   }, [load]);
   return <div className="space-y-3 border-t border-border/50 pt-5">
     <div className="flex items-center justify-between gap-3">
-      <h3 className="text-sm font-semibold">Activity history</h3>
-      <button type="button" className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => { setLoading(true); setError(null); void load(); }}>Refresh history</button>
+      <h3 className="text-sm font-semibold">Recent activity</h3>
+      <button type="button" className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => { pausedRef.current = false; setLoading(true); void load(); }}>Refresh</button>
     </div>
-    <p className="text-xs text-muted-foreground">Recorded page changes, tab status changes, resumed connections, and saved feature actions are retained without an automatic time limit. Times show when the server received each report. History starts when tracking was enabled; previously deleted records cannot be recovered. Feature actions describe successful saved changes and generated exports; their page column names the feature, not necessarily the page open at the time. Typed text, individual clicks, failed logins, and application errors are not captured.</p>
+    <p className="text-xs text-muted-foreground">Saved changes, successful parses, and download requests.</p>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {events.length > 0 && <div className="overflow-x-auto rounded-xl border border-border/50">
       <table className="w-full text-left text-xs">
-        <thead className="bg-muted/40"><tr>{["Reported at", "Profile", "Page", "Status / action"].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
+        <thead className="bg-muted/40"><tr>{["User", "Activity", "When"].map((label) => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead>
         <tbody>{events.map((event) => <tr key={event.id} className="border-t border-border/40">
-          <td className="whitespace-nowrap p-3">{new Date(event.recorded_at).toLocaleString()}</td>
           <td className="p-3">{event.profile_name}</td>
-          <td className="p-3">{event.page}</td>
           <td className="p-3">{event.status}</td>
+          <td className="whitespace-nowrap p-3">{new Date(event.recorded_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
         </tr>)}</tbody>
       </table>
     </div>}
-    {loading && <p className="text-xs text-muted-foreground">Loading history…</p>}
-    {!loading && !error && events.length === 0 && <p className="text-xs text-muted-foreground">No activity history recorded yet.</p>}
-    {cursor && <button type="button" className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => { setLoading(true); setError(null); void load(cursor); }}>Load older activity</button>}
+    {loading && <p className="text-xs text-muted-foreground">Loading activity…</p>}
+    {!loading && !error && events.length === 0 && <p className="text-xs text-muted-foreground">No saved activity recorded yet.</p>}
+    {cursor && <button type="button" className="text-xs underline disabled:opacity-50" disabled={loading} onClick={() => { pausedRef.current = true; setLoading(true); void load(cursor); }}>Load older activity</button>}
   </div>;
 }
