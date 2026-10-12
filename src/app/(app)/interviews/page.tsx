@@ -31,7 +31,9 @@ export default async function InterviewsPage() {
     <div className="space-y-5 py-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Interviews</h1>
-        <p className="text-sm text-muted-foreground">{rounds.length} rounds across all applications</p>
+        <p className="text-sm text-muted-foreground">
+          {rounds.length} rounds across all applications
+        </p>
       </div>
       <InterviewsList rounds={rounds as never} />
     </div>

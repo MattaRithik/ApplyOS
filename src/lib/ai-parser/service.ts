@@ -22,9 +22,10 @@ import { runDeterministicPass, type DeterministicPartial } from "@/lib/ai-parser
 // (metadata.overallConfidence) remains in the response as UI-facing
 // metadata only — it must never trigger a second provider call.
 const configuredModel = process.env.AI_PARSER_MODEL?.trim();
-const DEFAULT_MODEL = configuredModel && /^gpt-5-(mini|nano)(?:-\d{4}-\d{2}-\d{2})?$/.test(configuredModel)
-  ? configuredModel
-  : "gpt-5-mini";
+const DEFAULT_MODEL =
+  configuredModel && /^gpt-5-(mini|nano)(?:-\d{4}-\d{2}-\d{2})?$/.test(configuredModel)
+    ? configuredModel
+    : "gpt-5-mini";
 // GPT-5-family models bill hidden "reasoning" tokens as output tokens and
 // spend real latency on them. This is a pure single-pass extraction task
 // (read text, fill a schema) with no multi-step reasoning to do, so the
@@ -32,7 +33,10 @@ const DEFAULT_MODEL = configuredModel && /^gpt-5-(mini|nano)(?:-\d{4}-\d{2}-\d{2
 // latency substantially with no observed accuracy loss on extraction tasks.
 const configuredEffort = process.env.AI_PARSER_REASONING_EFFORT?.trim();
 const REASONING_EFFORT: "minimal" | "low" | "medium" | "high" =
-  configuredEffort === "minimal" || configuredEffort === "low" || configuredEffort === "medium" || configuredEffort === "high"
+  configuredEffort === "minimal" ||
+  configuredEffort === "low" ||
+  configuredEffort === "medium" ||
+  configuredEffort === "high"
     ? configuredEffort
     : "low";
 // At most this many EXTRA attempts (beyond the first) against the same
@@ -41,7 +45,9 @@ const REASONING_EFFORT: "minimal" | "low" | "medium" | "high" =
 // errors, which are handled (and never reach this module) before a provider
 // call is ever made.
 const configuredRetries = Number(process.env.AI_PARSER_MAX_RETRIES ?? 1);
-const MAX_RETRIES = Number.isInteger(configuredRetries) ? Math.max(0, Math.min(configuredRetries, 1)) : 1;
+const MAX_RETRIES = Number.isInteger(configuredRetries)
+  ? Math.max(0, Math.min(configuredRetries, 1))
+  : 1;
 
 interface AttemptUsage {
   inputTokens: number;
@@ -93,7 +99,11 @@ interface ModelCallResult {
   totalTokens: number;
 }
 
-async function callModel(model: string, systemPrompt: string, userPrompt: string): Promise<ModelCallResult> {
+async function callModel(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<ModelCallResult> {
   const client = getOpenAIClient();
 
   let response;
@@ -105,6 +115,7 @@ async function callModel(model: string, systemPrompt: string, userPrompt: string
         { role: "user", content: userPrompt },
       ],
       reasoning: { effort: REASONING_EFFORT },
+      max_output_tokens: 12_000,
       text: {
         format: {
           type: "json_schema",
@@ -116,16 +127,20 @@ async function callModel(model: string, systemPrompt: string, userPrompt: string
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown provider error";
-    // Network/timeout errors and 5xx are worth retrying with the fallback
-    // model; 4xx (bad request, auth) are not — those indicate a request
-    // shape problem that will fail identically on the fallback model too.
+    // Retry transient failures with the same model. A 4xx indicates a
+    // request or authorization problem that will fail again unchanged.
     const status = (err as { status?: number })?.status;
     const retryable = typeof status !== "number" || status >= 500;
     throw new ParserProviderError(message, retryable);
   }
 
   const rawUsage = response.usage as
-    | { input_tokens?: number; output_tokens?: number; total_tokens?: number; input_tokens_details?: { cached_tokens?: number } }
+    | {
+        input_tokens?: number;
+        output_tokens?: number;
+        total_tokens?: number;
+        input_tokens_details?: { cached_tokens?: number };
+      }
     | undefined;
   const attemptUsage: AttemptUsage = {
     inputTokens: rawUsage?.input_tokens ?? 0,
@@ -147,7 +162,10 @@ async function callModel(model: string, systemPrompt: string, userPrompt: string
 
   const validated = rawAiJobParseSchema.safeParse(parsedJson);
   if (!validated.success) {
-    throw new ParserUnusableResultError(`Model ${model} returned a response that failed schema validation.`, attemptUsage);
+    throw new ParserUnusableResultError(
+      `Model ${model} returned a response that failed schema validation.`,
+      attemptUsage,
+    );
   }
 
   const usage = rawUsage;
@@ -162,25 +180,36 @@ async function callModel(model: string, systemPrompt: string, userPrompt: string
 }
 
 /** Overlays deterministic values onto the AI-extracted groups — deterministic "explicit" values outrank AI "explicit" values. */
-function mergeDeterministic(raw: RawAiJobParse, deterministic: DeterministicPartial): RawAiJobParse {
+function mergeDeterministic(
+  raw: RawAiJobParse,
+  deterministic: DeterministicPartial,
+): RawAiJobParse {
   const merged: RawAiJobParse = structuredClone(raw);
   if (deterministic.identity) {
-    if (deterministic.identity.requisitionId != null) merged.identity.requisitionId = deterministic.identity.requisitionId;
-    if (deterministic.identity.recruiterEmail != null) merged.identity.recruiterEmail = deterministic.identity.recruiterEmail;
-    if (deterministic.identity.sourcePlatform != null) merged.identity.sourcePlatform = deterministic.identity.sourcePlatform;
+    if (deterministic.identity.requisitionId != null)
+      merged.identity.requisitionId = deterministic.identity.requisitionId;
+    if (deterministic.identity.recruiterEmail != null)
+      merged.identity.recruiterEmail = deterministic.identity.recruiterEmail;
+    if (deterministic.identity.sourcePlatform != null)
+      merged.identity.sourcePlatform = deterministic.identity.sourcePlatform;
   }
   if (deterministic.location?.workplaceType != null) {
     merged.location.workplaceType = deterministic.location.workplaceType;
   }
   if (deterministic.roleContent) {
-    if (deterministic.roleContent.applicationDeadline != null) merged.roleContent.applicationDeadline = deterministic.roleContent.applicationDeadline;
-    if (deterministic.roleContent.postingDate != null) merged.roleContent.postingDate = deterministic.roleContent.postingDate;
+    if (deterministic.roleContent.applicationDeadline != null)
+      merged.roleContent.applicationDeadline = deterministic.roleContent.applicationDeadline;
+    if (deterministic.roleContent.postingDate != null)
+      merged.roleContent.postingDate = deterministic.roleContent.postingDate;
   }
   return merged;
 }
 
 /** Builds the field-path -> provenance-status map for every AI-facing field, then overlays deterministic entries on top. */
-function buildProvenance(merged: RawAiJobParse, deterministicProvenance: ProvenanceMap): ProvenanceMap {
+function buildProvenance(
+  merged: RawAiJobParse,
+  deterministicProvenance: ProvenanceMap,
+): ProvenanceMap {
   const provenance: ProvenanceMap = {};
   const inferredSet = new Set(merged.metadata.inferredFields ?? []);
   const uncertainSet = new Set(merged.metadata.uncertainFields ?? []);
@@ -227,7 +256,13 @@ export interface ParseJobDescriptionArgs {
 export interface ParseJobDescriptionOutcome {
   result: AiParserResult;
   usage: {
-    modelCalls: { model: string; inputTokens: number; outputTokens: number; cachedInputTokens: number; totalTokens: number }[];
+    modelCalls: {
+      model: string;
+      inputTokens: number;
+      outputTokens: number;
+      cachedInputTokens: number;
+      totalTokens: number;
+    }[];
     totalInputTokens: number;
     totalOutputTokens: number;
     totalCachedInputTokens: number;
@@ -248,7 +283,11 @@ export interface ParseJobDescriptionOutcome {
  * immediately with zero retries. `metadata.overallConfidence` is never
  * consulted here — it is UI-facing metadata only.
  */
-export async function parseJobDescription({ jobDescription, jobUrl, targetRoles = [] }: ParseJobDescriptionArgs): Promise<ParseJobDescriptionOutcome> {
+export async function parseJobDescription({
+  jobDescription,
+  jobUrl,
+  targetRoles = [],
+}: ParseJobDescriptionArgs): Promise<ParseJobDescriptionOutcome> {
   const startedAt = Date.now();
   const deterministic = runDeterministicPass(jobDescription, jobUrl);
 
@@ -265,7 +304,13 @@ export async function parseJobDescription({ jobDescription, jobUrl, targetRoles 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const call = await callModel(primaryModel, systemPrompt, userPrompt);
-      modelCalls.push({ model: primaryModel, inputTokens: call.inputTokens, outputTokens: call.outputTokens, cachedInputTokens: call.cachedInputTokens, totalTokens: call.totalTokens });
+      modelCalls.push({
+        model: primaryModel,
+        inputTokens: call.inputTokens,
+        outputTokens: call.outputTokens,
+        cachedInputTokens: call.cachedInputTokens,
+        totalTokens: call.totalTokens,
+      });
       finalCall = call;
       break;
     } catch (err) {
@@ -275,7 +320,13 @@ export async function parseJobDescription({ jobDescription, jobUrl, targetRoles 
       // billed) a response — record that real usage even though the
       // attempt failed, so cost tracking never silently drops it.
       if (err instanceof ParserUnusableResultError && err.usage) {
-        modelCalls.push({ model: primaryModel, inputTokens: err.usage.inputTokens, outputTokens: err.usage.outputTokens, cachedInputTokens: err.usage.cachedInputTokens, totalTokens: err.usage.totalTokens });
+        modelCalls.push({
+          model: primaryModel,
+          inputTokens: err.usage.inputTokens,
+          outputTokens: err.usage.outputTokens,
+          cachedInputTokens: err.usage.cachedInputTokens,
+          totalTokens: err.usage.totalTokens,
+        });
       }
       if (err instanceof ParserProviderError && !err.retryable) {
         throw err; // non-retryable (e.g. bad request/auth) — fails identically again, don't retry
@@ -289,16 +340,36 @@ export async function parseJobDescription({ jobDescription, jobUrl, targetRoles 
   }
 
   if (!finalCall) {
-    throw lastError instanceof ParserUnusableResultError
-      ? lastError
-      : new ParserUnusableResultError(lastError ? `Primary model failed: ${lastError.message}` : "No usable model result was produced.");
+    const billedUsage = modelCalls.length
+      ? {
+          inputTokens: modelCalls.reduce((sum, call) => sum + call.inputTokens, 0),
+          outputTokens: modelCalls.reduce((sum, call) => sum + call.outputTokens, 0),
+          cachedInputTokens: modelCalls.reduce((sum, call) => sum + call.cachedInputTokens, 0),
+          totalTokens: modelCalls.reduce((sum, call) => sum + call.totalTokens, 0),
+        }
+      : undefined;
+    throw new ParserUnusableResultError(
+      lastError?.message ?? "No usable model result was produced.",
+      billedUsage,
+    );
   }
 
-  const validated = validateExtraction(mergeDeterministic(finalCall.raw, deterministic.partial), deterministic.cleanedText);
+  const validated = validateExtraction(
+    mergeDeterministic(finalCall.raw, deterministic.partial),
+    deterministic.cleanedText,
+  );
   const merged = validated.result;
   // Never accept a fabricated target or assign priority without saved preferences.
-  if (!targetRoles.length || !merged.priorityMatch?.matchedTargetRole || !targetRoles.includes(merged.priorityMatch.matchedTargetRole)) merged.priorityMatch = null;
-  const provenance = buildProvenance(merged, { ...deterministic.provenance, ...validated.provenance });
+  if (
+    !targetRoles.length ||
+    !merged.priorityMatch?.matchedTargetRole ||
+    !targetRoles.includes(merged.priorityMatch.matchedTargetRole)
+  )
+    merged.priorityMatch = null;
+  const provenance = buildProvenance(merged, {
+    ...deterministic.provenance,
+    ...validated.provenance,
+  });
 
   const result: AiParserResult = {
     ...merged,

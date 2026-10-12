@@ -52,19 +52,31 @@ function getBucketName(): string {
 }
 
 /** Object keys are always server-generated — callers never choose the final path. */
-export function buildResumeObjectKey(userId: string, resumeId: string, safeFileName: string): string {
+export function buildResumeObjectKey(
+  userId: string,
+  resumeId: string,
+  safeFileName: string,
+): string {
   const uuid = crypto.randomUUID();
   return `users/${userId}/resumes/${resumeId}/uploads/${uuid}-${safeFileName}`;
 }
 
 /** Final objects never have a browser-minted PUT URL. */
-export function buildFinalResumeObjectKey(userId: string, resumeId: string, safeFileName: string): string {
+export function buildFinalResumeObjectKey(
+  userId: string,
+  resumeId: string,
+  safeFileName: string,
+): string {
   return `users/${userId}/resumes/${resumeId}/files/${crypto.randomUUID()}-${safeFileName}`;
 }
 
 /** Defense in depth for current-format keys; legacy keys remain DB-owned. */
 export function assertResumeObjectKeyOwnership(storageKey: string, userId: string): void {
-  if (storageKey.includes("..") || storageKey.includes("\\") || /[\u0000-\u001f\u007f]/.test(storageKey)) {
+  if (
+    storageKey.includes("..") ||
+    storageKey.includes("\\") ||
+    /[\u0000-\u001f\u007f]/.test(storageKey)
+  ) {
     throw new Error("Invalid storage key.");
   }
   if (storageKey.startsWith("users/") && !storageKey.startsWith(`users/${userId}/resumes/`)) {
@@ -75,7 +87,7 @@ export function assertResumeObjectKeyOwnership(storageKey: string, userId: strin
 export async function createResumeUploadUrl(
   storageKey: string,
   contentType: string,
-  contentLength: number
+  contentLength: number,
 ): Promise<{ url: string; expiresIn: number }> {
   const command = new PutObjectCommand({
     Bucket: getBucketName(),
@@ -91,7 +103,7 @@ export async function createResumeDownloadUrl(
   storageKey: string,
   downloadFileName?: string,
   disposition: "inline" | "attachment" = "attachment",
-  contentType = "application/octet-stream"
+  contentType = "application/octet-stream",
 ): Promise<{ url: string; expiresIn: number }> {
   const safeName = downloadFileName
     ?.normalize("NFKC")
@@ -100,12 +112,12 @@ export async function createResumeDownloadUrl(
   const command = new GetObjectCommand({
     Bucket: getBucketName(),
     Key: storageKey,
-    ResponseContentDisposition: safeName
-      ? `${disposition}; filename="${safeName}"`
-      : undefined,
+    ResponseContentDisposition: safeName ? `${disposition}; filename="${safeName}"` : undefined,
     ResponseContentType: contentType,
   });
-  const url = await getSignedUrl(getB2Client(), command, { expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS });
+  const url = await getSignedUrl(getB2Client(), command, {
+    expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS,
+  });
   return { url, expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS };
 }
 
@@ -120,15 +132,20 @@ export interface ResumeObjectInspection {
 
 export async function inspectResumeObject(
   storageKey: string,
-  extension: ResumeExtension
+  extension: ResumeExtension,
 ): Promise<ResumeObjectInspection> {
   try {
     const result = await getB2Client().send(
-      new HeadObjectCommand({ Bucket: getBucketName(), Key: storageKey })
+      new HeadObjectCommand({ Bucket: getBucketName(), Key: storageKey }),
     );
     if (!result.ETag) throw new Error("Storage did not return an object version.");
     const prefix = await getB2Client().send(
-      new GetObjectCommand({ Bucket: getBucketName(), Key: storageKey, Range: "bytes=0-7", IfMatch: result.ETag })
+      new GetObjectCommand({
+        Bucket: getBucketName(),
+        Key: storageKey,
+        Range: "bytes=0-7",
+        IfMatch: result.ETag,
+      }),
     );
     const bytes = prefix.Body ? await prefix.Body.transformToByteArray() : new Uint8Array();
     return {
@@ -155,7 +172,7 @@ export async function promoteResumeObject(
   sourceKey: string,
   destinationKey: string,
   sourceETag: string,
-  contentType: string
+  contentType: string,
 ): Promise<void> {
   await getB2Client().send(
     new CopyObjectCommand({
@@ -165,7 +182,7 @@ export async function promoteResumeObject(
       CopySourceIfMatch: sourceETag,
       ContentType: contentType,
       MetadataDirective: "REPLACE",
-    })
+    }),
   );
 }
 

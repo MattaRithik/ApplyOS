@@ -9,7 +9,12 @@ import {
   promoteResumeObject,
   type ResumeObjectInspection,
 } from "@/lib/storage/b2";
-import { canonicalMimeType, isAllowedResumeExtension, MAX_RESUME_FILE_SIZE_BYTES, sanitizeOriginalFileName } from "@/lib/utils/resume";
+import {
+  canonicalMimeType,
+  isAllowedResumeExtension,
+  MAX_RESUME_FILE_SIZE_BYTES,
+  sanitizeOriginalFileName,
+} from "@/lib/utils/resume";
 import { isSameOriginMutation } from "@/lib/security/request";
 import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 
@@ -25,7 +30,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Cross-site request rejected." }, { status: 403 });
   }
   const { id } = await params;
-  if (!uuidSchema.safeParse(id).success) return NextResponse.json({ error: "Invalid resume id." }, { status: 400 });
+  if (!uuidSchema.safeParse(id).success)
+    return NextResponse.json({ error: "Invalid resume id." }, { status: 400 });
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,7 +68,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     assertResumeObjectKeyOwnership(resume.storage_key, user.id);
     inspection = await inspectResumeObject(resume.storage_key, resume.file_extension);
   } catch {
-    return NextResponse.json({ error: "Storage validation is temporarily unavailable." }, { status: 502 });
+    return NextResponse.json(
+      { error: "Storage validation is temporarily unavailable." },
+      { status: 502 },
+    );
   }
   const expectedType = canonicalMimeType(resume.file_extension);
   const invalidObject =
@@ -76,24 +85,41 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (invalidObject) {
     if (inspection.exists) await deleteResumeObject(resume.storage_key).catch(() => undefined);
-    await serviceClient.from("resumes").update({ status: "failed" }).eq("id", id).eq("user_id", user.id);
+    await serviceClient
+      .from("resumes")
+      .update({ status: "failed" })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .eq("status", "uploading")
+      .eq("storage_key", resume.storage_key);
     return NextResponse.json(
-      { error: "The uploaded file failed validation. Please upload a valid PDF, DOC, or DOCX file." },
-      { status: 400 }
+      {
+        error: "The uploaded file failed validation. Please upload a valid PDF, DOC, or DOCX file.",
+      },
+      { status: 400 },
     );
   }
 
   const finalStorageKey = buildFinalResumeObjectKey(
     user.id,
     resume.id,
-    sanitizeOriginalFileName(resume.original_file_name)
+    sanitizeOriginalFileName(resume.original_file_name),
   );
   try {
     await promoteResumeObject(resume.storage_key, finalStorageKey, inspection.eTag!, expectedType);
   } catch {
     await deleteResumeObject(resume.storage_key).catch(() => undefined);
-    await serviceClient.from("resumes").update({ status: "failed" }).eq("id", id).eq("user_id", user.id);
-    return NextResponse.json({ error: "The upload changed during validation. Please upload it again." }, { status: 409 });
+    await serviceClient
+      .from("resumes")
+      .update({ status: "failed" })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .eq("status", "uploading")
+      .eq("storage_key", resume.storage_key);
+    return NextResponse.json(
+      { error: "The upload changed during validation. Please upload it again." },
+      { status: 409 },
+    );
   }
 
   const { data: updated, error: updateError } = await serviceClient
@@ -106,7 +132,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     })
     .eq("id", id)
     .eq("user_id", user.id)
-    .select("id, display_name, original_file_name, file_extension, file_type, file_size, status, uploaded_at, target_role, version_notes, resume_match_score, missing_keywords, is_archived, created_at, updated_at")
+    // Only one concurrent finalizer can promote this exact pending row.
+    .eq("status", "uploading")
+    .eq("storage_key", resume.storage_key)
+    .select(
+      "id, display_name, original_file_name, file_extension, file_type, file_size, status, uploaded_at, target_role, version_notes, resume_match_score, missing_keywords, is_archived, created_at, updated_at",
+    )
     .single();
 
   if (updateError) {

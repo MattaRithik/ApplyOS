@@ -56,11 +56,16 @@ export function isBanned(u: Pick<User, "id"> & { banned_until?: string | null })
   return new Date(u.banned_until).getTime() > Date.now();
 }
 
-export async function fetchAllAuthUsers(supabase: ReturnType<typeof createServiceRoleClient>): Promise<User[]> {
+export async function fetchAllAuthUsers(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+): Promise<User[]> {
   const all: User[] = [];
   let page = 1;
   while (all.length < MAX_AUTH_USERS_FETCH) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: AUTH_USERS_PAGE_SIZE });
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: AUTH_USERS_PAGE_SIZE,
+    });
     if (error || !data) throw new Error("Failed to enumerate auth users.");
     all.push(...data.users);
     if (data.users.length < AUTH_USERS_PAGE_SIZE) break;
@@ -74,20 +79,38 @@ export async function fetchAllAuthUsers(supabase: ReturnType<typeof createServic
  * ever receives the requested page of safe account metadata, never the
  * full user list or raw usage rows.
  */
-export async function listUsers(opts: { search?: string; page: number; pageSize: number }): Promise<AdminUserListPage> {
+export async function listUsers(opts: {
+  search?: string;
+  page: number;
+  pageSize: number;
+}): Promise<AdminUserListPage> {
   const supabase = createServiceRoleClient();
   const authUsers = await fetchAllAuthUsers(supabase);
   const ids = authUsers.map((u) => u.id);
-  if (ids.length === 0) return { users: [], total: 0, activeUsers: 0, disabledUsers: 0, page: 0, pageSize: opts.pageSize };
+  if (ids.length === 0)
+    return {
+      users: [],
+      total: 0,
+      activeUsers: 0,
+      disabledUsers: 0,
+      page: 0,
+      pageSize: opts.pageSize,
+    };
 
   const [profilesResult, rolesResult, entitlementsResult, usageResult] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", ids),
     supabase.from("app_user_roles").select("user_id, role, revoked_at").in("user_id", ids),
     supabase
       .from("ai_parser_entitlements")
-      .select("user_id, enabled, daily_request_limit, monthly_budget_usd, suspended_at, suspension_reason, expires_at")
+      .select(
+        "user_id, enabled, daily_request_limit, monthly_budget_usd, suspended_at, suspension_reason, expires_at",
+      )
       .in("user_id", ids),
-    supabase.from("ai_parser_usage").select("user_id, estimated_total_cost_usd").in("user_id", ids).gte("created_at", monthStartUtc()),
+    supabase
+      .from("ai_parser_usage")
+      .select("user_id, estimated_total_cost_usd")
+      .in("user_id", ids)
+      .gte("created_at", monthStartUtc()),
   ]);
   if (profilesResult.error || rolesResult.error || entitlementsResult.error || usageResult.error) {
     throw new Error("Failed to load administrative user metadata.");
@@ -97,7 +120,9 @@ export async function listUsers(opts: { search?: string; page: number; pageSize:
   const entitlements = entitlementsResult.data;
   const usageRows = usageResult.data;
 
-  const profileMap = new Map((profiles ?? []).map((p) => [p.id as string, p.full_name as string | null]));
+  const profileMap = new Map(
+    (profiles ?? []).map((p) => [p.id as string, p.full_name as string | null]),
+  );
   const roleMap = new Map((roles ?? []).map((r) => [r.user_id as string, r]));
   const entitlementMap = new Map((entitlements ?? []).map((e) => [e.user_id as string, e]));
 
@@ -129,7 +154,10 @@ export async function listUsers(opts: { search?: string; page: number; pageSize:
         suspensionReason: ent?.suspension_reason ?? null,
         expiresAt: ent?.expires_at ?? null,
         dailyRequestLimit: ent?.daily_request_limit ?? null,
-        monthlyBudgetUsd: ent?.monthly_budget_usd !== null && ent?.monthly_budget_usd !== undefined ? Number(ent.monthly_budget_usd) : null,
+        monthlyBudgetUsd:
+          ent?.monthly_budget_usd !== null && ent?.monthly_budget_usd !== undefined
+            ? Number(ent.monthly_budget_usd)
+            : null,
       },
       usageThisMonth: { requests: usage.requests, estimatedCostUsd: usage.costUsd },
     };
@@ -138,7 +166,9 @@ export async function listUsers(opts: { search?: string; page: number; pageSize:
   const search = opts.search?.trim().toLowerCase() ?? "";
   if (search) {
     summaries = summaries.filter(
-      (s) => (s.email ?? "").toLowerCase().includes(search) || (s.displayName ?? "").toLowerCase().includes(search)
+      (s) =>
+        (s.email ?? "").toLowerCase().includes(search) ||
+        (s.displayName ?? "").toLowerCase().includes(search),
     );
   }
 
@@ -150,7 +180,14 @@ export async function listUsers(opts: { search?: string; page: number; pageSize:
   const start = page * opts.pageSize;
   const pageItems = summaries.slice(start, start + opts.pageSize);
 
-  return { users: pageItems, total, activeUsers: total - disabledUsers, disabledUsers, page, pageSize: opts.pageSize };
+  return {
+    users: pageItems,
+    total,
+    activeUsers: total - disabledUsers,
+    disabledUsers,
+    page,
+    pageSize: opts.pageSize,
+  };
 }
 
 /** Full detail for one user — still only account/access/usage metadata, never application data. */
@@ -164,7 +201,11 @@ export async function getUserDetail(userId: string): Promise<AdminUserDetail | n
     supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
     getUserRole(userId),
     getEntitlement(userId),
-    supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId).gte("created_at", monthStartUtc()),
+    supabase
+      .from("ai_parser_usage")
+      .select("estimated_total_cost_usd")
+      .eq("user_id", userId)
+      .gte("created_at", monthStartUtc()),
     supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId),
   ]);
   if (profileResult.error || monthResult.error || allTimeResult.error) {
@@ -215,9 +256,13 @@ export async function getOverview(): Promise<AdminOverview> {
 
   const [entitlementsResult, monthResult] = await Promise.all([
     supabase.from("ai_parser_entitlements").select("enabled, suspended_at"),
-    supabase.from("ai_parser_usage").select("estimated_total_cost_usd").gte("created_at", monthStartUtc()),
+    supabase
+      .from("ai_parser_usage")
+      .select("estimated_total_cost_usd")
+      .gte("created_at", monthStartUtc()),
   ]);
-  if (entitlementsResult.error || monthResult.error) throw new Error("Failed to load administrative overview.");
+  if (entitlementsResult.error || monthResult.error)
+    throw new Error("Failed to load administrative overview.");
   const entitlements = entitlementsResult.data;
   const monthRows = monthResult.data;
 
@@ -231,6 +276,9 @@ export async function getOverview(): Promise<AdminOverview> {
     usersWithAiAccess,
     suspendedAiAccess,
     aiRequestsThisMonth: (monthRows ?? []).length,
-    aiCostThisMonthUsd: (monthRows ?? []).reduce((s, r) => s + Number(r.estimated_total_cost_usd ?? 0), 0),
+    aiCostThisMonthUsd: (monthRows ?? []).reduce(
+      (s, r) => s + Number(r.estimated_total_cost_usd ?? 0),
+      0,
+    ),
   };
 }

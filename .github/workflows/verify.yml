@@ -1,0 +1,34 @@
+name: Verify
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Build placeholders only. Tests use mocks or disposable PostgreSQL.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: build-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: build-service-placeholder
+      APP_OWNER_EMAIL: owner@example.test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=moderate
+      - run: npm run build
+      - run: npm run test:presence-runtime
+      - run: npm run db:bundle

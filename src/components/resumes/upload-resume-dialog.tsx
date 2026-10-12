@@ -95,12 +95,20 @@ export function UploadResumeDialog() {
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Display name</Label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Rithik_Google_Quant_Resume" />
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="e.g. Rithik_Google_Quant_Resume"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleUpload} disabled={uploading || !file}>{uploading ? "Uploading…" : "Upload"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpload} disabled={uploading || !file}>
+            {uploading ? "Uploading…" : "Upload"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

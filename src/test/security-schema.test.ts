@@ -3,19 +3,47 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const schema = readFileSync(resolve("supabase/schema.sql"), "utf8");
-const parserMigration = readFileSync(resolve("supabase/migrations/20260711120000_ai_parser_rewrite.sql"), "utf8");
-const adminMigration = readFileSync(resolve("supabase/migrations/20260712090000_admin_authorization.sql"), "utf8");
-const hardening = readFileSync(resolve("supabase/migrations/20260712150000_security_hardening.sql"), "utf8");
+const parserMigration = readFileSync(
+  resolve("supabase/migrations/20260711120000_ai_parser_rewrite.sql"),
+  "utf8",
+);
+const adminMigration = readFileSync(
+  resolve("supabase/migrations/20260712090000_admin_authorization.sql"),
+  "utf8",
+);
+const hardening = readFileSync(
+  resolve("supabase/migrations/20260712150000_security_hardening.sql"),
+  "utf8",
+);
 
 describe("database security invariants", () => {
   it("enables RLS for every private table in the canonical schema", () => {
     const tables = [
-      "profiles", "companies", "resumes", "applications", "application_status_history", "parsed_job_details",
-      "ai_parser_usage", "ai_parser_cache", "contacts", "application_contacts", "email_templates", "outreach",
-      "interview_rounds", "follow_ups", "notes", "exports", "international_student_profiles", "user_timelines",
-      "app_user_roles", "ai_parser_entitlements", "admin_audit_log", "ai_parser_attempt_details",
+      "profiles",
+      "companies",
+      "resumes",
+      "applications",
+      "application_status_history",
+      "parsed_job_details",
+      "ai_parser_usage",
+      "ai_parser_cache",
+      "contacts",
+      "application_contacts",
+      "email_templates",
+      "outreach",
+      "interview_rounds",
+      "follow_ups",
+      "notes",
+      "exports",
+      "international_student_profiles",
+      "user_timelines",
+      "app_user_roles",
+      "ai_parser_entitlements",
+      "admin_audit_log",
+      "ai_parser_attempt_details",
     ];
-    for (const table of tables) expect(schema).toContain(`alter table ${table} enable row level security;`);
+    for (const table of tables)
+      expect(schema).toContain(`alter table ${table} enable row level security;`);
     expect(`${schema}\n${hardening}`).not.toMatch(/using\s*\(\s*true\s*\)/i);
   });
 
@@ -23,12 +51,18 @@ describe("database security invariants", () => {
     expect(parserMigration.toLowerCase()).toContain("select-own only");
     expect(adminMigration).toContain("NO insert/update/delete");
     expect(adminMigration).toContain("RLS with zero policies denies all access");
-    expect(hardening).toContain("revoke insert, delete, update on table resumes from authenticated");
+    expect(hardening).toContain(
+      "revoke insert, delete, update on table resumes from authenticated",
+    );
   });
 
   it("keeps parser posting context service-only and tied to usage deletion", () => {
-    expect(schema).toContain("revoke all on table ai_parser_attempt_details from anon, authenticated;");
-    expect(schema).toContain("usage_id uuid primary key references ai_parser_usage(id) on delete cascade");
+    expect(schema).toContain(
+      "revoke all on table ai_parser_attempt_details from anon, authenticated;",
+    );
+    expect(schema).toContain(
+      "usage_id uuid primary key references ai_parser_usage(id) on delete cascade",
+    );
     expect(schema).not.toMatch(/create policy[^;]+on ai_parser_attempt_details/i);
   });
 

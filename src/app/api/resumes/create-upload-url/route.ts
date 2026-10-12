@@ -16,7 +16,12 @@ import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 
 const uploadRequestSchema = z
   .object({
-    fileName: z.string().trim().min(1).max(255).refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
+    fileName: z
+      .string()
+      .trim()
+      .min(1)
+      .max(255)
+      .refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
     fileType: z.string().trim().max(150),
     fileSize: z.number().int().positive().max(MAX_RESUME_FILE_SIZE_BYTES),
     displayName: z.string().trim().min(1).max(150).optional(),
@@ -49,7 +54,8 @@ export async function POST(request: Request) {
   const json = await readJsonBody(request, 8 * 1024);
   if (!json.ok) return NextResponse.json({ error: json.error }, { status: json.status });
   const parsedBody = uploadRequestSchema.safeParse(json.value);
-  if (!parsedBody.success) return NextResponse.json({ error: "Invalid upload request." }, { status: 400 });
+  if (!parsedBody.success)
+    return NextResponse.json({ error: "Invalid upload request." }, { status: 400 });
   const { fileName, fileType, fileSize, displayName: displayNameInput } = parsedBody.data;
 
   const extensionFromName = getFileExtension(fileName);
@@ -58,23 +64,34 @@ export async function POST(request: Request) {
   if (!extension) {
     return NextResponse.json(
       { error: "Only PDF, DOC, and DOCX files are allowed." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const canonicalType = canonicalMimeType(extension);
-  if (fileType && (!isAllowedResumeMimeType(fileType) || ALLOWED_RESUME_MIME_TYPES[fileType] !== extension)) {
-    return NextResponse.json({ error: "The file extension and MIME type do not match." }, { status: 400 });
+  if (
+    fileType &&
+    (!isAllowedResumeMimeType(fileType) || ALLOWED_RESUME_MIME_TYPES[fileType] !== extension)
+  ) {
+    return NextResponse.json(
+      { error: "The file extension and MIME type do not match." },
+      { status: 400 },
+    );
   }
 
   if (fileSize <= 0 || fileSize > MAX_RESUME_FILE_SIZE_BYTES) {
     return NextResponse.json(
       { error: `File must be under ${MAX_RESUME_FILE_SIZE_BYTES / (1024 * 1024)}MB.` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const displayName = displayNameInput || fileName.replace(/\.[^.]+$/, "").trim().slice(0, 150);
+  const displayName =
+    displayNameInput ||
+    fileName
+      .replace(/\.[^.]+$/, "")
+      .trim()
+      .slice(0, 150);
   if (!displayName) {
     return NextResponse.json({ error: "displayName is required" }, { status: 400 });
   }
@@ -90,7 +107,7 @@ export async function POST(request: Request) {
   if (duplicate) {
     return NextResponse.json(
       { error: "You already have a resume with this name." },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -118,6 +135,21 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError) {
+    if (insertError.code === "P0001") {
+      return NextResponse.json(
+        {
+          error:
+            "Resume storage limit reached (50 files or 100 MB). Delete unused resumes to upload another.",
+        },
+        { status: 409 },
+      );
+    }
+    if (insertError.code === "23505") {
+      return NextResponse.json(
+        { error: "You already have a resume with this name." },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Failed to reserve the upload." }, { status: 500 });
   }
 

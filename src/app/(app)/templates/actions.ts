@@ -4,15 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { TemplateCategory } from "@/lib/types/database";
 import { DEFAULT_TEMPLATES } from "@/lib/data/default-templates";
-import { assertAllowedKeys, uuidSchema } from "@/lib/validation/common";
-
-const TEMPLATE_INPUT_KEYS = ["name", "category", "subject", "body"] as const;
-
-function validateTemplate(input: Partial<TemplateInput>, requireFields = false) {
-  if ((requireFields || input.name !== undefined) && (!input.name?.trim() || input.name.length > 200)) throw new Error("Invalid template name.");
-  if ((requireFields || input.body !== undefined) && (input.body === undefined || input.body.length > 20_000)) throw new Error("Invalid template body.");
-  if (input.subject && input.subject.length > 500) throw new Error("Template subject is too long.");
-}
+import { uuidSchema } from "@/lib/validation/common";
+import { templateInputSchema, parseActionInput } from "@/lib/validation/forms";
 
 export interface TemplateInput {
   name: string;
@@ -22,13 +15,12 @@ export interface TemplateInput {
 }
 
 export async function createTemplate(input: TemplateInput) {
-  assertAllowedKeys(input, TEMPLATE_INPUT_KEYS);
+  input = parseActionInput(templateInputSchema, input);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
-  validateTemplate(input, true);
 
   const { data, error } = await supabase
     .from("email_templates")
@@ -42,14 +34,13 @@ export async function createTemplate(input: TemplateInput) {
 }
 
 export async function updateTemplate(id: string, input: Partial<TemplateInput>) {
-  assertAllowedKeys(input, TEMPLATE_INPUT_KEYS);
+  input = parseActionInput(templateInputSchema.partial(), input);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   uuidSchema.parse(id);
-  validateTemplate(input);
 
   const { data, error } = await supabase
     .from("email_templates")
@@ -72,7 +63,11 @@ export async function deleteTemplate(id: string) {
   if (!user) throw new Error("Not authenticated");
   uuidSchema.parse(id);
 
-  const { error } = await supabase.from("email_templates").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase
+    .from("email_templates")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/templates");
 }

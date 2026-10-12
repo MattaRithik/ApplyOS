@@ -7,7 +7,14 @@ import { GlassPanel } from "@/components/shared/glass-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatUsd } from "@/components/settings/admin/stat-card";
 import { UserDetailDialog } from "@/components/settings/admin/user-detail-dialog";
@@ -87,7 +94,11 @@ export function UsersSection() {
           onClick={() => fetchUsers(search, page)}
           disabled={loading}
         >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
         </Button>
       </form>
 
@@ -106,11 +117,17 @@ export function UsersSection() {
           </TableHeader>
           <TableBody>
             {(result?.users ?? []).map((u) => (
-              <TableRow key={u.id} className="cursor-pointer" onClick={() => setSelectedUserId(u.id)}>
+              <TableRow
+                key={u.id}
+                className="cursor-pointer"
+                onClick={() => setSelectedUserId(u.id)}
+              >
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-medium">{u.displayName || u.email || "—"}</span>
-                    {u.displayName && <span className="text-xs text-muted-foreground">{u.email}</span>}
+                    {u.displayName && (
+                      <span className="text-xs text-muted-foreground">{u.email}</span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -128,18 +145,26 @@ export function UsersSection() {
                   )}
                 </TableCell>
                 <TableCell className="tabular-nums">{u.usageThisMonth.requests}</TableCell>
-                <TableCell className="tabular-nums">{formatUsd(u.usageThisMonth.estimatedCostUsd)}</TableCell>
+                <TableCell className="tabular-nums">
+                  {formatUsd(u.usageThisMonth.estimatedCostUsd)}
+                </TableCell>
                 <TableCell>
                   {u.banned ? (
                     <span className="inline-flex items-center gap-1 text-xs text-destructive">
                       <ShieldAlert className="h-3 w-3" /> Disabled
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">{u.emailVerified ? "Verified" : "Unverified"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {u.emailVerified ? "Verified" : "Unverified"}
+                    </span>
                   )}
                 </TableCell>
                 <TableCell onClick={(event) => event.stopPropagation()}>
-                  <DeleteUserDialog user={u} disabled={loading} onDeleted={() => fetchUsers(search, page)} />
+                  <DeleteUserDialog
+                    user={u}
+                    disabled={loading}
+                    onDeleted={() => fetchUsers(search, page)}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -156,7 +181,8 @@ export function UsersSection() {
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Page {page + 1} of {totalPages} · {result?.total ?? 0} total · {result?.activeUsers ?? 0} active · {result?.disabledUsers ?? 0} disabled
+          Page {page + 1} of {totalPages} · {result?.total ?? 0} total · {result?.activeUsers ?? 0}{" "}
+          active · {result?.disabledUsers ?? 0} disabled
         </span>
         <div className="flex gap-1.5">
           <Button

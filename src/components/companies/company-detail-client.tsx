@@ -24,12 +24,25 @@ import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { CompanyFormDialog } from "@/components/companies/company-form-dialog";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { deleteCompany } from "@/app/(app)/companies/actions";
-import { RELATIONSHIP_TYPES, type Company, type Contact, type Outreach, type Note, type ApplicationStatus } from "@/lib/types/database";
+import {
+  RELATIONSHIP_TYPES,
+  type Company,
+  type Contact,
+  type Outreach,
+  type Note,
+  type ApplicationStatus,
+} from "@/lib/types/database";
 import { safeHttpUrl } from "@/lib/utils/url";
 
 interface Props {
   company: Company;
-  applications: { id: string; job_title: string; status: ApplicationStatus; date_applied: string | null; priority_score: number }[];
+  applications: {
+    id: string;
+    job_title: string;
+    status: ApplicationStatus;
+    date_applied: string | null;
+    priority_score: number;
+  }[];
   contacts: Contact[];
   outreach: Outreach[];
   notes: Note[];
@@ -46,14 +59,20 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
 
   const linkedRecordCount = applications.length + contacts.length + outreach.length;
 
-  const bestContact = contacts.find((c) => c.response_status === "meeting_scheduled" || c.response_status === "referred") ?? contacts[0];
+  const bestContact =
+    contacts.find(
+      (c) => c.response_status === "meeting_scheduled" || c.response_status === "referred",
+    ) ?? contacts[0];
   const websiteUrl = safeHttpUrl(company.website);
   const careersUrl = safeHttpUrl(company.careers_page_url);
   const linkedinUrl = safeHttpUrl(company.linkedin_url);
 
   return (
     <div className="space-y-5 py-6">
-      <Link href="/companies" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/companies"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to companies
       </Link>
 
@@ -78,8 +97,21 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <CompanyFormDialog company={company} trigger={<Button variant="outline" size="sm">Edit</Button>} onSaved={() => router.refresh()} />
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
+            <CompanyFormDialog
+              company={company}
+              trigger={
+                <Button variant="outline" size="sm">
+                  Edit
+                </Button>
+              }
+              onSaved={() => router.refresh()}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
             <ConfirmDeleteDialog
@@ -100,17 +132,32 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
 
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
           {websiteUrl && (
-            <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
+            <a
+              href={websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-primary hover:underline"
+            >
               <Globe className="h-3.5 w-3.5" /> Website
             </a>
           )}
           {careersUrl && (
-            <a href={careersUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
+            <a
+              href={careersUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-primary hover:underline"
+            >
               <Briefcase className="h-3.5 w-3.5" /> Careers page
             </a>
           )}
           {linkedinUrl && (
-            <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline">
+            <a
+              href={linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-primary hover:underline"
+            >
               <Users className="h-3.5 w-3.5" /> LinkedIn
             </a>
           )}
@@ -129,7 +176,8 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
       <div className="grid gap-5 lg:grid-cols-2">
         <GlassPanel className="p-5">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <Briefcase className="h-4 w-4 text-[var(--blue-accent)]" /> Applications ({applications.length})
+            <Briefcase className="h-4 w-4 text-[var(--blue-accent)]" /> Applications (
+            {applications.length})
           </h2>
           {applications.length === 0 ? (
             <p className="text-sm text-muted-foreground">No applications to this company yet.</p>
@@ -137,7 +185,10 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
             <ul className="space-y-2">
               {applications.map((a) => (
                 <li key={a.id}>
-                  <Link href={`/applications/${a.id}`} className="flex items-center justify-between rounded-lg border border-border/40 p-2.5 text-sm hover:bg-accent/40">
+                  <Link
+                    href={`/applications/${a.id}`}
+                    className="flex items-center justify-between rounded-lg border border-border/40 p-2.5 text-sm hover:bg-accent/40"
+                  >
                     <span className="truncate">{a.job_title}</span>
                     <StatusBadge status={a.status} />
                   </Link>
@@ -172,7 +223,8 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
 
         <GlassPanel className="p-5">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <Send className="h-4 w-4 text-[var(--emerald-accent)]" /> Outreach history ({outreach.length})
+            <Send className="h-4 w-4 text-[var(--emerald-accent)]" /> Outreach history (
+            {outreach.length})
           </h2>
           {outreach.length === 0 ? (
             <p className="text-sm text-muted-foreground">No outreach logged yet.</p>
@@ -182,7 +234,9 @@ export function CompanyDetailClient({ company, applications, contacts, outreach,
                 <li key={o.id} className="rounded-lg border border-border/40 p-2.5 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{o.person_name ?? "Unknown"}</span>
-                    <span className="text-[11px] text-muted-foreground">{format(new Date(o.date_sent), "MMM d, yyyy")}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {format(new Date(o.date_sent), "MMM d, yyyy")}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {o.outreach_type} · {o.response_received ? "Replied" : "No response yet"}

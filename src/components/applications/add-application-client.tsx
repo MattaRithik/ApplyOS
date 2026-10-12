@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { ApplicationForm, type ApplicationFormValues } from "@/components/applications/application-form";
+import {
+  ApplicationForm,
+  type ApplicationFormValues,
+} from "@/components/applications/application-form";
 import { AiParserLayout } from "@/components/applications/parser/ai-parser-layout";
 import { AiParserPanel } from "@/components/applications/parser/ai-parser-panel";
 import { createApplication, saveParsedJobDetails } from "@/app/(app)/applications/actions";
@@ -63,11 +66,23 @@ export function AddApplicationClient({
   React.useEffect(() => {
     // Initialize in the browser so today follows the user's timezone, not the server's.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client-local date initialization after hydration
-    setValues((current) => ({ ...current, date_applied: current.date_applied || format(new Date(), "yyyy-MM-dd") }));
+    setValues((current) => ({
+      ...current,
+      date_applied: current.date_applied || format(new Date(), "yyyy-MM-dd"),
+    }));
   }, []);
 
-  const handleApplyExtractedFields = (result: AiParserResult, accepted: Set<AcceptableFieldKey>) => {
-    setValues((prev) => applyParsedResultToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, result, accepted));
+  const handleApplyExtractedFields = (
+    result: AiParserResult,
+    accepted: Set<AcceptableFieldKey>,
+  ) => {
+    setValues((prev) =>
+      applyParsedResultToForm(
+        { ...prev, job_url: jobUrl, job_description: jobDescription },
+        result,
+        accepted,
+      ),
+    );
     setParserOpen(false);
   };
 
@@ -113,7 +128,13 @@ export function AddApplicationClient({
     <div>
       <GlassPanel className="p-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <ApplicationForm values={values} onChange={setValues} onPriorityChange={() => setPriorityEdited(true)} resumeOptions={resumeOptions} visaSponsorshipDropdown />
+          <ApplicationForm
+            values={values}
+            onChange={setValues}
+            onPriorityChange={() => setPriorityEdited(true)}
+            resumeOptions={resumeOptions}
+            visaSponsorshipDropdown
+          />
           <div className="flex items-center justify-end gap-2 border-t border-border/50 pt-4">
             <Button type="submit" disabled={submitting}>
               {submitting ? "Saving…" : "Save Application"}

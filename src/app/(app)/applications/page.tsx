@@ -20,7 +20,11 @@ export default async function ApplicationsPage() {
       .eq("user_id", user.id)
       .eq("is_archived", false)
       .order("created_at", { ascending: false }),
-    supabase.from("resumes").select("id, display_name").eq("user_id", user.id).eq("is_archived", false),
+    supabase
+      .from("resumes")
+      .select("id, display_name")
+      .eq("user_id", user.id)
+      .eq("is_archived", false),
   ]);
 
   if (!applications || applications.length === 0) {
@@ -42,7 +46,9 @@ export default async function ApplicationsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
-          <p className="text-sm text-muted-foreground">{applications.length} tracked applications</p>
+          <p className="text-sm text-muted-foreground">
+            {applications.length} tracked applications
+          </p>
         </div>
         <Button render={<Link href="/applications/add" />} className="gap-2">
           <Sparkles className="h-4 w-4" /> Add Application

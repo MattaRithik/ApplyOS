@@ -55,12 +55,21 @@ interface StatTileProps {
 const accentClasses: Record<NonNullable<StatTileProps["accent"]>, string> = {
   blue: "from-[var(--blue-accent)]/25 to-[var(--blue-accent)]/5 text-[var(--blue-accent)]",
   cyan: "from-[var(--cyan-accent)]/25 to-[var(--cyan-accent)]/5 text-[var(--cyan-accent)]",
-  emerald: "from-[var(--emerald-accent)]/25 to-[var(--emerald-accent)]/5 text-[var(--emerald-accent)]",
+  emerald:
+    "from-[var(--emerald-accent)]/25 to-[var(--emerald-accent)]/5 text-[var(--emerald-accent)]",
   amber: "from-[var(--amber-accent)]/25 to-[var(--amber-accent)]/5 text-[var(--amber-accent)]",
   silver: "from-[var(--silver-accent)]/25 to-[var(--silver-accent)]/5 text-[var(--silver-accent)]",
 };
 
-export function StatTile({ label, value, iconName, accent = "blue", hint, delay = 0, compact = false }: StatTileProps) {
+export function StatTile({
+  label,
+  value,
+  iconName,
+  accent = "blue",
+  hint,
+  delay = 0,
+  compact = false,
+}: StatTileProps) {
   const Icon = icons[iconName];
 
   return (
@@ -75,7 +84,7 @@ export function StatTile({ label, value, iconName, accent = "blue", hint, delay 
             className={cn(
               "flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br",
               compact ? "h-9 w-9" : "h-11 w-11",
-              accentClasses[accent]
+              accentClasses[accent],
             )}
           >
             <Icon className={compact ? "h-4 w-4" : "h-5 w-5"} />
@@ -84,8 +93,19 @@ export function StatTile({ label, value, iconName, accent = "blue", hint, delay 
         </div>
         <div className={cn("min-w-0", compact && "mt-2")}>
           {!compact && <p className="text-xl font-semibold tracking-tight tabular-nums">{value}</p>}
-          <p className={cn("text-muted-foreground", compact ? "text-[11px] leading-tight" : "truncate text-xs")}>{label}</p>
-          {hint && <p className={cn("text-[11px] text-muted-foreground/70", !compact && "truncate")}>{hint}</p>}
+          <p
+            className={cn(
+              "text-muted-foreground",
+              compact ? "text-[11px] leading-tight" : "truncate text-xs",
+            )}
+          >
+            {label}
+          </p>
+          {hint && (
+            <p className={cn("text-[11px] text-muted-foreground/70", !compact && "truncate")}>
+              {hint}
+            </p>
+          )}
         </div>
       </GlassPanel>
     </motion.div>

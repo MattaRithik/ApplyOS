@@ -4,12 +4,31 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAIParserAccess, ParserAuthError } from "@/lib/ai-parser/entitlement";
-import { parseRequestSchema, PARSER_SCHEMA_VERSION, PROMPT_VERSION, type AiParserResult } from "@/lib/ai-parser/schema";
-import { normalizeDescription, hashDescription, getCachedResult, writeCacheResult } from "@/lib/ai-parser/cache";
+import {
+  parseRequestSchema,
+  PARSER_SCHEMA_VERSION,
+  PROMPT_VERSION,
+  type AiParserResult,
+} from "@/lib/ai-parser/schema";
+import {
+  normalizeDescription,
+  hashDescription,
+  getCachedResult,
+  writeCacheResult,
+} from "@/lib/ai-parser/cache";
 import { checkMonthlyBudget } from "@/lib/ai-parser/budget";
-import { acquireParseSlot, finalizeUsageRow, getRateLimitConfig, type FinalizeUsagePatch } from "@/lib/ai-parser/rate-limit";
+import {
+  acquireParseSlot,
+  finalizeUsageRow,
+  getRateLimitConfig,
+  type FinalizeUsagePatch,
+} from "@/lib/ai-parser/rate-limit";
 import { calculateCost } from "@/lib/ai-parser/pricing";
-import { parseJobDescription, ParserProviderError, ParserUnusableResultError } from "@/lib/ai-parser/service";
+import {
+  parseJobDescription,
+  ParserProviderError,
+  ParserUnusableResultError,
+} from "@/lib/ai-parser/service";
 import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
 import { recordAttemptInput, recordAttemptResult } from "@/lib/ai-parser/attempt-details";
 
@@ -21,7 +40,9 @@ const ABSOLUTE_MAX_INPUT_CHARS = 100_000;
 
 function maxInputChars(): number {
   const raw = Number(process.env.AI_PARSER_MAX_INPUT_CHARS);
-  return Number.isInteger(raw) && raw > 0 ? Math.min(raw, ABSOLUTE_MAX_INPUT_CHARS) : DEFAULT_MAX_INPUT_CHARS;
+  return Number.isInteger(raw) && raw > 0
+    ? Math.min(raw, ABSOLUTE_MAX_INPUT_CHARS)
+    : DEFAULT_MAX_INPUT_CHARS;
 }
 
 export async function POST(request: Request) {
@@ -52,29 +73,59 @@ export async function POST(request: Request) {
 
   const meaningfulLength = jobDescription.trim().length;
   if (meaningfulLength < MIN_MEANINGFUL_CHARS) {
-    return NextResponse.json({ error: "That doesn't look like a full job description yet." }, { status: 400 });
+    return NextResponse.json(
+      { error: "That doesn't look like a full job description yet." },
+      { status: 400 },
+    );
   }
   const limit = maxInputChars();
   if (jobDescription.length > limit) {
-    return NextResponse.json({ error: `Job description is too long (max ${limit} characters).` }, { status: 413 });
+    return NextResponse.json(
+      { error: `Job description is too long (max ${limit} characters).` },
+      { status: 413 },
+    );
   }
 
   const { data: profile, error: profileError } = await ensureProfile(supabase, user);
-  if (profileError) return NextResponse.json({ error: "Could not load target roles. Please try again." }, { status: 503 });
+  if (profileError)
+    return NextResponse.json(
+      { error: "Could not load target roles. Please try again." },
+      { status: 503 },
+    );
   const targetRoles = parseTargetRoles(profile?.target_role).slice(0, 15);
 
   const budget = await checkMonthlyBudget(user.id, limits.monthlyBudgetUsd);
   if (!budget.ok) {
-    return NextResponse.json({ error: "The monthly AI parsing budget has been reached." }, { status: 429 });
+    return NextResponse.json(
+      { error: "The monthly AI parsing budget has been reached." },
+      { status: 429 },
+    );
   }
 
-  const slot = await acquireParseSlot(user.id, getRateLimitConfig(limits.dailyRequestLimit));
+  const slot = await acquireParseSlot(
+    user.id,
+    getRateLimitConfig(limits.dailyRequestLimit),
+    limits.monthlyBudgetUsd,
+  );
   if (!slot.ok) {
-    return NextResponse.json({ error: "Rate limit reached.", reason: slot.reason }, { status: 429 });
+    if (slot.reason === "unavailable")
+      return NextResponse.json(
+        { error: "AI parsing is temporarily unavailable." },
+        { status: 503 },
+      );
+    if (slot.reason === "access_denied")
+      return NextResponse.json(
+        { error: "AI parsing is not enabled for this account." },
+        { status: 403 },
+      );
+    return NextResponse.json(
+      { error: "Rate limit reached.", reason: slot.reason },
+      { status: 429 },
+    );
   }
   const usageRowId = slot.usageRowId;
   await recordAttemptInput(usageRowId, jobDescription, jobUrl).catch(() =>
-    console.error(`[ai-parser] request=${requestId} attempt_input_write_failed`)
+    console.error(`[ai-parser] request=${requestId} attempt_input_write_failed`),
   );
   const finalizeUsageSafely = async (patch: FinalizeUsagePatch) => {
     try {
@@ -92,7 +143,7 @@ export async function POST(request: Request) {
       const cached = await getCachedResult(supabase, user.id, descriptionHash);
       if (cached) {
         await recordAttemptResult(usageRowId, cached.result).catch(() =>
-          console.error(`[ai-parser] request=${requestId} attempt_result_write_failed`)
+          console.error(`[ai-parser] request=${requestId} attempt_result_write_failed`),
         );
         await finalizeUsageSafely({
           status: "cache_hit",
@@ -137,7 +188,10 @@ export async function POST(request: Request) {
           descriptionHash,
           requestId,
         });
-        return NextResponse.json({ error: "The AI provider is temporarily unavailable. Please try again." }, { status: 503 });
+        return NextResponse.json(
+          { error: "The AI provider is temporarily unavailable. Please try again." },
+          { status: 503 },
+        );
       }
       if (err instanceof ParserUnusableResultError) {
         console.error(`[ai-parser] request=${requestId} unusable_result`);
@@ -176,14 +230,17 @@ export async function POST(request: Request) {
               }
             : {}),
         });
-        return NextResponse.json({ error: "The AI parser couldn't produce a usable result for this posting." }, { status: 502 });
+        return NextResponse.json(
+          { error: "The AI parser couldn't produce a usable result for this posting." },
+          { status: 502 },
+        );
       }
       throw err;
     }
 
     const { result, usage } = outcome;
     await recordAttemptResult(usageRowId, result).catch(() =>
-      console.error(`[ai-parser] request=${requestId} attempt_result_write_failed`)
+      console.error(`[ai-parser] request=${requestId} attempt_result_write_failed`),
     );
     const cost = calculateCost({
       model: result.parseMeta.finalModel,
@@ -192,8 +249,8 @@ export async function POST(request: Request) {
       cachedInputTokens: usage.totalCachedInputTokens,
     });
 
-    await writeCacheResult(user.id, descriptionHash, result, result.parseMeta.finalModel).catch(() =>
-      console.error(`[ai-parser] request=${requestId} cache_write_failed`)
+    await writeCacheResult(user.id, descriptionHash, result, result.parseMeta.finalModel).catch(
+      () => console.error(`[ai-parser] request=${requestId} cache_write_failed`),
     );
 
     await finalizeUsageSafely({
@@ -228,7 +285,12 @@ export async function POST(request: Request) {
       fallbackUsed: boolean;
       parserVersion: string;
       descriptionHash: string;
-      usage: { inputTokens: number; outputTokens: number; totalTokens: number; estimatedCostUsd: number };
+      usage: {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+        estimatedCostUsd: number;
+      };
     } = {
       result,
       provenance: result.provenance,

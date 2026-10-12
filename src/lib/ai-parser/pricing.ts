@@ -61,11 +61,26 @@ export interface CostCalculationResult {
  * (usage.input_tokens_details.cached_tokens) — they must never be added on
  * top of input tokens, only priced differently within them.
  */
-export function calculateCost({ model, inputTokens, outputTokens, cachedInputTokens = 0 }: CostCalculationInput): CostCalculationResult {
-  const baseModel = model.startsWith("gpt-5-mini-") ? "gpt-5-mini" : model.startsWith("gpt-5-nano-") ? "gpt-5-nano" : model;
+export function calculateCost({
+  model,
+  inputTokens,
+  outputTokens,
+  cachedInputTokens = 0,
+}: CostCalculationInput): CostCalculationResult {
+  const baseModel = model.startsWith("gpt-5-mini-")
+    ? "gpt-5-mini"
+    : model.startsWith("gpt-5-nano-")
+      ? "gpt-5-nano"
+      : model;
   const pricing = PRICING_TABLE[baseModel] ?? null;
   if (!pricing) {
-    return { inputCostUsd: 0, cachedInputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0, pricing: null };
+    return {
+      inputCostUsd: 0,
+      cachedInputCostUsd: 0,
+      outputCostUsd: 0,
+      totalCostUsd: 0,
+      pricing: null,
+    };
   }
 
   const cachedTokens = Math.max(0, Math.min(cachedInputTokens, inputTokens));

@@ -53,18 +53,30 @@ function formatValue(value: unknown): string {
 }
 
 /** Dotted field paths that map directly onto a top-level ApplicationFormValues key (with optional value transform). */
-const DIRECT_MAP: Record<string, { formKey: keyof ApplicationFormValues; transform?: (v: unknown) => unknown }> = {
+const DIRECT_MAP: Record<
+  string,
+  { formKey: keyof ApplicationFormValues; transform?: (v: unknown) => unknown }
+> = {
   "identity.companyName": { formKey: "company_name" },
   "identity.jobTitle": { formKey: "job_title" },
   "identity.sourcePlatform": { formKey: "source" },
   "location.rawLocation": { formKey: "location" },
-  "location.workplaceType": { formKey: "work_mode", transform: (v) => WORKPLACE_TO_WORK_MODE[String(v)] ?? null },
-  "employment.employmentType": { formKey: "employment_type", transform: (v) => EMPLOYMENT_TYPE_MAP[String(v)] ?? null },
+  "location.workplaceType": {
+    formKey: "work_mode",
+    transform: (v) => WORKPLACE_TO_WORK_MODE[String(v)] ?? null,
+  },
+  "employment.employmentType": {
+    formKey: "employment_type",
+    transform: (v) => EMPLOYMENT_TYPE_MAP[String(v)] ?? null,
+  },
   "compensation.salaryMinimum": { formKey: "salary_min" },
   "compensation.salaryMaximum": { formKey: "salary_max" },
   "compensation.salaryCurrency": { formKey: "salary_currency" },
   "immigration.sponsorshipText": { formKey: "visa_sponsorship_notes" },
-  "immigration.visaSponsorship": { formKey: "visa_sponsorship_status", transform: (v) => VISA_SPONSORSHIP_MAP[String(v)] ?? "not_mentioned" },
+  "immigration.visaSponsorship": {
+    formKey: "visa_sponsorship_status",
+    transform: (v) => VISA_SPONSORSHIP_MAP[String(v)] ?? "not_mentioned",
+  },
   "skills.requiredSkills": { formKey: "required_skills" },
   "skills.preferredSkills": { formKey: "preferred_skills" },
   "skills.keywords": { formKey: "keywords" },
@@ -122,7 +134,10 @@ const NOTES_FIELDS: Record<string, NotesFieldSpec> = {
   "compensation.bonusMentioned": { label: "Bonus Mentioned", section: "compensation" },
   "compensation.equityMentioned": { label: "Equity Mentioned", section: "compensation" },
   "compensation.commissionMentioned": { label: "Commission Mentioned", section: "compensation" },
-  "compensation.compensationIsEstimated": { label: "Compensation Is Estimated", section: "compensation" },
+  "compensation.compensationIsEstimated": {
+    label: "Compensation Is Estimated",
+    section: "compensation",
+  },
   "compensation.compensationText": { label: "Compensation Notes", section: "compensation" },
   "skills.programmingLanguages": { label: "Programming Languages", section: "requirements" },
   "skills.frameworks": { label: "Frameworks", section: "requirements" },
@@ -136,32 +151,59 @@ const NOTES_FIELDS: Record<string, NotesFieldSpec> = {
   "skills.methodologies": { label: "Methodologies", section: "requirements" },
   "skills.domainKnowledge": { label: "Domain Knowledge", section: "requirements" },
   "skills.softSkills": { label: "Soft Skills", section: "requirements" },
-  "experienceEducation.minimumYearsExperience": { label: "Minimum Years Experience", section: "requirements" },
-  "experienceEducation.maximumYearsExperience": { label: "Maximum Years Experience", section: "requirements" },
+  "experienceEducation.minimumYearsExperience": {
+    label: "Minimum Years Experience",
+    section: "requirements",
+  },
+  "experienceEducation.maximumYearsExperience": {
+    label: "Maximum Years Experience",
+    section: "requirements",
+  },
   "experienceEducation.experienceText": { label: "Experience", section: "requirements" },
   "experienceEducation.educationLevel": { label: "Education Level", section: "requirements" },
   "experienceEducation.fieldsOfStudy": { label: "Fields of Study", section: "requirements" },
-  "experienceEducation.graduateDegreeRequired": { label: "Graduate Degree Required", section: "requirements" },
-  "experienceEducation.certificationsRequired": { label: "Certifications Required", section: "requirements" },
-  "experienceEducation.certificationsPreferred": { label: "Certifications Preferred", section: "requirements" },
+  "experienceEducation.graduateDegreeRequired": {
+    label: "Graduate Degree Required",
+    section: "requirements",
+  },
+  "experienceEducation.certificationsRequired": {
+    label: "Certifications Required",
+    section: "requirements",
+  },
+  "experienceEducation.certificationsPreferred": {
+    label: "Certifications Preferred",
+    section: "requirements",
+  },
   "roleContent.conciseSummary": { label: "Summary", section: "extra" },
   "roleContent.responsibilities": { label: "Responsibilities", section: "requirements" },
-  "roleContent.requiredQualifications": { label: "Required Qualifications", section: "requirements" },
-  "roleContent.preferredQualifications": { label: "Preferred Qualifications", section: "requirements" },
+  "roleContent.requiredQualifications": {
+    label: "Required Qualifications",
+    section: "requirements",
+  },
+  "roleContent.preferredQualifications": {
+    label: "Preferred Qualifications",
+    section: "requirements",
+  },
   "roleContent.benefits": { label: "Benefits", section: "benefits" },
   "roleContent.interviewProcess": { label: "Interview Process", section: "extra" },
   "roleContent.schedule": { label: "Schedule", section: "workArrangement" },
   "roleContent.shift": { label: "Shift", section: "workArrangement" },
-  "immigration.workAuthorizationRequirement": { label: "Work Authorization Requirement", section: "extra" },
+  "immigration.workAuthorizationRequirement": {
+    label: "Work Authorization Requirement",
+    section: "extra",
+  },
   "immigration.citizenshipRequirement": { label: "Citizenship Requirement", section: "extra" },
-  "immigration.securityClearanceRequirement": { label: "Security Clearance Requirement", section: "extra" },
+  "immigration.securityClearanceRequirement": {
+    label: "Security Clearance Requirement",
+    section: "extra",
+  },
   "immigration.exportControlRestriction": { label: "Export Control Restriction", section: "extra" },
   "immigration.backgroundCheckMentioned": { label: "Background Check Mentioned", section: "extra" },
 };
 
 /** Backward-compatible flat label lookup, kept for anything still reading `NOTES_LABELS`. */
 const NOTES_LABELS: Record<string, string> = Object.fromEntries(
-  Object.entries(NOTES_FIELDS).map(([path, spec]) => [path, spec.label])
+  Object.entries(NOTES_FIELDS).map(([path, spec]) => [path, spec.label]),
 );
 
 const DIRECT_LABELS: Record<string, string> = {
@@ -230,7 +272,11 @@ function isFormValueEmpty(value: unknown): boolean {
  *   - never a field that would overwrite a value already present in the
  *     current form (the user's own typed input always wins).
  */
-export function selectSafeFieldsToApply(result: AiParserResult, current: ApplicationFormValues, preservePriority = false): Set<AcceptableFieldKey> {
+export function selectSafeFieldsToApply(
+  result: AiParserResult,
+  current: ApplicationFormValues,
+  preservePriority = false,
+): Set<AcceptableFieldKey> {
   const safe = new Set<AcceptableFieldKey>();
 
   const isAcceptableStatus = (path: string, status: FieldProvenanceStatus | undefined): boolean => {
@@ -243,7 +289,8 @@ export function selectSafeFieldsToApply(result: AiParserResult, current: Applica
     const value = get(result, path);
     if (value === null || value === undefined) continue;
     if (!isAcceptableStatus(path, result.provenance[path]?.status)) continue;
-    if (!isFormValueEmpty((current as unknown as Record<string, unknown>)[direct.formKey])) continue;
+    if (!isFormValueEmpty((current as unknown as Record<string, unknown>)[direct.formKey]))
+      continue;
     safe.add(path);
   }
 
@@ -257,7 +304,10 @@ export function selectSafeFieldsToApply(result: AiParserResult, current: Applica
     safe.add(path);
   }
 
-  if (result.identity.recruiterEmail && result.provenance["identity.recruiterEmail"]?.status === "explicit") {
+  if (
+    result.identity.recruiterEmail &&
+    result.provenance["identity.recruiterEmail"]?.status === "explicit"
+  ) {
     safe.add(SYNTHETIC_RECRUITER_CONTACT_KEY);
   }
 
@@ -269,7 +319,12 @@ export function selectSafeFieldsToApply(result: AiParserResult, current: Applica
     safe.add(SYNTHETIC_DEADLINE_KEY);
   }
 
-  if (!preservePriority && result.priorityMatch?.score != null && (current.priority_score == null || current.priority_score === 50)) safe.add("priorityMatch.score");
+  if (
+    !preservePriority &&
+    result.priorityMatch?.score != null &&
+    (current.priority_score == null || current.priority_score === 50)
+  )
+    safe.add("priorityMatch.score");
 
   return safe;
 }
@@ -285,7 +340,13 @@ const SECTION_HEADINGS: Record<NotesSection, string> = {
   extra: "Extra Details",
 };
 
-const SECTION_ORDER: NotesSection[] = ["requirements", "benefits", "compensation", "workArrangement", "extra"];
+const SECTION_ORDER: NotesSection[] = [
+  "requirements",
+  "benefits",
+  "compensation",
+  "workArrangement",
+  "extra",
+];
 
 // The Notes field renders as plain pre-wrapped text (no Markdown parser in
 // the app) — an uppercase heading with clear spacing reads cleanly there,
@@ -311,7 +372,7 @@ function renderNotesSection(heading: string, lines: { label: string; value: unkn
 export function applyParsedResultToForm(
   current: ApplicationFormValues,
   result: AiParserResult,
-  acceptedKeys: Set<AcceptableFieldKey>
+  acceptedKeys: Set<AcceptableFieldKey>,
 ): ApplicationFormValues {
   const next: ApplicationFormValues = { ...current };
   const bySection: Record<NotesSection, { label: string; value: unknown }[]> = {
@@ -325,7 +386,8 @@ export function applyParsedResultToForm(
   for (const key of acceptedKeys) {
     if (key === SYNTHETIC_EMPLOYMENT_KEY) {
       const employmentType = EMPLOYMENT_TYPE_MAP[result.employment.employmentType];
-      if (employmentType && result.provenance["employment.employmentType"]?.status === "explicit") next.employment_type = employmentType;
+      if (employmentType && result.provenance["employment.employmentType"]?.status === "explicit")
+        next.employment_type = employmentType;
       continue;
     }
     if (key === "priorityMatch.score") {
@@ -343,7 +405,12 @@ export function applyParsedResultToForm(
       if (name || email) {
         next.hrContacts = [
           ...next.hrContacts,
-          { ...EMPTY_HR_CONTACT, name: name ?? "", email: email ?? "", relationship_type: "recruiter" },
+          {
+            ...EMPTY_HR_CONTACT,
+            name: name ?? "",
+            email: email ?? "",
+            relationship_type: "recruiter",
+          },
         ];
       }
       continue;
@@ -365,17 +432,25 @@ export function applyParsedResultToForm(
 
     const spec = NOTES_FIELDS[key];
     if (spec) {
-      bySection[spec.section].push({ label: spec.label.replace("Salary", compensationLabel(result.compensation.compensationText)), value });
+      bySection[spec.section].push({
+        label: spec.label.replace(
+          "Salary",
+          compensationLabel(result.compensation.compensationText),
+        ),
+        value,
+      });
     }
   }
 
   const sectionBlocks = SECTION_ORDER.filter((s) => bySection[s].length > 0).map((s) =>
-    renderNotesSection(SECTION_HEADINGS[s], bySection[s])
+    renderNotesSection(SECTION_HEADINGS[s], bySection[s]),
   );
 
   if (sectionBlocks.length > 0) {
     const parsedBlock = sectionBlocks.join("\n\n");
-    next.notes = [cleanApplicationNotes(current.notes ?? ""), parsedBlock].filter(Boolean).join("\n\n");
+    next.notes = [cleanApplicationNotes(current.notes ?? ""), parsedBlock]
+      .filter(Boolean)
+      .join("\n\n");
   }
 
   return next;

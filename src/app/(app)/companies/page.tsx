@@ -12,7 +12,11 @@ export default async function CompaniesPage() {
 
   const [{ data: companies }, { data: applications }] = await Promise.all([
     supabase.from("companies").select("*").eq("user_id", user.id).order("name"),
-    supabase.from("applications").select("company_id").eq("user_id", user.id).eq("is_archived", false),
+    supabase
+      .from("applications")
+      .select("company_id")
+      .eq("user_id", user.id)
+      .eq("is_archived", false),
   ]);
 
   const counts = new Map<string, number>();
@@ -20,7 +24,10 @@ export default async function CompaniesPage() {
     if (a.company_id) counts.set(a.company_id, (counts.get(a.company_id) ?? 0) + 1);
   });
 
-  const withCounts = (companies ?? []).map((c) => ({ ...c, application_count: counts.get(c.id) ?? 0 }));
+  const withCounts = (companies ?? []).map((c) => ({
+    ...c,
+    application_count: counts.get(c.id) ?? 0,
+  }));
 
   if (!companies || companies.length === 0) {
     return (

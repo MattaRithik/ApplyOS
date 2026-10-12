@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarClock, ListChecks, Building2, ArrowUpRight, Sparkles, MessageCircle } from "lucide-react";
+import { CalendarClock, ListChecks, Building2, ArrowUpRight, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { getTimelinesContext } from "@/lib/data/timelines";
-import { getJobDropsSummary } from "@/lib/data/job-drops";
-import { features } from "@/lib/features";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
-import { JobDropsStatsRow } from "@/components/job-drops/stats-row";
 import { ApplicationsOverTimeChart } from "@/components/dashboard/charts/applications-over-time-chart";
 import { StatusDistributionChart } from "@/components/dashboard/charts/status-distribution-chart";
 import { OutreachReplyChart } from "@/components/dashboard/charts/outreach-reply-chart";
@@ -27,26 +24,11 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [data, timelinesContext, { data: profile }, jobDropsSummary] = await Promise.all([
+  const [data, timelinesContext, { data: profile }] = await Promise.all([
     getDashboardData(supabase, user.id),
     getTimelinesContext(supabase, user.id),
     supabase.from("profiles").select("user_category").eq("id", user.id).maybeSingle(),
-    features.jobDrops ? getJobDropsSummary(supabase, user.id, user.email ?? null) : Promise.resolve(null),
   ]);
-
-  const jobDropsSection = jobDropsSummary && (
-    <GlassPanel className="p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <MessageCircle className="h-4 w-4 text-[var(--amber-accent)]" /> Job Drops
-        </h2>
-        <Link href="/job-drops" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
-          Open <ArrowUpRight className="h-3 w-3" />
-        </Link>
-      </div>
-      <JobDropsStatsRow summary={jobDropsSummary} />
-    </GlassPanel>
-  );
 
   const isInternational = profile?.user_category === "international_student_us";
 
@@ -91,7 +73,6 @@ export default async function DashboardPage() {
             actionHref="/applications/add"
           />
         </div>
-        {jobDropsSection}
         {timelinesSection}
       </div>
     );
@@ -109,15 +90,69 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        <StatTile label="Total Applications" value={data.totalApplications} iconName="briefcase" accent="blue" delay={0.0} />
-        <StatTile label="Active" value={data.activeApplications} iconName="flame" accent="cyan" delay={0.02} />
-        <StatTile label="Rejections" value={data.rejections} iconName="xCircle" accent="silver" delay={0.04} />
-        <StatTile label="Offers" value={data.offers} iconName="trophy" accent="emerald" delay={0.06} />
-        <StatTile label="Interviews Scheduled" value={data.interviewsScheduledCount} iconName="calendarClock" accent="amber" delay={0.08} />
-        <StatTile label="Follow-ups Due" value={data.followUpsDueCount} iconName="listChecks" accent="cyan" delay={0.1} />
-        <StatTile label="Cold Emails Sent" value={data.coldEmailsSent} iconName="send" accent="blue" delay={0.12} />
-        <StatTile label="Reply Rate" value={`${data.replyRate}%`} iconName="reply" accent="emerald" delay={0.14} />
-        <StatTile label="Applied This Week" value={data.applicationsThisWeek} iconName="trendingUp" accent="cyan" delay={0.16} />
+        <StatTile
+          label="Total Applications"
+          value={data.totalApplications}
+          iconName="briefcase"
+          accent="blue"
+          delay={0.0}
+        />
+        <StatTile
+          label="Active"
+          value={data.activeApplications}
+          iconName="flame"
+          accent="cyan"
+          delay={0.02}
+        />
+        <StatTile
+          label="Rejections"
+          value={data.rejections}
+          iconName="xCircle"
+          accent="silver"
+          delay={0.04}
+        />
+        <StatTile
+          label="Offers"
+          value={data.offers}
+          iconName="trophy"
+          accent="emerald"
+          delay={0.06}
+        />
+        <StatTile
+          label="Interviews Scheduled"
+          value={data.interviewsScheduledCount}
+          iconName="calendarClock"
+          accent="amber"
+          delay={0.08}
+        />
+        <StatTile
+          label="Follow-ups Due"
+          value={data.followUpsDueCount}
+          iconName="listChecks"
+          accent="cyan"
+          delay={0.1}
+        />
+        <StatTile
+          label="Cold Emails Sent"
+          value={data.coldEmailsSent}
+          iconName="send"
+          accent="blue"
+          delay={0.12}
+        />
+        <StatTile
+          label="Reply Rate"
+          value={`${data.replyRate}%`}
+          iconName="reply"
+          accent="emerald"
+          delay={0.14}
+        />
+        <StatTile
+          label="Applied This Week"
+          value={data.applicationsThisWeek}
+          iconName="trendingUp"
+          accent="cyan"
+          delay={0.16}
+        />
         <StatTile
           label="Avg Response Time"
           value={data.avgResponseTimeDays !== null ? `${data.avgResponseTimeDays}d` : "—"}
@@ -126,8 +161,6 @@ export default async function DashboardPage() {
           delay={0.18}
         />
       </div>
-
-      {jobDropsSection}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <GlassPanel className="p-5 lg:col-span-2">
@@ -188,7 +221,10 @@ export default async function DashboardPage() {
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <CalendarClock className="h-4 w-4 text-[var(--amber-accent)]" /> Upcoming interviews
             </h2>
-            <Link href="/interviews" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+            <Link
+              href="/interviews"
+              className="flex items-center gap-0.5 text-xs text-primary hover:underline"
+            >
               View all <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
@@ -197,10 +233,12 @@ export default async function DashboardPage() {
               {data.upcomingInterviews.map((i) => (
                 <li key={i.id} className="text-sm">
                   <p className="truncate font-medium">
-                    {i.application?.job_title} <span className="text-muted-foreground">· {i.application?.company_name}</span>
+                    {i.application?.job_title}{" "}
+                    <span className="text-muted-foreground">· {i.application?.company_name}</span>
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {i.round_name} · {i.scheduled_at ? format(new Date(i.scheduled_at), "MMM d, h:mm a") : "TBD"}
+                    {i.round_name} ·{" "}
+                    {i.scheduled_at ? format(new Date(i.scheduled_at), "MMM d, h:mm a") : "TBD"}
                   </p>
                 </li>
               ))}
@@ -215,7 +253,10 @@ export default async function DashboardPage() {
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <ListChecks className="h-4 w-4 text-destructive" /> Overdue follow-ups
             </h2>
-            <Link href="/follow-ups" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+            <Link
+              href="/follow-ups"
+              className="flex items-center gap-0.5 text-xs text-primary hover:underline"
+            >
               View all <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
@@ -224,7 +265,9 @@ export default async function DashboardPage() {
               {data.overdueFollowUps.map((f) => (
                 <li key={f.id} className="flex items-center justify-between text-sm">
                   <span className="truncate">{f.title}</span>
-                  <span className="text-xs text-destructive">{format(new Date(f.due_date), "MMM d")}</span>
+                  <span className="text-xs text-destructive">
+                    {format(new Date(f.due_date), "MMM d")}
+                  </span>
                 </li>
               ))}
             </ul>

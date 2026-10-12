@@ -34,7 +34,8 @@ function isOwnerEmailMatch(user: User): boolean {
  * Missing/null verification fields fail closed.
  */
 function isEmailVerified(user: User): boolean {
-  const emailConfirmedAt = (user as unknown as { email_confirmed_at?: string | null }).email_confirmed_at;
+  const emailConfirmedAt = (user as unknown as { email_confirmed_at?: string | null })
+    .email_confirmed_at;
   const confirmedAt = (user as unknown as { confirmed_at?: string | null }).confirmed_at;
   const verifiedAt = emailConfirmedAt !== undefined ? emailConfirmedAt : confirmedAt;
   return typeof verifiedAt === "string" && verifiedAt.length > 0;
@@ -91,7 +92,8 @@ export async function ensureOwnerBootstrap(user: User): Promise<void> {
     .select("enabled, suspended_at")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (entitlementLookupError) throw new Error("Failed to verify owner entitlement bootstrap state.");
+  if (entitlementLookupError)
+    throw new Error("Failed to verify owner entitlement bootstrap state.");
 
   if (!existingEntitlement || !existingEntitlement.enabled || existingEntitlement.suspended_at) {
     const { error } = await supabase.from("ai_parser_entitlements").upsert({
@@ -156,6 +158,7 @@ export async function requirePrimaryOwner(supabase: SupabaseClient): Promise<Use
     throw new AdminAuthError("Owner access required.", 403);
   }
   await ensureOwnerBootstrap(user).catch(() => {});
-  if (await getUserRole(user.id) !== "owner") throw new AdminAuthError("Owner access required.", 403);
+  if ((await getUserRole(user.id)) !== "owner")
+    throw new AdminAuthError("Owner access required.", 403);
   return user;
 }

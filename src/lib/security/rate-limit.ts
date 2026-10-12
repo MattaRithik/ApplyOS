@@ -16,7 +16,7 @@ export async function consumeApiRateLimit(
   userId: string,
   action: ApiRateLimitAction,
   windowSeconds: number,
-  maxCount: number
+  maxCount: number,
 ): Promise<boolean> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase.rpc("try_consume_api_rate_limit", {

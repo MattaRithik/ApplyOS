@@ -19,9 +19,22 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
-import { APPLICATION_STATUSES, type ApplicationStatus, type InterviewRound, type Note, type ApplicationStatusHistory, type ParsedJobDetails } from "@/lib/types/database";
+import {
+  APPLICATION_STATUSES,
+  type ApplicationStatus,
+  type InterviewRound,
+  type Note,
+  type ApplicationStatusHistory,
+  type ParsedJobDetails,
+} from "@/lib/types/database";
 import { deleteApplication, updateApplicationStatus } from "@/app/(app)/applications/actions";
 import { EditApplicationDialog } from "@/components/applications/detail/edit-application-dialog";
 import { InterviewRoundsSection } from "@/components/applications/detail/interview-rounds-section";
@@ -46,7 +59,15 @@ interface Props {
   parsedDetailsLoadFailed: boolean;
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: React.ReactNode;
+}) {
   if (!value) return null;
   return (
     <div className="flex items-start gap-2.5 text-sm">
@@ -96,14 +117,21 @@ export function ApplicationDetailClient({
       ? `${application.salary_currency ?? "USD"} ${application.salary_min?.toLocaleString() ?? "?"} – ${application.salary_max?.toLocaleString() ?? "?"}`
       : null;
 
-  const referral = [application.referral_person, application.referral_email, application.referral_phone]
+  const referral = [
+    application.referral_person,
+    application.referral_email,
+    application.referral_phone,
+  ]
     .filter(Boolean)
     .join(" · ");
   const jobUrl = safeHttpUrl(application.job_url);
 
   return (
     <div className="space-y-5 py-6">
-      <Link href="/applications" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/applications"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to applications
       </Link>
 
@@ -113,7 +141,12 @@ export function ApplicationDetailClient({
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold tracking-tight">{application.job_title}</h1>
               {jobUrl && (
-                <a href={jobUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                <a
+                  href={jobUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary"
+                >
                   <ExternalLink className="h-4 w-4" />
                 </a>
               )}
@@ -128,10 +161,14 @@ export function ApplicationDetailClient({
               value={status}
               onValueChange={(v) => handleStatusChange((v ?? status) as ApplicationStatus)}
             >
-              <SelectTrigger className="h-8 w-[190px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[190px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {APPLICATION_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -142,7 +179,12 @@ export function ApplicationDetailClient({
               aiParserEnabled={aiParserEnabled}
               onSaved={() => router.refresh()}
             />
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
             <ConfirmDeleteDialog
@@ -159,7 +201,11 @@ export function ApplicationDetailClient({
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
-          <InfoRow icon={MapPin} label="Location" value={[application.location, application.work_mode].filter(Boolean).join(" · ")} />
+          <InfoRow
+            icon={MapPin}
+            label="Location"
+            value={[application.location, application.work_mode].filter(Boolean).join(" · ")}
+          />
           <InfoRow
             icon={ExternalLink}
             label="Source"
@@ -183,10 +229,27 @@ export function ApplicationDetailClient({
             }
           />
           <InfoRow icon={FileText} label="Resume" value={application.resume?.display_name} />
-          <InfoRow icon={DollarSign} label={compensationLabel(application.job_description)} value={salary} />
+          <InfoRow
+            icon={DollarSign}
+            label={compensationLabel(application.job_description)}
+            value={salary}
+          />
           <InfoRow icon={User} label="Referral" value={referral || null} />
-          <InfoRow icon={FileText} label="Date applied" value={application.date_applied && format(new Date(application.date_applied), "MMM d, yyyy")} />
-          <InfoRow icon={FileText} label="Follow-up" value={application.follow_up_date && format(new Date(application.follow_up_date), "MMM d, yyyy")} />
+          <InfoRow
+            icon={FileText}
+            label="Date applied"
+            value={
+              application.date_applied && format(new Date(application.date_applied), "MMM d, yyyy")
+            }
+          />
+          <InfoRow
+            icon={FileText}
+            label="Follow-up"
+            value={
+              application.follow_up_date &&
+              format(new Date(application.follow_up_date), "MMM d, yyyy")
+            }
+          />
           <InfoRow icon={FileText} label="Priority" value={`${application.priority_score}/100`} />
           <InfoRow
             icon={FileText}
@@ -203,8 +266,12 @@ export function ApplicationDetailClient({
 
         {application.job_description && (
           <details className="mt-4 text-sm">
-            <summary className="cursor-pointer text-xs font-medium text-muted-foreground">Job description</summary>
-            <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{application.job_description}</p>
+            <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+              Job description
+            </summary>
+            <p className="mt-2 whitespace-pre-wrap text-muted-foreground">
+              {application.job_description}
+            </p>
           </details>
         )}
       </GlassPanel>

@@ -52,7 +52,7 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
           sponsorship_notes: company.sponsorship_notes,
           notes: company.notes,
         }
-      : EMPTY
+      : EMPTY,
   );
 
   const set = <K extends keyof CompanyInput>(key: K, v: CompanyInput[K]) =>
@@ -65,7 +65,9 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
     }
     setSaving(true);
     try {
-      const result = company ? await updateCompany(company.id, values) : await createCompany(values);
+      const result = company
+        ? await updateCompany(company.id, values)
+        : await createCompany(values);
       toast.success(company ? "Company updated." : "Company added.");
       setOpen(false);
       onSaved?.(result);
@@ -98,26 +100,43 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Website</Label>
-              <Input value={values.website ?? ""} onChange={(e) => set("website", e.target.value)} />
+              <Input
+                value={values.website ?? ""}
+                onChange={(e) => set("website", e.target.value)}
+              />
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Careers page</Label>
-              <Input value={values.careers_page_url ?? ""} onChange={(e) => set("careers_page_url", e.target.value)} />
+              <Input
+                value={values.careers_page_url ?? ""}
+                onChange={(e) => set("careers_page_url", e.target.value)}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Industry</Label>
-              <Input value={values.industry ?? ""} onChange={(e) => set("industry", e.target.value)} />
+              <Input
+                value={values.industry ?? ""}
+                onChange={(e) => set("industry", e.target.value)}
+              />
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Location</Label>
-              <Input value={values.location ?? ""} onChange={(e) => set("location", e.target.value)} />
+              <Input
+                value={values.location ?? ""}
+                onChange={(e) => set("location", e.target.value)}
+              />
             </div>
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">LinkedIn company URL</Label>
-            <Input value={values.linkedin_url ?? ""} onChange={(e) => set("linkedin_url", e.target.value)} />
+            <Label className="mb-1.5 block text-xs text-muted-foreground">
+              LinkedIn company URL
+            </Label>
+            <Input
+              value={values.linkedin_url ?? ""}
+              onChange={(e) => set("linkedin_url", e.target.value)}
+            />
           </div>
           <div className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2">
             <Label className="text-xs">Sponsorship friendly</Label>
@@ -128,16 +147,28 @@ export function CompanyFormDialog({ company, onSaved, trigger }: CompanyFormDial
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Sponsorship notes</Label>
-            <Textarea rows={2} value={values.sponsorship_notes ?? ""} onChange={(e) => set("sponsorship_notes", e.target.value)} />
+            <Textarea
+              rows={2}
+              value={values.sponsorship_notes ?? ""}
+              onChange={(e) => set("sponsorship_notes", e.target.value)}
+            />
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Notes</Label>
-            <Textarea rows={2} value={values.notes ?? ""} onChange={(e) => set("notes", e.target.value)} />
+            <Textarea
+              rows={2}
+              value={values.notes ?? ""}
+              onChange={(e) => set("notes", e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

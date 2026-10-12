@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { features } from "@/lib/features";
 import {
   LayoutDashboard,
   Briefcase,
@@ -13,32 +12,17 @@ import {
   BarChart3,
   Download,
   Settings,
-  MessageCircle,
 } from "lucide-react";
 
 export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  badgeKey?: "followUpsDue" | "interviewsUpcoming" | "jobDropsUnread";
-  /** Keeps the item permanently highlighted (icon/text tint + glow), not just when its badge has a count. */
-  accent?: boolean;
-  /** ISO timestamp — shows a pulsing "New" tag until this date, then stops on its own. */
-  newUntil?: string;
-  enabled?: boolean;
+  badgeKey?: "followUpsDue";
 }
 
-const primaryNavItems: NavItem[] = [
+export const primaryNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  {
-    label: "Job Drops",
-    enabled: features.jobDrops,
-    href: "/job-drops",
-    icon: MessageCircle,
-    badgeKey: "jobDropsUnread",
-    accent: true,
-    newUntil: "2026-08-19T23:59:59Z",
-  },
   { label: "Applications", href: "/applications", icon: Briefcase },
   { label: "Companies", href: "/companies", icon: Building2 },
   { label: "Contacts", href: "/contacts", icon: Users },
@@ -51,8 +35,4 @@ const primaryNavItems: NavItem[] = [
   { label: "Export Center", href: "/export", icon: Download },
 ];
 
-export const primaryNav = primaryNavItems.filter((item) => item.enabled !== false);
-
-export const secondaryNav: NavItem[] = [
-  { label: "Settings", href: "/settings", icon: Settings },
-];
+export const secondaryNav: NavItem[] = [{ label: "Settings", href: "/settings", icon: Settings }];

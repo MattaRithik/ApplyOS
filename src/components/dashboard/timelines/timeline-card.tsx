@@ -5,8 +5,19 @@ import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { TIMELINE_ICON_OPTIONS, TIMELINE_CATEGORY_OPTIONS, CATEGORY_DEFAULT_ICON, type TimelineIconKey } from "@/lib/timelines/icons";
-import { getCountdownLabel, getProgressPercent, formatTargetDate, parseDateOnly, resolveRollingTargetDate } from "@/lib/utils/timeline-date";
+import {
+  TIMELINE_ICON_OPTIONS,
+  TIMELINE_CATEGORY_OPTIONS,
+  CATEGORY_DEFAULT_ICON,
+  type TimelineIconKey,
+} from "@/lib/timelines/icons";
+import {
+  getCountdownLabel,
+  getProgressPercent,
+  formatTargetDate,
+  parseDateOnly,
+  resolveRollingTargetDate,
+} from "@/lib/utils/timeline-date";
 import { cn } from "@/lib/utils";
 import type { RollingRule, TimelineCategory } from "@/lib/types/database";
 
@@ -45,9 +56,14 @@ function useToday() {
 
 export function TimelineCard({ data, onEdit }: { data: TimelineCardData; onEdit: () => void }) {
   const today = useToday();
-  const iconKey = (data.icon && data.icon in TIMELINE_ICON_OPTIONS ? data.icon : CATEGORY_DEFAULT_ICON[data.category]) as TimelineIconKey;
+  const iconKey = (
+    data.icon && data.icon in TIMELINE_ICON_OPTIONS
+      ? data.icon
+      : CATEGORY_DEFAULT_ICON[data.category]
+  ) as TimelineIconKey;
   const Icon = TIMELINE_ICON_OPTIONS[iconKey];
-  const categoryLabel = TIMELINE_CATEGORY_OPTIONS.find((c) => c.value === data.category)?.label ?? data.category;
+  const categoryLabel =
+    TIMELINE_CATEGORY_OPTIONS.find((c) => c.value === data.category)?.label ?? data.category;
 
   const targetDate = data.rollingRule
     ? resolveRollingTargetDate(data.rollingRule, today)
@@ -55,7 +71,9 @@ export function TimelineCard({ data, onEdit }: { data: TimelineCardData; onEdit:
       ? parseDateOnly(data.targetDateISO)
       : null;
   const countdown = targetDate ? getCountdownLabel(targetDate, today) : null;
-  const progressPercent = targetDate ? getProgressPercent(parseDateOnly(data.createdAtISO.slice(0, 10)), targetDate, today) : 0;
+  const progressPercent = targetDate
+    ? getProgressPercent(parseDateOnly(data.createdAtISO.slice(0, 10)), targetDate, today)
+    : 0;
 
   return (
     <GlassPanel hoverLift className="flex flex-col gap-3 p-4">
@@ -84,12 +102,14 @@ export function TimelineCard({ data, onEdit }: { data: TimelineCardData; onEdit:
             <p
               className={cn(
                 "text-xl font-semibold tabular-nums tracking-tight",
-                countdown.isOverdue && "text-destructive"
+                countdown.isOverdue && "text-destructive",
               )}
             >
               {countdown.primary}
             </p>
-            {countdown.extended && <p className="text-xs text-muted-foreground">{countdown.extended}</p>}
+            {countdown.extended && (
+              <p className="text-xs text-muted-foreground">{countdown.extended}</p>
+            )}
           </div>
           <div
             role="progressbar"
@@ -100,7 +120,10 @@ export function TimelineCard({ data, onEdit }: { data: TimelineCardData; onEdit:
             className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
           >
             <div
-              className={cn("h-full rounded-full transition-all", countdown.isOverdue ? "bg-destructive" : "bg-primary")}
+              className={cn(
+                "h-full rounded-full transition-all",
+                countdown.isOverdue ? "bg-destructive" : "bg-primary",
+              )}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -108,12 +131,16 @@ export function TimelineCard({ data, onEdit }: { data: TimelineCardData; onEdit:
         </>
       )}
 
-      {data.supportingText && <p className="text-[11px] leading-relaxed text-muted-foreground">{data.supportingText}</p>}
+      {data.supportingText && (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{data.supportingText}</p>
+      )}
       {data.warningText && (
         <p className="text-[11px] leading-relaxed text-[var(--amber-accent)]">{data.warningText}</p>
       )}
 
-      <Badge variant="secondary" className="w-fit text-[10px]">{categoryLabel}</Badge>
+      <Badge variant="secondary" className="w-fit text-[10px]">
+        {categoryLabel}
+      </Badge>
     </GlassPanel>
   );
 }

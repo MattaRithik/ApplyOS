@@ -1,7 +1,12 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/types/database";
 
 const COLORS = [
@@ -28,7 +33,13 @@ export function StatusDistributionChart({
     <ChartContainer config={config} className="aspect-auto h-72 w-full">
       <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16 }}>
         <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-        <XAxis type="number" tickLine={false} axisLine={false} fontSize={11} allowDecimals={false} />
+        <XAxis
+          type="number"
+          tickLine={false}
+          axisLine={false}
+          fontSize={11}
+          allowDecimals={false}
+        />
         <YAxis
           type="category"
           dataKey="label"

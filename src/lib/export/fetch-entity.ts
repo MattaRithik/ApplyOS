@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExportEntity } from "@/lib/types/database";
 import { getFollowUpItems } from "@/lib/data/follow-ups";
+import { readAllRows } from "@/lib/supabase/pagination";
 
 const TABLE_BY_ENTITY: Record<Exclude<ExportEntity, "full_backup" | "follow_ups">, string> = {
   applications: "applications",
@@ -28,7 +29,7 @@ function stripRow(row: Record<string, unknown>) {
 export async function fetchEntityRows(
   supabase: SupabaseClient,
   userId: string,
-  entity: Exclude<ExportEntity, "full_backup">
+  entity: Exclude<ExportEntity, "full_backup">,
 ) {
   if (entity === "follow_ups") {
     const items = await getFollowUpItems(supabase, userId);
@@ -43,9 +44,15 @@ export async function fetchEntityRows(
   }
 
   const table = TABLE_BY_ENTITY[entity];
-  const { data, error } = await supabase.from(table).select("*").eq("user_id", userId);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(stripRow);
+  const rows = await readAllRows<Record<string, unknown>>(
+    supabase
+      .from(table)
+      .select("*")
+      .eq("user_id", userId)
+      .lte("created_at", new Date().toISOString())
+      .order("id"),
+  );
+  return rows.map(stripRow);
 }
 
 export const EXPORT_ENTITIES: { value: Exclude<ExportEntity, "full_backup">; label: string }[] = [

@@ -18,7 +18,7 @@ export function TemplatesGrid({ templates }: { templates: EmailTemplate[] }) {
 
   const handleCopy = async (template: EmailTemplate) => {
     await navigator.clipboard.writeText(
-      template.subject ? `Subject: ${template.subject}\n\n${template.body}` : template.body
+      template.subject ? `Subject: ${template.subject}\n\n${template.body}` : template.body,
     );
     toast.success("Copied to clipboard.");
   };
@@ -47,7 +47,9 @@ export function TemplatesGrid({ templates }: { templates: EmailTemplate[] }) {
               </div>
             </div>
           </div>
-          {t.subject && <p className="text-xs font-medium text-muted-foreground">Subject: {t.subject}</p>}
+          {t.subject && (
+            <p className="text-xs font-medium text-muted-foreground">Subject: {t.subject}</p>
+          )}
           <p className="line-clamp-4 whitespace-pre-wrap text-xs text-muted-foreground">{t.body}</p>
           <div className="mt-auto flex items-center justify-between border-t border-border/40 pt-2.5">
             <span className="text-[11px] text-muted-foreground">Used {t.times_used}×</span>
@@ -58,9 +60,18 @@ export function TemplatesGrid({ templates }: { templates: EmailTemplate[] }) {
               <TemplateFormDialog
                 template={t}
                 onSaved={() => router.refresh()}
-                trigger={<Button variant="ghost" size="icon-sm"><Pencil className="h-3.5 w-3.5" /></Button>}
+                trigger={
+                  <Button variant="ghost" size="icon-sm">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                }
               />
-              <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(t.id)} aria-label="Delete template">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setDeletingId(t.id)}
+                aria-label="Delete template"
+              >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </div>

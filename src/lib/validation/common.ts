@@ -5,7 +5,10 @@ export const optionalUuidSchema = uuidSchema.nullable().optional();
 export const shortTextSchema = z.string().trim().min(1).max(200);
 export const optionalTextSchema = (max = 2_000) => z.string().trim().max(max).nullable().optional();
 export const isoDateSchema = z.iso.date();
-export const optionalIsoDateSchema = isoDateSchema.nullable().optional();
+export const optionalIsoDateSchema = isoDateSchema
+  .or(z.literal("").transform(() => null))
+  .nullable()
+  .optional();
 
 export const httpUrlSchema = z
   .string()
@@ -21,11 +24,15 @@ export const httpUrlSchema = z
     }
   }, "Only HTTP(S) URLs are allowed.");
 
-export const optionalHttpUrlSchema = httpUrlSchema.nullable().optional();
+export const optionalHttpUrlSchema = httpUrlSchema
+  .or(z.literal("").transform(() => null))
+  .nullable()
+  .optional();
 
 /** Runtime mass-assignment guard for typed server-action objects. */
 export function assertAllowedKeys(value: unknown, allowedKeys: readonly string[]): void {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("Invalid input.");
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    throw new Error("Invalid input.");
   const allowed = new Set(allowedKeys);
   if (Object.keys(value).some((key) => !allowed.has(key))) throw new Error("Invalid input fields.");
 }

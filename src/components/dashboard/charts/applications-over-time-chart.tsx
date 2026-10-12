@@ -29,7 +29,11 @@ const PERIODS: { value: Period; label: string; range: string }[] = [
   { value: "monthly", label: "Monthly", range: "Last 12 months" },
 ];
 
-export function ApplicationsOverTimeChart({ data }: { data: ApplicationsOverTimeData | LegacyWeeklyData }) {
+export function ApplicationsOverTimeChart({
+  data,
+}: {
+  data: ApplicationsOverTimeData | LegacyWeeklyData;
+}) {
   const [period, setPeriod] = React.useState<Period>("weekly");
   const selectedPeriod = PERIODS.find((option) => option.value === period)!;
   const hasPeriodData = !Array.isArray(data);
@@ -42,7 +46,10 @@ export function ApplicationsOverTimeChart({ data }: { data: ApplicationsOverTime
       {hasPeriodData && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">{selectedPeriod.range}</span>
-          <div className="flex rounded-lg border border-border/60 bg-muted/40 p-0.5" aria-label="Chart interval">
+          <div
+            className="flex rounded-lg border border-border/60 bg-muted/40 p-0.5"
+            aria-label="Chart interval"
+          >
             {PERIODS.map((option) => (
               <button
                 key={option.value}

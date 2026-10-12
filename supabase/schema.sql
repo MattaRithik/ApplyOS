@@ -1,7 +1,8 @@
 -- =====================================================================
 -- ApplyOS — Supabase schema
--- Run this in the Supabase SQL editor (or via `supabase db push`).
--- Safe to re-run: guarded with IF NOT EXISTS / OR REPLACE where possible.
+-- Baseline for fresh projects; apply every ordered migration after it.
+-- Existing deployments apply only pending migrations, never this baseline.
+-- See docs/database.md and npm run db:bundle for the complete fresh setup.
 -- =====================================================================
 
 create extension if not exists "pgcrypto";

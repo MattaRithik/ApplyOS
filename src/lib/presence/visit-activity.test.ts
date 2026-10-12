@@ -24,18 +24,46 @@ describe("visit activity summaries", () => {
       { user_id: "dp", status: "success", created_at: "2026-10-07T18:20:01Z" },
       { user_id: "other", status: "success", created_at: middle },
     ];
-    expect(countVisitActivity([visit, { ...visit, user_id: "other" }, { ...visit, started_at: "2026-10-07T19:00:00Z", last_report_at: "2026-10-07T19:15:00Z" }], actions, parses))
-      .toEqual([{ added: 1, updated: 2, parsed: 2 }, { added: 1, updated: 0, parsed: 1 }, { added: 0, updated: 0, parsed: 0 }]);
+    expect(
+      countVisitActivity(
+        [
+          visit,
+          { ...visit, user_id: "other" },
+          { ...visit, started_at: "2026-10-07T19:00:00Z", last_report_at: "2026-10-07T19:15:00Z" },
+        ],
+        actions,
+        parses,
+      ),
+    ).toEqual([
+      { added: 1, updated: 2, parsed: 2 },
+      { added: 1, updated: 0, parsed: 1 },
+      { added: 0, updated: 0, parsed: 0 },
+    ]);
   });
 
   function database(actionResults: { data: unknown[] | null; error: unknown }[]) {
-    const actionQuery = { select: vi.fn(), in: vi.fn(), gte: vi.fn(), lte: vi.fn(), order: vi.fn(), range: vi.fn() };
-    const parseQuery = { select: vi.fn(), in: vi.fn(), gte: vi.fn(), lte: vi.fn(), order: vi.fn(), range: vi.fn().mockResolvedValue({ data: [], error: null }) };
+    const actionQuery = {
+      select: vi.fn(),
+      in: vi.fn(),
+      gte: vi.fn(),
+      lte: vi.fn(),
+      order: vi.fn(),
+      range: vi.fn(),
+    };
+    const parseQuery = {
+      select: vi.fn(),
+      in: vi.fn(),
+      gte: vi.fn(),
+      lte: vi.fn(),
+      order: vi.fn(),
+      range: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
     for (const query of [actionQuery, parseQuery]) {
-      for (const method of [query.select, query.in, query.gte, query.lte, query.order]) method.mockReturnValue(query);
+      for (const method of [query.select, query.in, query.gte, query.lte, query.order])
+        method.mockReturnValue(query);
     }
     for (const result of actionResults) actionQuery.range.mockResolvedValueOnce(result);
-    const from = vi.fn((table) => table === "user_presence_history" ? actionQuery : parseQuery);
+    const from = vi.fn((table) => (table === "user_presence_history" ? actionQuery : parseQuery));
     return { db: { from } as unknown as SupabaseClient, from, actionQuery, parseQuery };
   }
 
@@ -45,8 +73,15 @@ describe("visit activity summaries", () => {
       { data: Array.from({ length: 1000 }, () => action), error: null },
       { data: [action], error: null },
     ]);
-    expect((await withVisitActivity(db, [visit]))[0].activity).toEqual({ added: 1001, updated: 0, parsed: 0 });
-    expect(actionQuery.range.mock.calls).toEqual([[0, 999], [1000, 1999]]);
+    expect((await withVisitActivity(db, [visit]))[0].activity).toEqual({
+      added: 1001,
+      updated: 0,
+      parsed: 0,
+    });
+    expect(actionQuery.range.mock.calls).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
     expect(actionQuery.in).toHaveBeenCalledWith("user_id", ["dp"]);
     expect(actionQuery.gte).toHaveBeenCalledWith("recorded_at", "2026-10-07T18:00:00.000Z");
     expect(actionQuery.lte).toHaveBeenCalledWith("recorded_at", "2026-10-07T18:20:00.000Z");

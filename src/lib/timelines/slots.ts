@@ -22,7 +22,7 @@ const VALID_SLOTS = [1, 2, 3];
 export function planSlotAssignment(
   currentlyPinned: PinnedSlotSummary[],
   timelineId: string,
-  targetSlot: number
+  targetSlot: number,
 ): SlotAssignmentPlan {
   if (!VALID_SLOTS.includes(targetSlot)) {
     return { ok: false, unpinId: null, error: "Dashboard slot must be 1, 2, or 3." };
@@ -35,7 +35,11 @@ export function planSlotAssignment(
   // for that case rather than relying on it being merely impossible.
   const distinctSlotsInUse = new Set(otherPinned.map((t) => t.dashboard_slot));
   if (distinctSlotsInUse.size >= 3 && !distinctSlotsInUse.has(targetSlot as 1 | 2 | 3)) {
-    return { ok: false, unpinId: null, error: "All three dashboard timeline slots are already in use." };
+    return {
+      ok: false,
+      unpinId: null,
+      error: "All three dashboard timeline slots are already in use.",
+    };
   }
 
   const occupant = otherPinned.find((t) => t.dashboard_slot === targetSlot);

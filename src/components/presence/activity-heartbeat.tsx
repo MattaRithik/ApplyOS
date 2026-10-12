@@ -24,34 +24,56 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
       if (stopped) return;
       lastSent = Date.now();
       // Snapshot transitions immediately and send them in order, including tab close.
-      const body = JSON.stringify({ sessionId, page: pageRef.current,
-        visible: document.visibilityState === "visible" && document.hasFocus(), closed,
-        idleSeconds: lastInteraction === null ? 86400 : Math.min(86400, Math.floor((Date.now() - lastInteraction) / 1000)),
-        interactionAt: lastInteraction === null ? null : new Date(lastInteraction).toISOString() });
+      const body = JSON.stringify({
+        sessionId,
+        page: pageRef.current,
+        visible: document.visibilityState === "visible" && document.hasFocus(),
+        closed,
+        idleSeconds:
+          lastInteraction === null
+            ? 86400
+            : Math.min(86400, Math.floor((Date.now() - lastInteraction) / 1000)),
+        interactionAt: lastInteraction === null ? null : new Date(lastInteraction).toISOString(),
+      });
       queue = queue.then(async () => {
         try {
           const response = await fetch("/api/presence", {
-            method: "POST", credentials: "same-origin", cache: "no-store", keepalive: true,
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store",
+            keepalive: true,
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(10_000), body,
+            signal: AbortSignal.timeout(10_000),
+            body,
           });
-          if (!stopped && !closed) setHeartbeatError(response.ok ? null : heartbeatFailure(response.status));
+          if (!stopped && !closed)
+            setHeartbeatError(response.ok ? null : heartbeatFailure(response.status));
         } catch {
-          if (!stopped && !closed) setHeartbeatError("The request timed out or could not reach the server.");
+          if (!stopped && !closed)
+            setHeartbeatError("The request timed out or could not reach the server.");
         }
       });
     };
     const interaction = (event: Event) => {
-      if (!event.isTrusted || document.visibilityState !== "visible" || !document.hasFocus()) return;
+      if (!event.isTrusted || document.visibilityState !== "visible" || !document.hasFocus())
+        return;
       const firstInteraction = lastInteraction === null;
       const wasIdle = firstInteraction || Date.now() - lastInteraction! >= IDLE_MS;
       lastInteraction = Date.now();
       if (firstInteraction || (wasIdle && Date.now() - lastSent > 2000)) send();
     };
-    const visibility = () => { send(); };
-    const pagehide = () => { send(true); };
-    const pageshow = () => { send(); };
-    sendRef.current = () => { send(); };
+    const visibility = () => {
+      send();
+    };
+    const pagehide = () => {
+      send(true);
+    };
+    const pageshow = () => {
+      send();
+    };
+    sendRef.current = () => {
+      send();
+    };
     send();
     const timer = window.setInterval(send, HEARTBEAT_MS);
     const events = ["pointerdown", "keydown", "scroll", "touchstart"];

@@ -19,7 +19,9 @@ export function CompanyView({ applications }: { applications: ApplicationWithRes
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
   }, [applications]);
 
-  const [expanded, setExpanded] = React.useState<Set<string>>(new Set(grouped.slice(0, 3).map(([c]) => c)));
+  const [expanded, setExpanded] = React.useState<Set<string>>(
+    new Set(grouped.slice(0, 3).map(([c]) => c)),
+  );
 
   const toggle = (company: string) =>
     setExpanded((prev) => {
@@ -45,7 +47,12 @@ export function CompanyView({ applications }: { applications: ApplicationWithRes
                   {apps.length}
                 </span>
               </div>
-              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform",
+                  isOpen && "rotate-180",
+                )}
+              />
             </button>
             {isOpen && (
               <div className="divide-y divide-border/50 border-t border-border/50">

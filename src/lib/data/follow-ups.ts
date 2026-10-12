@@ -13,33 +13,42 @@ export interface FollowUpItem {
   link: string;
 }
 
-export async function getFollowUpItems(supabase: SupabaseClient, userId: string): Promise<FollowUpItem[]> {
-  const [{ data: applications }, { data: outreach }, { data: contacts }, { data: interviewRounds }] =
-    await Promise.all([
-      supabase
-        .from("applications")
-        .select("id, job_title, company_name, follow_up_date")
-        .eq("user_id", userId)
-        .eq("is_archived", false)
-        .not("follow_up_date", "is", null),
-      supabase
-        .from("outreach")
-        .select("id, person_name, company_name, follow_up_date, response_received")
-        .eq("user_id", userId)
-        .eq("response_received", false)
-        .not("follow_up_date", "is", null),
-      supabase
-        .from("contacts")
-        .select("id, name, company_name, next_follow_up_date")
-        .eq("user_id", userId)
-        .not("next_follow_up_date", "is", null),
-      supabase
-        .from("interview_rounds")
-        .select("id, round_name, application_id, scheduled_at, follow_up_sent, application:applications(job_title, company_name)")
-        .eq("user_id", userId)
-        .eq("follow_up_sent", false)
-        .not("scheduled_at", "is", null),
-    ]);
+export async function getFollowUpItems(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<FollowUpItem[]> {
+  const [
+    { data: applications },
+    { data: outreach },
+    { data: contacts },
+    { data: interviewRounds },
+  ] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("id, job_title, company_name, follow_up_date")
+      .eq("user_id", userId)
+      .eq("is_archived", false)
+      .not("follow_up_date", "is", null),
+    supabase
+      .from("outreach")
+      .select("id, person_name, company_name, follow_up_date, response_received")
+      .eq("user_id", userId)
+      .eq("response_received", false)
+      .not("follow_up_date", "is", null),
+    supabase
+      .from("contacts")
+      .select("id, name, company_name, next_follow_up_date")
+      .eq("user_id", userId)
+      .not("next_follow_up_date", "is", null),
+    supabase
+      .from("interview_rounds")
+      .select(
+        "id, round_name, application_id, scheduled_at, follow_up_sent, application:applications(job_title, company_name)",
+      )
+      .eq("user_id", userId)
+      .eq("follow_up_sent", false)
+      .not("scheduled_at", "is", null),
+  ]);
 
   const items: FollowUpItem[] = [];
   const today = new Date().toISOString().slice(0, 10);

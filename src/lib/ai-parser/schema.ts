@@ -41,7 +41,12 @@ export const EMPLOYMENT_TYPE_VALUES = [
   "unknown",
 ] as const;
 export const SALARY_PERIOD_VALUES = ["hour", "day", "week", "month", "year", "unknown"] as const;
-export const VISA_SPONSORSHIP_VALUES = ["available", "not_available", "unclear", "not_mentioned"] as const;
+export const VISA_SPONSORSHIP_VALUES = [
+  "available",
+  "not_available",
+  "unclear",
+  "not_mentioned",
+] as const;
 
 const identitySchema = z
   .object({
@@ -199,11 +204,14 @@ const metadataSchema = z
   })
   .strict();
 
-const priorityMatchSchema = z.object({
-  score: z.number().int().min(0).max(100).nullable(),
-  matchedTargetRole: nStr(60),
-  explanation: nStr(600),
-}).strict().nullable();
+const priorityMatchSchema = z
+  .object({
+    score: z.number().int().min(0).max(100).nullable(),
+    matchedTargetRole: nStr(60),
+    explanation: nStr(600),
+  })
+  .strict()
+  .nullable();
 
 export const rawAiJobParseSchema = z
   .object({
@@ -244,7 +252,8 @@ export type MetadataGroup = z.infer<typeof metadataSchema>;
 // annotating get an entry — we do not wrap every primitive.
 // ---------------------------------------------------------------------
 
-export type FieldProvenanceStatus = "explicit" | "normalized" | "inferred" | "missing" | "uncertain";
+export type FieldProvenanceStatus =
+  "explicit" | "normalized" | "inferred" | "missing" | "uncertain";
 
 export interface FieldProvenanceEntry {
   status: FieldProvenanceStatus;
@@ -294,7 +303,8 @@ export interface ParseMetadataInfo {
 /** Full internal result: raw AI groups (deterministic-merged) + provenance + parse metadata. */
 export interface AiParserResult {
   /** Optional for saved reports generated before target-role matching existed. */
-  priorityMatch?: (NonNullable<z.infer<typeof priorityMatchSchema>> & { targetRoles?: string[] }) | null;
+  priorityMatch?:
+    (NonNullable<z.infer<typeof priorityMatchSchema>> & { targetRoles?: string[] }) | null;
   identity: IdentityGroup;
   location: LocationGroup;
   employment: EmploymentGroup;
@@ -323,7 +333,12 @@ export interface AiParserApiResponse {
   fallbackUsed: boolean;
   parserVersion: string;
   descriptionHash: string;
-  usage: { inputTokens: number; outputTokens: number; totalTokens: number; estimatedCostUsd: number };
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCostUsd: number;
+  };
 }
 
 export const parseRequestSchema = z

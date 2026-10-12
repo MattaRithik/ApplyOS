@@ -123,15 +123,16 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-[var(--amber-accent)]" /> Built for finance & quant recruiting
+              <Sparkles className="h-3 w-3 text-[var(--amber-accent)]" /> Built for finance & quant
+              recruiting
             </span>
             <h1 className="mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
               The complete job-search CRM for competitive finance and quant recruiting.
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-              ApplyOS keeps every application, resume version, recruiter contact, cold email, interview round, and
-              follow-up in one place — so nothing about your search to Jane Street, Citadel Securities, or Goldman
-              Sachs slips through the cracks.
+              ApplyOS keeps every application, resume version, recruiter contact, cold email,
+              interview round, and follow-up in one place — so nothing about your search to Jane
+              Street, Citadel Securities, or Goldman Sachs slips through the cracks.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button size="lg" className="gap-2" render={<Link href="/login" />}>
@@ -142,12 +143,18 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Already have an account? <Link href="/login" className="text-primary hover:underline">Sign in here.</Link>
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Sign in here.
+              </Link>
             </p>
           </div>
 
           <div className="relative">
-            <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-[var(--blue-accent)]/10 via-transparent to-[var(--emerald-accent)]/10 blur-2xl" aria-hidden />
+            <div
+              className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-[var(--blue-accent)]/10 via-transparent to-[var(--emerald-accent)]/10 blur-2xl"
+              aria-hidden
+            />
             <DashboardPreview />
           </div>
         </div>
@@ -156,10 +163,12 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       {/* Features */}
       <section id="features" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">Everything your search needs, one workspace</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">
+            Everything your search needs, one workspace
+          </h2>
           <p className="mt-3 text-muted-foreground">
-            Nine tools that cover the full lifecycle of a competitive finance or tech application — replacing the
-            spreadsheet-plus-inbox setup most candidates start with.
+            Nine tools that cover the full lifecycle of a competitive finance or tech application —
+            replacing the spreadsheet-plus-inbox setup most candidates start with.
           </p>
         </div>
 
@@ -177,10 +186,15 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
+      <section
+        id="how-it-works"
+        className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6"
+      >
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight">How it works</h2>
-          <p className="mt-3 text-muted-foreground">From saved job post to signed offer, in four steps.</p>
+          <p className="mt-3 text-muted-foreground">
+            From saved job post to signed offer, in four steps.
+          </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -205,9 +219,9 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
           <div>
             <h2 className="text-3xl font-semibold tracking-tight">Why ApplyOS</h2>
             <p className="mt-3 text-muted-foreground">
-              Most trackers are generic kanban boards borrowed from software recruiting. ApplyOS is built around the
-              specifics of finance and quant pipelines — multi-round superdays, recruiter-led outreach, and the visa
-              questions that come with them.
+              Most trackers are generic kanban boards borrowed from software recruiting. ApplyOS is
+              built around the specifics of finance and quant pipelines — multi-round superdays,
+              recruiter-led outreach, and the visa questions that come with them.
             </p>
           </div>
           <ul className="space-y-3.5">
@@ -229,28 +243,36 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
           </span>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight">You own your data</h2>
           <p className="mt-3 text-sm text-muted-foreground">
-            Everything you enter — applications, resumes, contacts, outreach, interviews, notes — belongs to your
-            account and is only visible to you. You can export any table, or a full backup of your workspace, to
-            Excel or CSV at any time from the Export Center. There&apos;s no lock-in: if you leave, you take your data
-            with you.
+            Everything you enter — applications, resumes, contacts, outreach, interviews, notes —
+            belongs to your account and is only visible to you. You can export any table, or a full
+            backup of your workspace, to Excel or CSV at any time from the Export Center.
+            There&apos;s no lock-in: if you leave, you take your data with you.
           </p>
           <p className="mt-3 text-xs text-muted-foreground">
-            For account security, signed-in sessions report their current page section, tab visibility,
-            recent interaction time, IP address, approximate IP location, and browser information.
-            Only the site owner can view this activity. We keep the latest state per tab; sessions
-            inactive for more than 24 hours are removed when the activity service next runs.
+            For account security, signed-in sessions report their current page section, tab
+            visibility, recent interaction time, IP address, approximate IP location, and browser
+            information. Only the site owner can view this activity. We keep the latest state per
+            tab; sessions inactive for more than 24 hours are removed when the activity service next
+            runs.
           </p>
           <div className="mt-5 flex items-center justify-center gap-2">
             <Download className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Export anytime, in your account settings</span>
+            <span className="text-xs text-muted-foreground">
+              Export anytime, in your account settings
+            </span>
           </div>
         </GlassPanel>
       </section>
 
       {/* Final CTA */}
       <section className="mx-auto w-full max-w-4xl px-4 pb-20 sm:px-6">
-        <GlassPanel strong className="glow-emerald flex flex-col items-center gap-4 p-8 text-center sm:p-10">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Ready to run your search like a pipeline?</h2>
+        <GlassPanel
+          strong
+          className="glow-emerald flex flex-col items-center gap-4 p-8 text-center sm:p-10"
+        >
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Ready to run your search like a pipeline?
+          </h2>
           <p className="max-w-lg text-sm text-muted-foreground">
             Sign in to start tracking applications, resumes, and outreach in one place.
           </p>
@@ -270,8 +292,12 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
             <span className="text-sm font-medium">ApplyOS</span>
             <span className="text-xs text-muted-foreground">— Application Tracker</span>
           </div>
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ApplyOS. Your data, your workspace.</p>
-          <Link href="/login" className="text-xs text-primary hover:underline">Sign in</Link>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} ApplyOS. Your data, your workspace.
+          </p>
+          <Link href="/login" className="text-xs text-primary hover:underline">
+            Sign in
+          </Link>
         </div>
       </footer>
     </div>

@@ -24,7 +24,6 @@ interface TopbarProps {
   userName?: string | null;
   avatarUrl?: string | null;
   followUpsDueCount?: number;
-  jobDropsUnreadCount?: number;
   openCommandPalette: () => void;
 }
 
@@ -34,7 +33,6 @@ export function Topbar({
   userName,
   avatarUrl,
   followUpsDueCount,
-  jobDropsUnreadCount,
   openCommandPalette,
 }: TopbarProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -57,7 +55,6 @@ export function Topbar({
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <SidebarNav
               followUpsDueCount={followUpsDueCount}
-              jobDropsUnreadCount={jobDropsUnreadCount}
               onNavigate={() => setMobileOpen(false)}
             />
           </SheetContent>
@@ -109,7 +106,10 @@ export function Topbar({
               <SettingsIcon className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="text-destructive focus:text-destructive"
+            >
               <LogOut className="mr-2 h-4 w-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -38,7 +38,9 @@ export function ProfileTimelineSettings({
   const router = useRouter();
   const [category, setCategory] = React.useState<UserCategory | null>(userCategory);
   const [savingCategory, setSavingCategory] = React.useState(false);
-  const [graduationDate, setGraduationDate] = React.useState(internationalProfile?.expected_graduation_date ?? "");
+  const [graduationDate, setGraduationDate] = React.useState(
+    internationalProfile?.expected_graduation_date ?? "",
+  );
   const [savingGraduation, setSavingGraduation] = React.useState(false);
   const [reopening, setReopening] = React.useState(false);
 
@@ -98,17 +100,23 @@ export function ProfileTimelineSettings({
         <div>
           <h3 className="text-sm font-semibold">Work-authorization category</h3>
           <p className="text-xs text-muted-foreground">
-            Used only for relevant job-search context, such as sponsorship-related application tracking.
+            Used only for relevant job-search context, such as sponsorship-related application
+            tracking.
           </p>
         </div>
-        <RadioGroup value={category ?? ""} onValueChange={(v) => v && setCategory(v as UserCategory)}>
+        <RadioGroup
+          value={category ?? ""}
+          onValueChange={(v) => v && setCategory(v as UserCategory)}
+        >
           {CATEGORY_OPTIONS.map((opt) => (
             <Label
               key={opt.value}
               htmlFor={`settings-category-${opt.value}`}
               className={cn(
                 "flex cursor-pointer items-center gap-2.5 rounded-lg border p-2.5 text-sm transition-colors",
-                category === opt.value ? "border-primary bg-primary/5" : "border-border/50 hover:bg-accent/40"
+                category === opt.value
+                  ? "border-primary bg-primary/5"
+                  : "border-border/50 hover:bg-accent/40",
               )}
             >
               <RadioGroupItem value={opt.value} id={`settings-category-${opt.value}`} />
@@ -116,7 +124,11 @@ export function ProfileTimelineSettings({
             </Label>
           ))}
         </RadioGroup>
-        <Button size="sm" onClick={handleSaveCategory} disabled={savingCategory || category === userCategory}>
+        <Button
+          size="sm"
+          onClick={handleSaveCategory}
+          disabled={savingCategory || category === userCategory}
+        >
           {savingCategory ? "Saving…" : "Save category"}
         </Button>
       </GlassPanel>
@@ -126,12 +138,19 @@ export function ProfileTimelineSettings({
           <div>
             <h3 className="text-sm font-semibold">Graduation countdown</h3>
             <p className="text-xs text-muted-foreground">
-              This is the only student-specific date ApplyOS needs. It powers the countdown on your dashboard.
+              This is the only student-specific date ApplyOS needs. It powers the countdown on your
+              dashboard.
             </p>
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Expected graduation date</Label>
-            <Input type="date" value={graduationDate} onChange={(event) => setGraduationDate(event.target.value)} />
+            <Label className="mb-1.5 block text-xs text-muted-foreground">
+              Expected graduation date
+            </Label>
+            <Input
+              type="date"
+              value={graduationDate}
+              onChange={(event) => setGraduationDate(event.target.value)}
+            />
           </div>
           <Button size="sm" onClick={handleSaveGraduation} disabled={savingGraduation}>
             {savingGraduation ? "Saving…" : "Save graduation date"}
@@ -142,12 +161,16 @@ export function ProfileTimelineSettings({
       <GlassPanel className="space-y-4 p-5">
         <div>
           <h3 className="text-sm font-semibold">Dashboard timelines</h3>
-          <p className="text-xs text-muted-foreground">Up to 3 countdown cards appear on your dashboard.</p>
+          <p className="text-xs text-muted-foreground">
+            Up to 3 countdown cards appear on your dashboard.
+          </p>
         </div>
 
         {isInternational && (
           <div>
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Slot 1 · Graduation (automatic)</p>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+              Slot 1 · Graduation (automatic)
+            </p>
             <p className="rounded-lg border border-border/50 p-2.5 text-xs text-muted-foreground">
               Your expected graduation date appears on the dashboard automatically once it is set.
             </p>
@@ -168,7 +191,9 @@ export function ProfileTimelineSettings({
         </div>
 
         <div>
-          <p className="mb-1.5 text-xs font-medium text-muted-foreground">Slot 3 · Custom countdown</p>
+          <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+            Slot 3 · Custom countdown
+          </p>
           <TimelineSlotPicker
             slot={3}
             isInternational={isInternational}
@@ -184,9 +209,17 @@ export function ProfileTimelineSettings({
       <GlassPanel className="flex items-center justify-between gap-3 p-5">
         <div>
           <h3 className="text-sm font-semibold">Onboarding</h3>
-          <p className="text-xs text-muted-foreground">Rerun the welcome flow — your saved answers stay intact.</p>
+          <p className="text-xs text-muted-foreground">
+            Rerun the welcome flow — your saved answers stay intact.
+          </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleRerunOnboarding} disabled={reopening}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={handleRerunOnboarding}
+          disabled={reopening}
+        >
           <RotateCcw className="h-3.5 w-3.5" /> Rerun onboarding
         </Button>
       </GlassPanel>

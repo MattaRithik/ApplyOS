@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +37,13 @@ export function TemplateFormDialog({
   const [saving, setSaving] = React.useState(false);
   const [values, setValues] = React.useState<TemplateInput>(
     template
-      ? { name: template.name, category: template.category, subject: template.subject, body: template.body }
-      : { name: "", category: "custom", subject: "", body: "" }
+      ? {
+          name: template.name,
+          category: template.category,
+          subject: template.subject,
+          body: template.body,
+        }
+      : { name: "", category: "custom", subject: "", body: "" },
   );
 
   const set = <K extends keyof TemplateInput>(key: K, v: TemplateInput[K]) =>
@@ -82,29 +93,46 @@ export function TemplateFormDialog({
               value={values.category}
               onValueChange={(v) => set("category", (v ?? "custom") as TemplateInput["category"])}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {TEMPLATE_CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Subject line</Label>
-            <Input value={values.subject ?? ""} onChange={(e) => set("subject", e.target.value)} placeholder="Leave blank for LinkedIn DMs" />
+            <Input
+              value={values.subject ?? ""}
+              onChange={(e) => set("subject", e.target.value)}
+              placeholder="Leave blank for LinkedIn DMs"
+            />
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Body *</Label>
-            <Textarea rows={10} value={values.body} onChange={(e) => set("body", e.target.value)} className="font-mono text-xs" />
+            <Textarea
+              rows={10}
+              value={values.body}
+              onChange={(e) => set("body", e.target.value)}
+              className="font-mono text-xs"
+            />
             <p className="mt-1 text-[11px] text-muted-foreground">
               Use placeholders like {"{{first_name}}"}, {"{{company}}"}, {"{{role}}"}.
             </p>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

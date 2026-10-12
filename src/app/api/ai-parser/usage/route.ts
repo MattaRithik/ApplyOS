@@ -22,7 +22,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rangeParam = searchParams.get("range");
   const parsedRange = rangeSchema.safeParse(rangeParam ?? "month");
-  if (!parsedRange.success) return NextResponse.json({ error: "Invalid usage range." }, { status: 400 });
+  if (!parsedRange.success)
+    return NextResponse.json({ error: "Invalid usage range." }, { status: 400 });
   const range: UsageRange = parsedRange.data;
 
   let summary;

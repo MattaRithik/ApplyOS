@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureGraduationSlotPinned } from "@/lib/actions/timelines";
 import type { UserCategory } from "@/lib/types/database";
 import { assertAllowedKeys } from "@/lib/validation/common";
+import { z } from "zod";
+import { optionalIsoDateSchema } from "@/lib/validation/common";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -16,8 +18,19 @@ async function requireUser() {
 }
 
 export async function updateUserCategory(category: UserCategory) {
+  category = z
+    .enum([
+      "us_citizen_or_permanent_resident",
+      "international_student_us",
+      "other_temporary_authorization",
+      "prefer_not_to_answer",
+    ])
+    .parse(category);
   const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("profiles").update({ user_category: category }).eq("id", user.id);
+  const { error } = await supabase
+    .from("profiles")
+    .update({ user_category: category })
+    .eq("id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
   revalidatePath("/settings");
@@ -46,7 +59,10 @@ export async function skipOnboarding() {
 /** "Rerun onboarding" from Settings — re-opens the modal without touching any previously saved answers. */
 export async function reopenOnboarding() {
   const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("profiles").update({ onboarding_status: "not_started" }).eq("id", user.id);
+  const { error } = await supabase
+    .from("profiles")
+    .update({ onboarding_status: "not_started" })
+    .eq("id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
   revalidatePath("/settings");
@@ -58,6 +74,7 @@ export interface InternationalStudentProfileInput {
 
 export async function upsertInternationalStudentProfile(input: InternationalStudentProfileInput) {
   assertAllowedKeys(input, ["expected_graduation_date"]);
+  input = z.object({ expected_graduation_date: optionalIsoDateSchema }).strict().parse(input);
   const { supabase, user } = await requireUser();
   const { data, error } = await supabase
     .from("international_student_profiles")
@@ -78,6 +95,7 @@ export async function upsertInternationalStudentProfile(input: InternationalStud
 
 /** Hides immigration features/cards without deleting any saved dates. */
 export async function setInternationalModeEnabled(enabled: boolean) {
+  enabled = z.boolean().parse(enabled);
   const { supabase, user } = await requireUser();
   const { error } = await supabase
     .from("international_student_profiles")
@@ -90,7 +108,10 @@ export async function setInternationalModeEnabled(enabled: boolean) {
 
 export async function deleteInternationalStudentProfile() {
   const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("international_student_profiles").delete().eq("user_id", user.id);
+  const { error } = await supabase
+    .from("international_student_profiles")
+    .delete()
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
   revalidatePath("/settings");

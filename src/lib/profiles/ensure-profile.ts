@@ -10,11 +10,15 @@ export async function ensureProfile(supabase: SupabaseClient, user: User) {
   // Some older accounts predate the profile-creation trigger. Only insert a
   // missing row; ignore conflicts so concurrent requests cannot reset a profile.
   const admin = createServiceRoleClient();
-  const { error } = await admin.from("profiles").upsert({
-    id: user.id,
-    email: user.email ?? null,
-    full_name: typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
-  }, { onConflict: "id", ignoreDuplicates: true });
+  const { error } = await admin.from("profiles").upsert(
+    {
+      id: user.id,
+      email: user.email ?? null,
+      full_name:
+        typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
+    },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
   if (error) return { data: null, error };
   // Re-read through the authenticated client so RLS still governs access.
   return supabase.from("profiles").select("*").eq("id", user.id).single();

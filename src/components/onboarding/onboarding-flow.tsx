@@ -7,15 +7,30 @@ import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CategoryStep } from "@/components/onboarding/steps/category-step";
-import { EducationStep, EMPTY_EDUCATION_STATE, type EducationFormState } from "@/components/onboarding/steps/education-step";
+import {
+  EducationStep,
+  EMPTY_EDUCATION_STATE,
+  type EducationFormState,
+} from "@/components/onboarding/steps/education-step";
 import { TimelinesStep } from "@/components/onboarding/steps/timelines-step";
 import { ConfirmationStep } from "@/components/onboarding/steps/confirmation-step";
-import { completeOnboarding, skipOnboarding, updateUserCategory, upsertInternationalStudentProfile } from "@/lib/actions/profile";
+import {
+  completeOnboarding,
+  skipOnboarding,
+  updateUserCategory,
+  upsertInternationalStudentProfile,
+} from "@/lib/actions/profile";
 import type { UserCategory } from "@/lib/types/database";
 
 type StepKey = "category" | "education" | "timelines" | "confirmation";
 
-export function OnboardingFlow({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function OnboardingFlow({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const router = useRouter();
   const [category, setCategory] = React.useState<UserCategory | null>(null);
   const [education, setEducation] = React.useState<EducationFormState>(EMPTY_EDUCATION_STATE);
@@ -93,7 +108,13 @@ export function OnboardingFlow({ open, onOpenChange }: { open: boolean; onOpenCh
           <p className="text-xs font-medium text-muted-foreground">
             Step {stepIndex + 1} of {steps.length}
           </p>
-          <Button variant="ghost" size="sm" onClick={handleSkip} disabled={submitting} className="text-xs text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSkip}
+            disabled={submitting}
+            className="text-xs text-muted-foreground"
+          >
             Skip for now
           </Button>
         </div>
@@ -106,9 +127,7 @@ export function OnboardingFlow({ open, onOpenChange }: { open: boolean; onOpenCh
               onChange={(patch) => setEducation((s) => ({ ...s, ...patch }))}
             />
           )}
-          {currentStep === "timelines" && (
-            <TimelinesStep onTimelineSaved={() => {}} />
-          )}
+          {currentStep === "timelines" && <TimelinesStep onTimelineSaved={() => {}} />}
           {currentStep === "confirmation" && (
             <ConfirmationStep
               category={category}
@@ -120,13 +139,21 @@ export function OnboardingFlow({ open, onOpenChange }: { open: boolean; onOpenCh
         </div>
 
         <div className="-mx-4 -mb-4 flex items-center justify-between gap-2 rounded-b-xl border-t border-border/50 bg-muted/50 p-4">
-          <Button variant="outline" size="sm" onClick={handleBack} disabled={stepIndex === 0 || submitting} className="gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBack}
+            disabled={stepIndex === 0 || submitting}
+            className="gap-1.5"
+          >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Button>
           <Button size="sm" onClick={handleContinue} disabled={submitting} className="gap-1.5">
             {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {currentStep === "confirmation" ? "Finish" : "Continue"}
-            {currentStep !== "confirmation" && !submitting && <ArrowRight className="h-3.5 w-3.5" />}
+            {currentStep !== "confirmation" && !submitting && (
+              <ArrowRight className="h-3.5 w-3.5" />
+            )}
           </Button>
         </div>
       </DialogContent>

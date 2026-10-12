@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { runDeterministicPass, extractLikelyJobPostingUrl, cleanJobPostingDescription } from "@/lib/ai-parser/deterministic";
+import {
+  runDeterministicPass,
+  extractLikelyJobPostingUrl,
+  cleanJobPostingDescription,
+} from "@/lib/ai-parser/deterministic";
 
 /** The exact style of pasted-page clutter this module is meant to strip, used as a regression fixture across several describe blocks below. */
 const TOWER_LINKEDIN_PASTE = `Tower Research Capital logo
@@ -52,7 +56,8 @@ describe("runDeterministicPass — recruiter email", () => {
   });
 
   it("still rejects a lone non-recruiting email even with generic recruiting-context language elsewhere", () => {
-    const text = "Questions about this role? Email our compliance team at legal-notices@example.com for details.";
+    const text =
+      "Questions about this role? Email our compliance team at legal-notices@example.com for details.";
     const result = runDeterministicPass(text);
     expect(result.partial.identity?.recruiterEmail).toBeUndefined();
   });
@@ -91,7 +96,9 @@ Our hybrid work model is designed to enable collaboration. Employees are current
   });
 
   it("detects fully remote language", () => {
-    const result = runDeterministicPass("This is a fully remote position open to candidates anywhere in the US.");
+    const result = runDeterministicPass(
+      "This is a fully remote position open to candidates anywhere in the US.",
+    );
     expect(result.partial.location?.workplaceType).toBe("remote");
   });
 
@@ -124,24 +131,37 @@ describe("runDeterministicPass — recruiter email, extra-conservative exclusion
   });
 
   it("does not treat a generic info@/hr@ mailbox as a recruiter email", () => {
-    expect(runDeterministicPass("Reach us at info@example.com.").partial.identity?.recruiterEmail).toBeUndefined();
-    expect(runDeterministicPass("Reach us at hr@example.com.").partial.identity?.recruiterEmail).toBeUndefined();
+    expect(
+      runDeterministicPass("Reach us at info@example.com.").partial.identity?.recruiterEmail,
+    ).toBeUndefined();
+    expect(
+      runDeterministicPass("Reach us at hr@example.com.").partial.identity?.recruiterEmail,
+    ).toBeUndefined();
   });
 });
 
 describe("source platform detection from URL", () => {
   it("detects LinkedIn from a job URL", () => {
-    const result = runDeterministicPass("Some posting text.", "https://www.linkedin.com/jobs/view/1234567");
+    const result = runDeterministicPass(
+      "Some posting text.",
+      "https://www.linkedin.com/jobs/view/1234567",
+    );
     expect(result.partial.identity?.sourcePlatform).toBe("LinkedIn");
   });
 
   it("detects Greenhouse from a job URL", () => {
-    const result = runDeterministicPass("Some posting text.", "https://boards.greenhouse.io/acme/jobs/12345");
+    const result = runDeterministicPass(
+      "Some posting text.",
+      "https://boards.greenhouse.io/acme/jobs/12345",
+    );
     expect(result.partial.identity?.sourcePlatform).toBe("Greenhouse");
   });
 
   it("prefers a supplied URL's platform over any text-based signal", () => {
-    const result = runDeterministicPass("Responses managed off LinkedIn", "https://boards.greenhouse.io/acme/jobs/12345");
+    const result = runDeterministicPass(
+      "Responses managed off LinkedIn",
+      "https://boards.greenhouse.io/acme/jobs/12345",
+    );
     expect(result.partial.identity?.sourcePlatform).toBe("Greenhouse");
   });
 });
@@ -153,7 +173,8 @@ describe("source platform detection from copied page text (no URL)", () => {
   });
 
   it("detects LinkedIn from a cluster of LinkedIn-specific UI phrases with no URL", () => {
-    const text = "Your AI-powered job assessment\nTailor my resume\nPeople you can reach out to\nOver 100 people clicked apply";
+    const text =
+      "Your AI-powered job assessment\nTailor my resume\nPeople you can reach out to\nOver 100 people clicked apply";
     const result = runDeterministicPass(text);
     expect(result.partial.identity?.sourcePlatform).toBe("LinkedIn");
   });
@@ -164,7 +185,9 @@ describe("source platform detection from copied page text (no URL)", () => {
   });
 
   it("never invents a source platform when no platform signal is present", () => {
-    const result = runDeterministicPass("A completely generic job posting with no portal-specific language at all.");
+    const result = runDeterministicPass(
+      "A completely generic job posting with no portal-specific language at all.",
+    );
     expect(result.partial.identity?.sourcePlatform).toBeUndefined();
   });
 
@@ -188,7 +211,9 @@ describe("extractLikelyJobPostingUrl", () => {
 
   it("extracts a URL with a job/career path segment on an unknown host", () => {
     const text = "See the full posting at https://careers.example.com/jobs/senior-engineer-42";
-    expect(extractLikelyJobPostingUrl(text)).toBe("https://careers.example.com/jobs/senior-engineer-42");
+    expect(extractLikelyJobPostingUrl(text)).toBe(
+      "https://careers.example.com/jobs/senior-engineer-42",
+    );
   });
 
   it("does not invent a URL from a LinkedIn profile/company link", () => {
@@ -233,7 +258,9 @@ describe("cleanJobPostingDescription", () => {
 
   it("preserves the real job content", () => {
     const cleaned = cleanJobPostingDescription(TOWER_LINKEDIN_PASTE);
-    expect(cleaned).toMatch(/Tower Research Capital is a leading quantitative trading firm founded in 1998/);
+    expect(cleaned).toMatch(
+      /Tower Research Capital is a leading quantitative trading firm founded in 1998/,
+    );
   });
 
   it("preserves responsibilities/qualifications/salary/benefits when present", () => {
@@ -262,7 +289,8 @@ Benefits
   });
 
   it("preserves title/company/location/workplace type when there is no explicit heading to slice from", () => {
-    const text = "Software Engineer\nAcme Corp · Austin, TX (Remote)\n\nWe build great software and need your help.";
+    const text =
+      "Software Engineer\nAcme Corp · Austin, TX (Remote)\n\nWe build great software and need your help.";
     const cleaned = cleanJobPostingDescription(text);
     expect(cleaned).toMatch(/Software Engineer/);
     expect(cleaned).toMatch(/Acme Corp/);
@@ -270,7 +298,8 @@ Benefits
   });
 
   it("does not begin with logo/share/apply/save text even without a heading", () => {
-    const text = "Acme Corp logo\nShare\nApply\nSave\nAcme Corp is hiring a Software Engineer to join our team.";
+    const text =
+      "Acme Corp logo\nShare\nApply\nSave\nAcme Corp is hiring a Software Engineer to join our team.";
     const cleaned = cleanJobPostingDescription(text);
     expect(cleaned.startsWith("Acme Corp is hiring")).toBe(true);
   });
@@ -278,9 +307,16 @@ Benefits
 
 describe("contextual contact and source regressions", () => {
   it("does not pick talentacquisition for reasonable adjustments", () => {
-    expect(runDeterministicPass("For reasonable adjustments during the application process, contact talentacquisition@example.com.").partial.identity?.recruiterEmail).toBeUndefined();
+    expect(
+      runDeterministicPass(
+        "For reasonable adjustments during the application process, contact talentacquisition@example.com.",
+      ).partial.identity?.recruiterEmail,
+    ).toBeUndefined();
   });
   it("does not attribute a company domain containing lever to Lever", () => {
-    expect(runDeterministicPass("Job description", "https://careers.clever.com/jobs/1").partial.identity?.sourcePlatform).toBe("Company Website");
+    expect(
+      runDeterministicPass("Job description", "https://careers.clever.com/jobs/1").partial.identity
+        ?.sourcePlatform,
+    ).toBe("Company Website");
   });
 });

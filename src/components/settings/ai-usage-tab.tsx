@@ -92,28 +92,43 @@ export function AiUsageTab() {
                 "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                 range === r.value
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-border/50 text-muted-foreground hover:bg-accent/40"
+                  : "border-border/50 text-muted-foreground hover:bg-accent/40",
               )}
             >
               {r.label}
             </button>
           ))}
         </div>
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => fetchSummary(range)} disabled={loading}>
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => fetchSummary(range)}
+          disabled={loading}
+        >
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
           Refresh
         </Button>
       </div>
 
       {!summary ? (
-        <p className="text-sm text-muted-foreground">{loading ? "Loading usage…" : "No usage data yet."}</p>
+        <p className="text-sm text-muted-foreground">
+          {loading ? "Loading usage…" : "No usage data yet."}
+        </p>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard label="Spend today" value={formatUsd(summary.spend.todayUsd)} />
             <StatCard label="Spend this month" value={formatUsd(summary.spend.monthUsd)} />
             <StatCard label="Spend all-time" value={formatUsd(summary.spend.allTimeUsd)} />
-            <StatCard label={`Spend (${RANGES.find((r) => r.value === range)?.label})`} value={formatUsd(summary.totals.totalCostUsd)} />
+            <StatCard
+              label={`Spend (${RANGES.find((r) => r.value === range)?.label})`}
+              value={formatUsd(summary.totals.totalCostUsd)}
+            />
           </div>
 
           {monthlyBudgetUsd !== null && (
@@ -128,7 +143,11 @@ export function AiUsageTab() {
                 <div
                   className={cn(
                     "h-full rounded-full",
-                    (budgetPercent ?? 0) >= 100 ? "bg-destructive" : (budgetPercent ?? 0) >= 75 ? "bg-[var(--amber-accent)]" : "bg-[var(--emerald-accent)]"
+                    (budgetPercent ?? 0) >= 100
+                      ? "bg-destructive"
+                      : (budgetPercent ?? 0) >= 75
+                        ? "bg-[var(--amber-accent)]"
+                        : "bg-[var(--emerald-accent)]",
                   )}
                   style={{ width: `${budgetPercent ?? 0}%` }}
                 />
@@ -143,7 +162,11 @@ export function AiUsageTab() {
             <StatCard label="Daily request limit" value={summary.entitlement.dailyRequestLimit} />
             <StatCard
               label="Access expires"
-              value={summary.entitlement.expiresAt ? new Date(summary.entitlement.expiresAt).toLocaleDateString() : "Never"}
+              value={
+                summary.entitlement.expiresAt
+                  ? new Date(summary.entitlement.expiresAt).toLocaleDateString()
+                  : "Never"
+              }
             />
             <StatCard label="Requests" value={summary.totals.requests} />
             <StatCard label="Successful" value={summary.totals.successful} />
@@ -151,7 +174,10 @@ export function AiUsageTab() {
             <StatCard label="Cache hits" value={summary.totals.cacheHits} />
             <StatCard label="Retry uses" value={summary.totals.fallbackUses} />
             <StatCard label="Total tokens" value={summary.totals.totalTokens.toLocaleString()} />
-            <StatCard label="Avg cost / parse" value={formatUsd(summary.totals.avgCostPerSuccessfulParseUsd)} />
+            <StatCard
+              label="Avg cost / parse"
+              value={formatUsd(summary.totals.avgCostPerSuccessfulParseUsd)}
+            />
             <StatCard label="Avg latency" value={formatMs(summary.totals.avgLatencyMs)} />
           </div>
 
@@ -176,9 +202,13 @@ export function AiUsageTab() {
                       <tr key={m.model} className="border-t border-border/40">
                         <td className="py-1.5 pr-2 font-medium">{m.model}</td>
                         <td className="py-1.5 pr-2 tabular-nums">{m.calls}</td>
-                        <td className="py-1.5 pr-2 tabular-nums">{m.totalTokens.toLocaleString()}</td>
+                        <td className="py-1.5 pr-2 tabular-nums">
+                          {m.totalTokens.toLocaleString()}
+                        </td>
                         <td className="py-1.5 pr-2 tabular-nums">{formatUsd(m.costUsd)}</td>
-                        <td className="py-1.5 pr-2 tabular-nums">{m.percentOfTotalCost.toFixed(1)}%</td>
+                        <td className="py-1.5 pr-2 tabular-nums">
+                          {m.percentOfTotalCost.toFixed(1)}%
+                        </td>
                         <td className="py-1.5 pr-2 tabular-nums">{formatMs(m.avgLatencyMs)}</td>
                         <td className="py-1.5 pr-2 tabular-nums">{m.successRate.toFixed(0)}%</td>
                       </tr>
@@ -208,7 +238,9 @@ export function AiUsageTab() {
                 <tbody>
                   {summary.recentActivity.map((row) => (
                     <tr key={row.id} className="border-t border-border/40">
-                      <td className="py-1.5 pr-2 whitespace-nowrap tabular-nums">{new Date(row.createdAt).toLocaleString()}</td>
+                      <td className="py-1.5 pr-2 whitespace-nowrap tabular-nums">
+                        {new Date(row.createdAt).toLocaleString()}
+                      </td>
                       <td className="py-1.5 pr-2">{row.model ?? "—"}</td>
                       <td className="py-1.5 pr-2">
                         <Badge
@@ -217,7 +249,7 @@ export function AiUsageTab() {
                             "h-4 px-1.5 text-[9px] uppercase",
                             row.status === "success" && "text-[var(--emerald-accent)]",
                             row.status === "failed" && "text-destructive",
-                            row.status === "cache_hit" && "text-[var(--cyan-accent)]"
+                            row.status === "cache_hit" && "text-[var(--cyan-accent)]",
                           )}
                         >
                           {row.status}
@@ -225,9 +257,15 @@ export function AiUsageTab() {
                       </td>
                       <td className="py-1.5 pr-2">{row.cacheHit ? "Yes" : "No"}</td>
                       <td className="py-1.5 pr-2">{row.fallbackUsed ? "Yes" : "No"}</td>
-                      <td className="py-1.5 pr-2 tabular-nums">{row.totalTokens?.toLocaleString() ?? "—"}</td>
-                      <td className="py-1.5 pr-2 tabular-nums">{row.costUsd !== null ? formatUsd(row.costUsd) : "—"}</td>
-                      <td className="py-1.5 pr-2 tabular-nums">{row.latencyMs !== null ? formatMs(row.latencyMs) : "—"}</td>
+                      <td className="py-1.5 pr-2 tabular-nums">
+                        {row.totalTokens?.toLocaleString() ?? "—"}
+                      </td>
+                      <td className="py-1.5 pr-2 tabular-nums">
+                        {row.costUsd !== null ? formatUsd(row.costUsd) : "—"}
+                      </td>
+                      <td className="py-1.5 pr-2 tabular-nums">
+                        {row.latencyMs !== null ? formatMs(row.latencyMs) : "—"}
+                      </td>
                     </tr>
                   ))}
                   {summary.recentActivity.length === 0 && (

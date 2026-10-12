@@ -18,23 +18,27 @@ export interface BudgetCheckResult {
  * default, else no limit). Scoped strictly to `userId` so one user's
  * spend never blocks another's.
  */
-export async function checkMonthlyBudget(userId: string, limitUsd: number | null): Promise<BudgetCheckResult> {
+export async function checkMonthlyBudget(
+  userId: string,
+  limitUsd: number | null,
+): Promise<BudgetCheckResult> {
   const now = new Date();
-  const monthStartUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const monthStartUtc = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  ).toISOString();
 
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
-    .from("ai_parser_usage")
-    .select("estimated_total_cost_usd")
-    .eq("user_id", userId)
-    .gte("created_at", monthStartUtc);
+  const { data, error } = await supabase.rpc("ai_parser_cost_total", {
+    p_user_id: userId,
+    p_since: monthStartUtc,
+  });
 
-  if (error || !data) {
+  const spentUsd = Number(data);
+  if (error || data === null || !Number.isFinite(spentUsd) || spentUsd < 0) {
     // Fail closed on unexpected DB errors when a limit is configured.
     return { ok: limitUsd === null, spentUsd: 0, limitUsd };
   }
 
-  const spentUsd = data.reduce((sum, row) => sum + Number(row.estimated_total_cost_usd ?? 0), 0);
   const ok = limitUsd === null || spentUsd < limitUsd;
   return { ok, spentUsd, limitUsd };
 }

@@ -7,7 +7,12 @@ import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 const renameSchema = z
   .object({
     resumeId: z.string().uuid(),
-    newDisplayName: z.string().trim().min(1).max(150).refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
+    newDisplayName: z
+      .string()
+      .trim()
+      .min(1)
+      .max(150)
+      .refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
   })
   .strict();
 
@@ -38,7 +43,8 @@ export async function POST(request: Request) {
   const json = await readJsonBody(request, 4 * 1024);
   if (!json.ok) return NextResponse.json({ error: json.error }, { status: json.status });
   const parsedBody = renameSchema.safeParse(json.value);
-  if (!parsedBody.success) return NextResponse.json({ error: "Invalid rename request." }, { status: 400 });
+  if (!parsedBody.success)
+    return NextResponse.json({ error: "Invalid rename request." }, { status: 400 });
   const { resumeId, newDisplayName } = parsedBody.data;
 
   const { data: resume, error: fetchError } = await supabase
@@ -68,7 +74,7 @@ export async function POST(request: Request) {
   if (existing) {
     return NextResponse.json(
       { error: "You already have a resume with this name." },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -77,7 +83,9 @@ export async function POST(request: Request) {
     .update({ display_name: newDisplayName })
     .eq("id", resumeId)
     .eq("user_id", user.id)
-    .select("id, display_name, original_file_name, file_extension, file_type, file_size, status, uploaded_at, target_role, version_notes, resume_match_score, missing_keywords, is_archived, created_at, updated_at")
+    .select(
+      "id, display_name, original_file_name, file_extension, file_type, file_size, status, uploaded_at, target_role, version_notes, resume_match_score, missing_keywords, is_archived, created_at, updated_at",
+    )
     .single();
 
   if (updateError) {

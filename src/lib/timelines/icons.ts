@@ -47,7 +47,10 @@ export const CATEGORY_DEFAULT_ICON: Record<TimelineCategory, TimelineIconKey> = 
  * to React's "no components created during render" check; this helper is
  * for non-render contexts.
  */
-export function getTimelineIcon(iconKey: string | null | undefined, category: TimelineCategory): LucideIcon {
+export function getTimelineIcon(
+  iconKey: string | null | undefined,
+  category: TimelineCategory,
+): LucideIcon {
   if (iconKey && iconKey in TIMELINE_ICON_OPTIONS) {
     return TIMELINE_ICON_OPTIONS[iconKey as TimelineIconKey];
   }

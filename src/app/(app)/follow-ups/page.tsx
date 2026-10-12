@@ -28,7 +28,9 @@ export default async function FollowUpsPage() {
     <div className="space-y-5 py-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Follow-up Center</h1>
-        <p className="text-sm text-muted-foreground">{items.length} follow-ups tracked across your search</p>
+        <p className="text-sm text-muted-foreground">
+          {items.length} follow-ups tracked across your search
+        </p>
       </div>
       <FollowUpCenterClient items={items} />
     </div>

@@ -4,7 +4,13 @@ import * as React from "react";
 import { Table2, Kanban, CalendarDays, Building2, Flame, Search, X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { APPLICATION_STATUSES, WORK_MODES } from "@/lib/types/database";
@@ -35,7 +41,8 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
     const today = new Date().toISOString().slice(0, 10);
     return applications.filter((a) => {
       if (term) {
-        const haystack = `${a.job_title} ${a.company_name} ${a.location ?? ""} ${a.notes ?? ""}`.toLowerCase();
+        const haystack =
+          `${a.job_title} ${a.company_name} ${a.location ?? ""} ${a.notes ?? ""}`.toLowerCase();
         if (!haystack.includes(term)) return false;
       }
       if (statusFilter !== ALL && a.status !== statusFilter) return false;
@@ -47,7 +54,11 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
   }, [applications, search, statusFilter, workModeFilter, resumeFilter, followUpOnly]);
 
   const hasActiveFilters =
-    search || statusFilter !== ALL || workModeFilter !== ALL || resumeFilter !== ALL || followUpOnly;
+    search ||
+    statusFilter !== ALL ||
+    workModeFilter !== ALL ||
+    resumeFilter !== ALL ||
+    followUpOnly;
 
   const clearFilters = () => {
     setSearch("");
@@ -98,11 +109,15 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v ?? ALL)}
         >
-          <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[160px] text-xs">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All statuses</SelectItem>
             {APPLICATION_STATUSES.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -111,24 +126,35 @@ export function ApplicationsWorkspace({ applications, resumeOptions }: Applicati
           value={workModeFilter}
           onValueChange={(v) => setWorkModeFilter(v ?? ALL)}
         >
-          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Work mode" /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue placeholder="Work mode" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All modes</SelectItem>
             {WORK_MODES.map((m) => (
-              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              <SelectItem key={m.value} value={m.value}>
+                {m.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select
-          items={[{ value: ALL, label: "All resumes" }, ...resumeOptions.map((r) => ({ value: r.id, label: r.display_name }))]}
+          items={[
+            { value: ALL, label: "All resumes" },
+            ...resumeOptions.map((r) => ({ value: r.id, label: r.display_name })),
+          ]}
           value={resumeFilter}
           onValueChange={(v) => setResumeFilter(v ?? ALL)}
         >
-          <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Resume" /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[160px] text-xs">
+            <SelectValue placeholder="Resume" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All resumes</SelectItem>
             {resumeOptions.map((r) => (
-              <SelectItem key={r.id} value={r.id}>{r.display_name}</SelectItem>
+              <SelectItem key={r.id} value={r.id}>
+                {r.display_name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

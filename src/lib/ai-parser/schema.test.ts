@@ -187,7 +187,9 @@ describe("rawAiJobParseSchema", () => {
 
 describe("parseRequestSchema", () => {
   it("accepts a minimal valid request", () => {
-    const result = parseRequestSchema.safeParse({ jobDescription: "A description with enough length to matter here." });
+    const result = parseRequestSchema.safeParse({
+      jobDescription: "A description with enough length to matter here.",
+    });
     expect(result.success).toBe(true);
   });
 
@@ -207,7 +209,9 @@ describe("parseRequestSchema", () => {
 
   it("rejects a client-supplied cost or authorization override", () => {
     expect(parseRequestSchema.safeParse({ jobDescription: "desc", cost: 0 }).success).toBe(false);
-    expect(parseRequestSchema.safeParse({ jobDescription: "desc", authorization: "admin" }).success).toBe(false);
+    expect(
+      parseRequestSchema.safeParse({ jobDescription: "desc", authorization: "admin" }).success,
+    ).toBe(false);
   });
 
   it("rejects a malformed jobUrl", () => {
@@ -216,7 +220,13 @@ describe("parseRequestSchema", () => {
   });
 
   it("rejects non-HTTP URL schemes", () => {
-    expect(parseRequestSchema.safeParse({ jobDescription: "desc", jobUrl: "javascript:alert(1)" }).success).toBe(false);
-    expect(parseRequestSchema.safeParse({ jobDescription: "desc", jobUrl: "file:///etc/passwd" }).success).toBe(false);
+    expect(
+      parseRequestSchema.safeParse({ jobDescription: "desc", jobUrl: "javascript:alert(1)" })
+        .success,
+    ).toBe(false);
+    expect(
+      parseRequestSchema.safeParse({ jobDescription: "desc", jobUrl: "file:///etc/passwd" })
+        .success,
+    ).toBe(false);
   });
 });

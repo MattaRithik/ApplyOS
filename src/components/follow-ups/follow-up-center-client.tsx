@@ -36,10 +36,19 @@ function FollowUpRow({ item }: { item: FollowUpItem }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{item.title}</p>
-          {item.subtitle && <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p>}
+          {item.subtitle && (
+            <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p>
+          )}
         </div>
-        <Badge variant="secondary" className="text-[10px]">{CONTEXT_LABEL[item.context]}</Badge>
-        <span className={cn("text-xs font-medium tabular-nums", overdue ? "text-destructive" : "text-muted-foreground")}>
+        <Badge variant="secondary" className="text-[10px]">
+          {CONTEXT_LABEL[item.context]}
+        </Badge>
+        <span
+          className={cn(
+            "text-xs font-medium tabular-nums",
+            overdue ? "text-destructive" : "text-muted-foreground",
+          )}
+        >
           {format(new Date(item.dueDate), "MMM d")}
         </span>
       </div>
@@ -76,13 +85,25 @@ export function FollowUpCenterClient({ items }: { items: FollowUpItem[] }) {
       </TabsList>
 
       <TabsContent value="today" className="mt-4 space-y-2">
-        {dueToday.length === 0 ? <EmptyRow text="Nothing due today." /> : dueToday.map((i) => <FollowUpRow key={i.id} item={i} />)}
+        {dueToday.length === 0 ? (
+          <EmptyRow text="Nothing due today." />
+        ) : (
+          dueToday.map((i) => <FollowUpRow key={i.id} item={i} />)
+        )}
       </TabsContent>
       <TabsContent value="overdue" className="mt-4 space-y-2">
-        {overdue.length === 0 ? <EmptyRow text="No overdue follow-ups." /> : overdue.map((i) => <FollowUpRow key={i.id} item={i} />)}
+        {overdue.length === 0 ? (
+          <EmptyRow text="No overdue follow-ups." />
+        ) : (
+          overdue.map((i) => <FollowUpRow key={i.id} item={i} />)
+        )}
       </TabsContent>
       <TabsContent value="upcoming" className="mt-4 space-y-2">
-        {upcoming.length === 0 ? <EmptyRow text="Nothing upcoming." /> : upcoming.slice(0, 30).map((i) => <FollowUpRow key={i.id} item={i} />)}
+        {upcoming.length === 0 ? (
+          <EmptyRow text="Nothing upcoming." />
+        ) : (
+          upcoming.slice(0, 30).map((i) => <FollowUpRow key={i.id} item={i} />)
+        )}
       </TabsContent>
       <TabsContent value="company" className="mt-4 space-y-3">
         {byCompany.length === 0 ? (
@@ -94,7 +115,9 @@ export function FollowUpCenterClient({ items }: { items: FollowUpItem[] }) {
                 <Building2 className="h-3.5 w-3.5" /> {company} ({group.length})
               </h3>
               <div className="space-y-2">
-                {group.map((i) => <FollowUpRow key={i.id} item={i} />)}
+                {group.map((i) => (
+                  <FollowUpRow key={i.id} item={i} />
+                ))}
               </div>
             </GlassPanel>
           ))
@@ -103,9 +126,13 @@ export function FollowUpCenterClient({ items }: { items: FollowUpItem[] }) {
       <TabsContent value="type" className="mt-4 space-y-3">
         {[...byContext.entries()].map(([context, group]) => (
           <GlassPanel key={context} className="p-4">
-            <h3 className="mb-2 text-xs font-semibold text-muted-foreground">{CONTEXT_LABEL[context]} ({group.length})</h3>
+            <h3 className="mb-2 text-xs font-semibold text-muted-foreground">
+              {CONTEXT_LABEL[context]} ({group.length})
+            </h3>
             <div className="space-y-2">
-              {group.map((i) => <FollowUpRow key={i.id} item={i} />)}
+              {group.map((i) => (
+                <FollowUpRow key={i.id} item={i} />
+              ))}
             </div>
           </GlassPanel>
         ))}

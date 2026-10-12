@@ -20,7 +20,13 @@ import type { Resume } from "@/lib/types/database";
 
 type RenameableResume = Pick<Resume, "id" | "display_name" | "file_extension">;
 
-export function RenameResumeDialog({ resume, onRenamed }: { resume: RenameableResume; onRenamed?: () => void }) {
+export function RenameResumeDialog({
+  resume,
+  onRenamed,
+}: {
+  resume: RenameableResume;
+  onRenamed?: () => void;
+}) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState(resume.display_name);
@@ -51,7 +57,8 @@ export function RenameResumeDialog({ resume, onRenamed }: { resume: RenameableRe
         <DialogHeader>
           <DialogTitle>Rename resume</DialogTitle>
           <DialogDescription>
-            Only the display name changes — the underlying file in storage is never touched, so every application referencing this resume keeps working.
+            Only the display name changes — the underlying file in storage is never touched, so
+            every application referencing this resume keeps working.
           </DialogDescription>
         </DialogHeader>
         <div>
@@ -64,7 +71,9 @@ export function RenameResumeDialog({ resume, onRenamed }: { resume: RenameableRe
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
           <Button onClick={handleRename} disabled={saving || name.trim() === resume.display_name}>
             {saving ? "Renaming…" : "Rename"}
           </Button>

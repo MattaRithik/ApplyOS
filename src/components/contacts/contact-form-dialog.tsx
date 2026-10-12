@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +33,12 @@ interface ContactFormDialogProps {
   trigger?: React.ReactNode;
 }
 
-export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }: ContactFormDialogProps) {
+export function ContactFormDialog({
+  contact,
+  companyOptions,
+  onSaved,
+  trigger,
+}: ContactFormDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [values, setValues] = React.useState<ContactInput>(
@@ -61,7 +72,7 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
           next_follow_up_date: "",
           response_status: "no_response",
           notes: "",
-        }
+        },
   );
 
   const set = <K extends keyof ContactInput>(key: K, v: ContactInput[K]) =>
@@ -108,7 +119,10 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Role / title</Label>
-              <Input value={values.role_title ?? ""} onChange={(e) => set("role_title", e.target.value)} />
+              <Input
+                value={values.role_title ?? ""}
+                onChange={(e) => set("role_title", e.target.value)}
+              />
             </div>
           </div>
 
@@ -116,7 +130,10 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Company</Label>
               <Select
-                items={[{ value: NONE, label: "—" }, ...companyOptions.map((c) => ({ value: c.id, label: c.name }))]}
+                items={[
+                  { value: NONE, label: "—" },
+                  ...companyOptions.map((c) => ({ value: c.id, label: c.name })),
+                ]}
                 value={values.company_id ?? NONE}
                 onValueChange={(v) => {
                   const selected = companyOptions.find((c) => c.id === v);
@@ -124,26 +141,38 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
                   set("company_name", selected?.name ?? values.company_name);
                 }}
               >
-                <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>—</SelectItem>
                   {companyOptions.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs text-muted-foreground">Relationship type</Label>
+              <Label className="mb-1.5 block text-xs text-muted-foreground">
+                Relationship type
+              </Label>
               <Select
                 items={RELATIONSHIP_TYPES}
                 value={values.relationship_type}
-                onValueChange={(v) => set("relationship_type", (v ?? "other") as ContactInput["relationship_type"])}
+                onValueChange={(v) =>
+                  set("relationship_type", (v ?? "other") as ContactInput["relationship_type"])
+                }
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {RELATIONSHIP_TYPES.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -163,7 +192,10 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
 
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">LinkedIn URL</Label>
-            <Input value={values.linkedin_url ?? ""} onChange={(e) => set("linkedin_url", e.target.value)} />
+            <Input
+              value={values.linkedin_url ?? ""}
+              onChange={(e) => set("linkedin_url", e.target.value)}
+            />
           </div>
 
           <div>
@@ -178,11 +210,19 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Last contacted</Label>
-              <Input type="date" value={values.last_contacted_date ?? ""} onChange={(e) => set("last_contacted_date", e.target.value)} />
+              <Input
+                type="date"
+                value={values.last_contacted_date ?? ""}
+                onChange={(e) => set("last_contacted_date", e.target.value)}
+              />
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Next follow-up</Label>
-              <Input type="date" value={values.next_follow_up_date ?? ""} onChange={(e) => set("next_follow_up_date", e.target.value)} />
+              <Input
+                type="date"
+                value={values.next_follow_up_date ?? ""}
+                onChange={(e) => set("next_follow_up_date", e.target.value)}
+              />
             </div>
           </div>
 
@@ -191,12 +231,18 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
             <Select
               items={RESPONSE_STATUSES}
               value={values.response_status ?? "no_response"}
-              onValueChange={(v) => set("response_status", (v ?? "no_response") as ContactInput["response_status"])}
+              onValueChange={(v) =>
+                set("response_status", (v ?? "no_response") as ContactInput["response_status"])
+              }
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {RESPONSE_STATUSES.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -204,12 +250,20 @@ export function ContactFormDialog({ contact, companyOptions, onSaved, trigger }:
 
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Notes</Label>
-            <Textarea rows={3} value={values.notes ?? ""} onChange={(e) => set("notes", e.target.value)} />
+            <Textarea
+              rows={3}
+              value={values.notes ?? ""}
+              onChange={(e) => set("notes", e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

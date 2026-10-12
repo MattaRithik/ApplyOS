@@ -12,7 +12,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   const mounted = React.useSyncExternalStore(
     emptySubscribe,
     () => true,
-    () => false
+    () => false,
   );
 
   if (!mounted) {

@@ -54,7 +54,11 @@ function makeProfile(overrides: Partial<InternationalStudentProfile>): Internati
 
 describe("resolveTimeline — custom / fixed_date", () => {
   it("uses the stored target_date directly", () => {
-    const timeline = makeTimeline({ timeline_type: "custom", target_date: "2026-08-01", title: "Career fair" });
+    const timeline = makeTimeline({
+      timeline_type: "custom",
+      target_date: "2026-08-01",
+      title: "Career fair",
+    });
     const resolved = resolveTimeline(timeline, null);
     expect(resolved.targetDate?.getFullYear()).toBe(2026);
     expect(resolved.targetDate?.getMonth()).toBe(7);
@@ -177,13 +181,20 @@ describe("resolveTimeline — rolling windows", () => {
 describe("isSystemTimelineAvailable", () => {
   it("does not expose legacy immigration calculations", () => {
     expect(isSystemTimelineAvailable("opt_earliest_filing", null)).toBe(false);
-    expect(isSystemTimelineAvailable("opt_start", makeProfile({ opt_start_date: "2026-06-01" }))).toBe(false);
+    expect(
+      isSystemTimelineAvailable("opt_start", makeProfile({ opt_start_date: "2026-06-01" })),
+    ).toBe(false);
   });
 
   it("exposes graduation once its source date is present", () => {
-    expect(isSystemTimelineAvailable("i20_program_end", makeProfile({ expected_graduation_date: null }))).toBe(false);
     expect(
-      isSystemTimelineAvailable("i20_program_end", makeProfile({ expected_graduation_date: "2026-06-01" }))
+      isSystemTimelineAvailable("i20_program_end", makeProfile({ expected_graduation_date: null })),
+    ).toBe(false);
+    expect(
+      isSystemTimelineAvailable(
+        "i20_program_end",
+        makeProfile({ expected_graduation_date: "2026-06-01" }),
+      ),
     ).toBe(true);
   });
 

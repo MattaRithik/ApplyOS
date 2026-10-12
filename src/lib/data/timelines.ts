@@ -10,7 +10,10 @@ export interface TimelinesContext {
   pinnedTimelines: ResolvedTimeline[];
 }
 
-export async function getTimelinesContext(supabase: SupabaseClient, userId: string): Promise<TimelinesContext> {
+export async function getTimelinesContext(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<TimelinesContext> {
   const [{ data: profile }, { data: timelines }] = await Promise.all([
     supabase.from("international_student_profiles").select("*").eq("user_id", userId).maybeSingle(),
     supabase

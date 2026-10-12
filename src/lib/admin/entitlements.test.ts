@@ -5,9 +5,8 @@ vi.mock("@/lib/supabase/server", () => ({
   createServiceRoleClient: () => ({ rpc: rpcMock }),
 }));
 
-const { grantAIAccess, revokeAIAccess, suspendAIAccess, reactivateAIAccess, updateAILimits } = await import(
-  "@/lib/admin/entitlements"
-);
+const { grantAIAccess, revokeAIAccess, suspendAIAccess, reactivateAIAccess, updateAILimits } =
+  await import("@/lib/admin/entitlements");
 
 const PARAMS = { actorUserId: "owner-1", targetUserId: "user-1", requestId: "req-1" };
 

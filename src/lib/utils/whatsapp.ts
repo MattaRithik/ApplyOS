@@ -3,7 +3,13 @@ export function buildWhatsAppShareUrl(text: string): string {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
-export function jobDropShareText(params: { senderName: string; url: string; caption?: string | null }): string {
+export function jobDropShareText(params: {
+  senderName: string;
+  url: string;
+  caption?: string | null;
+}): string {
   const { senderName, url, caption } = params;
-  return caption ? `📌 Job posted by ${senderName}: ${caption}\n${url}` : `📌 Job posted by ${senderName}: ${url}`;
+  return caption
+    ? `📌 Job posted by ${senderName}: ${caption}\n${url}`
+    : `📌 Job posted by ${senderName}: ${url}`;
 }

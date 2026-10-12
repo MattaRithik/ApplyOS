@@ -41,7 +41,10 @@ function emptyForm(overrides: Partial<ApplicationFormValues> = {}): ApplicationF
   };
 }
 
-function buildResult(overrides: Partial<AiParserResult> = {}, provenanceOverrides: ProvenanceMap = {}): AiParserResult {
+function buildResult(
+  overrides: Partial<AiParserResult> = {},
+  provenanceOverrides: ProvenanceMap = {},
+): AiParserResult {
   const base: AiParserResult = {
     identity: {
       companyName: "Tower Research Capital",
@@ -194,9 +197,16 @@ describe("selectSafeFieldsToApply", () => {
     // salaryCurrency is not itself in RISKY_FIELDS' salary set, but salaryMinimum/Maximum are —
     // confirm the risky ones only pass when explicit.
     const explicitRisky = buildResult({}, { "compensation.salaryMinimum": { status: "explicit" } });
-    expect(selectSafeFieldsToApply(explicitRisky, emptyForm()).has("compensation.salaryMinimum")).toBe(true);
-    const normalizedRisky = buildResult({}, { "compensation.salaryMinimum": { status: "normalized" } });
-    expect(selectSafeFieldsToApply(normalizedRisky, emptyForm()).has("compensation.salaryMinimum")).toBe(false);
+    expect(
+      selectSafeFieldsToApply(explicitRisky, emptyForm()).has("compensation.salaryMinimum"),
+    ).toBe(true);
+    const normalizedRisky = buildResult(
+      {},
+      { "compensation.salaryMinimum": { status: "normalized" } },
+    );
+    expect(
+      selectSafeFieldsToApply(normalizedRisky, emptyForm()).has("compensation.salaryMinimum"),
+    ).toBe(false);
   });
 
   it("does not treat the form's default placeholder values as already-typed — visa sponsorship and salary currency", () => {
@@ -207,20 +217,25 @@ describe("selectSafeFieldsToApply", () => {
     // to treat as "the user already set this" and silently skip it.
     const result = buildResult(
       { immigration: { ...buildResult().immigration, visaSponsorship: "not_available" } },
-      { "immigration.visaSponsorship": { status: "explicit" } }
+      { "immigration.visaSponsorship": { status: "explicit" } },
     );
     const safe = selectSafeFieldsToApply(result, emptyForm());
     expect(safe.has("immigration.visaSponsorship")).toBe(true);
 
-    const currencyResult = buildResult({}, { "compensation.salaryCurrency": { status: "normalized" } });
-    expect(selectSafeFieldsToApply(currencyResult, emptyForm()).has("compensation.salaryCurrency")).toBe(true);
+    const currencyResult = buildResult(
+      {},
+      { "compensation.salaryCurrency": { status: "normalized" } },
+    );
+    expect(
+      selectSafeFieldsToApply(currencyResult, emptyForm()).has("compensation.salaryCurrency"),
+    ).toBe(true);
   });
 
   it("still respects a real, non-default visa sponsorship value the user already chose", () => {
     const current = emptyForm({ visa_sponsorship_status: "h1b_available" });
     const result = buildResult(
       { immigration: { ...buildResult().immigration, visaSponsorship: "not_available" } },
-      { "immigration.visaSponsorship": { status: "explicit" } }
+      { "immigration.visaSponsorship": { status: "explicit" } },
     );
     expect(selectSafeFieldsToApply(result, current).has("immigration.visaSponsorship")).toBe(false);
   });
@@ -240,9 +255,11 @@ describe("selectSafeFieldsToApply", () => {
   it("is extra-conservative for visa sponsorship — requires explicit, not normalized", () => {
     const result = buildResult(
       { immigration: { ...buildResult().immigration, visaSponsorship: "available" } },
-      { "immigration.visaSponsorship": { status: "normalized" } }
+      { "immigration.visaSponsorship": { status: "normalized" } },
     );
-    expect(selectSafeFieldsToApply(result, emptyForm()).has("immigration.visaSponsorship")).toBe(false);
+    expect(selectSafeFieldsToApply(result, emptyForm()).has("immigration.visaSponsorship")).toBe(
+      false,
+    );
   });
 
   it("does not overwrite a value the user already manually typed", () => {
@@ -255,22 +272,38 @@ describe("selectSafeFieldsToApply", () => {
 
   it("only includes recruiter contact when the email itself is explicit", () => {
     const withEmail = buildResult(
-      { identity: { ...buildResult().identity, recruiterEmail: "jane@example.com", recruiterName: "Jane" } },
-      { "identity.recruiterEmail": { status: "explicit" } }
+      {
+        identity: {
+          ...buildResult().identity,
+          recruiterEmail: "jane@example.com",
+          recruiterName: "Jane",
+        },
+      },
+      { "identity.recruiterEmail": { status: "explicit" } },
     );
-    expect(selectSafeFieldsToApply(withEmail, emptyForm()).has(SYNTHETIC_RECRUITER_CONTACT_KEY)).toBe(true);
+    expect(
+      selectSafeFieldsToApply(withEmail, emptyForm()).has(SYNTHETIC_RECRUITER_CONTACT_KEY),
+    ).toBe(true);
 
     const uncertainEmail = buildResult(
-      { identity: { ...buildResult().identity, recruiterEmail: "jane@example.com", recruiterName: "Jane" } },
-      { "identity.recruiterEmail": { status: "uncertain" } }
+      {
+        identity: {
+          ...buildResult().identity,
+          recruiterEmail: "jane@example.com",
+          recruiterName: "Jane",
+        },
+      },
+      { "identity.recruiterEmail": { status: "uncertain" } },
     );
-    expect(selectSafeFieldsToApply(uncertainEmail, emptyForm()).has(SYNTHETIC_RECRUITER_CONTACT_KEY)).toBe(false);
+    expect(
+      selectSafeFieldsToApply(uncertainEmail, emptyForm()).has(SYNTHETIC_RECRUITER_CONTACT_KEY),
+    ).toBe(false);
   });
 
   it("does not include the deadline->follow-up synthetic key when a follow-up date is already set", () => {
     const result = buildResult(
       { roleContent: { ...buildResult().roleContent, applicationDeadline: "2026-08-15" } },
-      { "roleContent.applicationDeadline": { status: "explicit" } }
+      { "roleContent.applicationDeadline": { status: "explicit" } },
     );
     const current = emptyForm({ follow_up_date: "2026-08-01" });
     expect(selectSafeFieldsToApply(result, current).has(SYNTHETIC_DEADLINE_KEY)).toBe(false);
@@ -285,39 +318,67 @@ describe("applyParsedResultToForm — never overwrites manually typed values", (
   });
 
   it("applies a field onto an empty form", () => {
-    const next = applyParsedResultToForm(emptyForm(), buildResult(), new Set(["identity.companyName"]));
+    const next = applyParsedResultToForm(
+      emptyForm(),
+      buildResult(),
+      new Set(["identity.companyName"]),
+    );
     expect(next.company_name).toBe("Tower Research Capital");
   });
 
   it("maps sourcePlatform onto the dedicated source form field", () => {
-    const next = applyParsedResultToForm(emptyForm(), buildResult(), new Set(["identity.sourcePlatform"]));
+    const next = applyParsedResultToForm(
+      emptyForm(),
+      buildResult(),
+      new Set(["identity.sourcePlatform"]),
+    );
     expect(next.source).toBe("LinkedIn");
   });
 });
 
 describe("applyParsedResultToForm — notes formatting", () => {
   it("groups notes into clear, spaced sections with headings", () => {
-    const next = applyParsedResultToForm(emptyForm(), buildResult(), new Set(["roleContent.benefits", "compensation.salaryPeriod"]));
+    const next = applyParsedResultToForm(
+      emptyForm(),
+      buildResult(),
+      new Set(["roleContent.benefits", "compensation.salaryPeriod"]),
+    );
     expect(next.notes).toContain("BENEFITS");
     expect(next.notes).toContain("COMPENSATION");
     expect(next.notes).toMatch(/\n\n/); // blank-line spacing between sections
   });
 
   it("renders array values as bullet points", () => {
-    const next = applyParsedResultToForm(emptyForm(), buildResult(), new Set(["roleContent.benefits"]));
+    const next = applyParsedResultToForm(
+      emptyForm(),
+      buildResult(),
+      new Set(["roleContent.benefits"]),
+    );
     expect(next.notes).toContain("• Generous PTO");
     expect(next.notes).toContain("• Free meals");
   });
 
   it("never includes portal clutter — only structured extracted field labels/values", () => {
-    const next = applyParsedResultToForm(emptyForm(), buildResult(), new Set(["roleContent.benefits"]));
+    const next = applyParsedResultToForm(
+      emptyForm(),
+      buildResult(),
+      new Set(["roleContent.benefits"]),
+    );
     expect(next.notes).not.toMatch(/logo|show more options|clicked apply/i);
   });
 });
 
 describe("new parser form transfer", () => {
   it("applies a normalized URL-detected source to an empty form", () => {
-    const result = buildResult({}, { "identity.sourcePlatform": { status: "normalized", evidence: "https://www.linkedin.com/jobs/view/123" } });
+    const result = buildResult(
+      {},
+      {
+        "identity.sourcePlatform": {
+          status: "normalized",
+          evidence: "https://www.linkedin.com/jobs/view/123",
+        },
+      },
+    );
     const current = emptyForm();
     const keys = selectSafeFieldsToApply(result, current);
     expect(keys.has("identity.sourcePlatform")).toBe(true);
@@ -326,7 +387,11 @@ describe("new parser form transfer", () => {
 
   it("does not replace an existing source or apply an uncertain source", () => {
     const result = buildResult({}, { "identity.sourcePlatform": { status: "normalized" } });
-    expect(selectSafeFieldsToApply(result, emptyForm({ source: "Referral" })).has("identity.sourcePlatform")).toBe(false);
+    expect(
+      selectSafeFieldsToApply(result, emptyForm({ source: "Referral" })).has(
+        "identity.sourcePlatform",
+      ),
+    ).toBe(false);
     result.provenance["identity.sourcePlatform"].status = "uncertain";
     expect(selectSafeFieldsToApply(result, emptyForm()).has("identity.sourcePlatform")).toBe(false);
   });
@@ -344,28 +409,44 @@ describe("new parser form transfer", () => {
   });
 
   it("does not translate an unclear policy into promised future sponsorship", () => {
-    const result = buildResult(); result.immigration.visaSponsorship = "unclear";
-    const next = applyParsedResultToForm(emptyForm(), result, new Set(["immigration.visaSponsorship"]));
+    const result = buildResult();
+    result.immigration.visaSponsorship = "unclear";
+    const next = applyParsedResultToForm(
+      emptyForm(),
+      result,
+      new Set(["immigration.visaSponsorship"]),
+    );
     expect(next.visa_sponsorship_status).toBe("not_mentioned");
   });
 });
 
 describe("role-aware priority and stipend", () => {
   it("applies the suggested priority including a zero score, while keeping manual priorities", () => {
-    const result = buildResult({ priorityMatch: { score: 0, matchedTargetRole: "Risk", explanation: "Unrelated role" } });
+    const result = buildResult({
+      priorityMatch: { score: 0, matchedTargetRole: "Risk", explanation: "Unrelated role" },
+    });
     const empty = emptyForm();
-    expect(applyParsedResultToForm(empty, result, selectSafeFieldsToApply(result, empty)).priority_score).toBe(0);
+    expect(
+      applyParsedResultToForm(empty, result, selectSafeFieldsToApply(result, empty)).priority_score,
+    ).toBe(0);
     const manual = emptyForm({ priority_score: 85 });
     expect(selectSafeFieldsToApply(result, manual).has("priorityMatch.score")).toBe(false);
-    expect(applyParsedResultToForm(manual, result, selectSafeFieldsToApply(result, manual)).priority_score).toBe(85);
+    expect(
+      applyParsedResultToForm(manual, result, selectSafeFieldsToApply(result, manual))
+        .priority_score,
+    ).toBe(85);
     expect(selectSafeFieldsToApply(result, empty, true).has("priorityMatch.score")).toBe(false);
-    expect(applyParsedResultToForm(manual, result, new Set(["priorityMatch.score"])).priority_score).toBe(0);
+    expect(
+      applyParsedResultToForm(manual, result, new Set(["priorityMatch.score"])).priority_score,
+    ).toBe(0);
   });
 
   it("leaves priority alone when no target-role match is available", () => {
     const result = buildResult({ priorityMatch: null });
     const form = emptyForm();
-    expect(applyParsedResultToForm(form, result, selectSafeFieldsToApply(result, form)).priority_score).toBe(50);
+    expect(
+      applyParsedResultToForm(form, result, selectSafeFieldsToApply(result, form)).priority_score,
+    ).toBe(50);
   });
 
   it("keeps an internship's actual rate and period rather than annualizing it", () => {
@@ -375,7 +456,16 @@ describe("role-aware priority and stipend", () => {
     result.compensation.salaryMaximum = 45;
     result.compensation.salaryPeriod = "hour";
     result.compensation.compensationText = "Stipend: $35–$45 per hour.";
-    const form = applyParsedResultToForm(emptyForm(), result, new Set(["employment.employmentType", "compensation.salaryMinimum", "compensation.salaryMaximum", "compensation.salaryPeriod"]));
+    const form = applyParsedResultToForm(
+      emptyForm(),
+      result,
+      new Set([
+        "employment.employmentType",
+        "compensation.salaryMinimum",
+        "compensation.salaryMaximum",
+        "compensation.salaryPeriod",
+      ]),
+    );
     expect(form.employment_type).toBe("internship");
     expect(form.salary_min).toBe(35);
     expect(form.salary_max).toBe(45);

@@ -20,9 +20,13 @@ export interface SecurityActionResult {
  * address or token here. Audited without ever recording the token or
  * email body.
  */
-export async function sendPasswordResetForUser(params: SecurityActionParams): Promise<SecurityActionResult> {
+export async function sendPasswordResetForUser(
+  params: SecurityActionParams,
+): Promise<SecurityActionResult> {
   const supabase = createServiceRoleClient();
-  const { data: userData, error: lookupError } = await supabase.auth.admin.getUserById(params.targetUserId);
+  const { data: userData, error: lookupError } = await supabase.auth.admin.getUserById(
+    params.targetUserId,
+  );
   if (lookupError || !userData?.user?.email || !userData.user.email_confirmed_at) {
     return { ok: false, error: "User not found." };
   }
@@ -49,10 +53,14 @@ export async function sendPasswordResetForUser(params: SecurityActionParams): Pr
  * is a known limitation, not a full instant revocation, and is
  * documented as such rather than overclaimed.
  */
-export async function revokeSessionsForUser(params: SecurityActionParams): Promise<SecurityActionResult> {
+export async function revokeSessionsForUser(
+  params: SecurityActionParams,
+): Promise<SecurityActionResult> {
   const supabase = createServiceRoleClient();
   const randomPassword = randomBytes(32).toString("base64url");
-  const { error } = await supabase.auth.admin.updateUserById(params.targetUserId, { password: randomPassword });
+  const { error } = await supabase.auth.admin.updateUserById(params.targetUserId, {
+    password: randomPassword,
+  });
 
   if (error) return { ok: false, error: "Failed to revoke sessions." };
   await recordAuditEvent({
@@ -66,7 +74,9 @@ export async function revokeSessionsForUser(params: SecurityActionParams): Promi
 
 export async function disableUser(params: SecurityActionParams): Promise<SecurityActionResult> {
   const supabase = createServiceRoleClient();
-  const { error } = await supabase.auth.admin.updateUserById(params.targetUserId, { ban_duration: "876000h" });
+  const { error } = await supabase.auth.admin.updateUserById(params.targetUserId, {
+    ban_duration: "876000h",
+  });
 
   if (error) return { ok: false, error: "Failed to disable account." };
   await recordAuditEvent({
@@ -80,7 +90,9 @@ export async function disableUser(params: SecurityActionParams): Promise<Securit
 
 export async function enableUser(params: SecurityActionParams): Promise<SecurityActionResult> {
   const supabase = createServiceRoleClient();
-  const { error } = await supabase.auth.admin.updateUserById(params.targetUserId, { ban_duration: "none" });
+  const { error } = await supabase.auth.admin.updateUserById(params.targetUserId, {
+    ban_duration: "none",
+  });
 
   if (error) return { ok: false, error: "Failed to re-enable account." };
   await recordAuditEvent({

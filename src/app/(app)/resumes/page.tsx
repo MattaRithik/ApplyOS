@@ -6,7 +6,8 @@ import type { ApplicationStatus } from "@/lib/types/database";
 
 const INTERVIEW_STATUSES: ApplicationStatus[] = [
   "recruiter_screen",
-  "oa_assessment", "ai_interview",
+  "oa_assessment",
+  "ai_interview",
   "first_round",
   "technical_round",
   "superday_final_round",
@@ -24,11 +25,17 @@ export default async function ResumesPage() {
   const [{ data: resumes }, { data: applications }] = await Promise.all([
     supabase
       .from("resumes")
-      .select("id, display_name, original_file_name, file_extension, file_size, target_role, status, created_at")
+      .select(
+        "id, display_name, original_file_name, file_extension, file_size, target_role, status, created_at",
+      )
       .eq("user_id", user.id)
       .eq("is_archived", false)
       .order("created_at", { ascending: false }),
-    supabase.from("applications").select("resume_id, status").eq("user_id", user.id).eq("is_archived", false),
+    supabase
+      .from("applications")
+      .select("resume_id, status")
+      .eq("user_id", user.id)
+      .eq("is_archived", false),
   ]);
 
   if (!resumes || resumes.length === 0) {

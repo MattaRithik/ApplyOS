@@ -18,7 +18,9 @@ export function isAllowedResumeExtension(ext: string): ext is ResumeExtension {
   return (ALLOWED_RESUME_EXTENSIONS as readonly string[]).includes(ext.toLowerCase());
 }
 
-export function isAllowedResumeMimeType(mimeType: string): mimeType is keyof typeof ALLOWED_RESUME_MIME_TYPES {
+export function isAllowedResumeMimeType(
+  mimeType: string,
+): mimeType is keyof typeof ALLOWED_RESUME_MIME_TYPES {
   return mimeType in ALLOWED_RESUME_MIME_TYPES;
 }
 
@@ -64,7 +66,13 @@ export function isResumeSignatureValid(extension: ResumeExtension, bytes: Uint8A
   }
   // DOCX is an OPC document in a ZIP container. This rejects arbitrary
   // executable formats, while deeper document parsing remains out of scope.
-  return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
+  return (
+    bytes.length >= 4 &&
+    bytes[0] === 0x50 &&
+    bytes[1] === 0x4b &&
+    bytes[2] === 0x03 &&
+    bytes[3] === 0x04
+  );
 }
 
 export function formatFileSize(bytes: number | null): string {

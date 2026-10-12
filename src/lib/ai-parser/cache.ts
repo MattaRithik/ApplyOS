@@ -16,8 +16,20 @@ export function normalizeDescription(text: string): string {
     .trim();
 }
 
-export function hashDescription(normalizedText: string, jobUrl?: string, targetRoles: string[] = []): string {
-  return createHash("sha256").update(JSON.stringify({ description: normalizedText, jobUrl: jobUrl?.trim() || null, targetRoles: [...new Set(targetRoles.map((role) => role.toLowerCase()))].sort() })).digest("hex");
+export function hashDescription(
+  normalizedText: string,
+  jobUrl?: string,
+  targetRoles: string[] = [],
+): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        description: normalizedText,
+        jobUrl: jobUrl?.trim() || null,
+        targetRoles: [...new Set(targetRoles.map((role) => role.toLowerCase()))].sort(),
+      }),
+    )
+    .digest("hex");
 }
 
 interface CacheRow {
@@ -29,7 +41,7 @@ interface CacheRow {
 export async function getCachedResult(
   supabase: SupabaseClient,
   userId: string,
-  descriptionHash: string
+  descriptionHash: string,
 ): Promise<CacheRow | null> {
   const { data, error } = await supabase
     .from("ai_parser_cache")
@@ -48,7 +60,7 @@ export async function writeCacheResult(
   userId: string,
   descriptionHash: string,
   result: AiParserResult,
-  model: string
+  model: string,
 ): Promise<void> {
   const supabase = createServiceRoleClient();
   const { error } = await supabase.from("ai_parser_cache").upsert(
@@ -61,7 +73,7 @@ export async function writeCacheResult(
       prompt_version: PROMPT_VERSION,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id,description_hash,parser_schema_version,prompt_version" }
+    { onConflict: "user_id,description_hash,parser_schema_version,prompt_version" },
   );
   if (error) throw new Error("Failed to persist parser cache.");
 }

@@ -13,7 +13,8 @@ export function HrContactsCard({ contacts }: { contacts: HrContactDraft[] }) {
       </h2>
       {contacts.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No HR contacts added yet — use Edit to add recruiters, HR, or hiring managers for this application.
+          No HR contacts added yet — use Edit to add recruiters, HR, or hiring managers for this
+          application.
         </p>
       ) : (
         <div className="space-y-3">
@@ -22,16 +23,24 @@ export function HrContactsCard({ contacts }: { contacts: HrContactDraft[] }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-medium">{contact.name}</p>
-                  {contact.role_title && <p className="text-xs text-muted-foreground">{contact.role_title}</p>}
+                  {contact.role_title && (
+                    <p className="text-xs text-muted-foreground">{contact.role_title}</p>
+                  )}
                 </div>
                 <Badge variant="secondary" className="text-[10px]">
-                  {HR_CONTACT_RELATIONSHIP_TYPES.find((r) => r.value === contact.relationship_type)?.label}
+                  {
+                    HR_CONTACT_RELATIONSHIP_TYPES.find((r) => r.value === contact.relationship_type)
+                      ?.label
+                  }
                 </Badge>
               </div>
               {(contact.email || contact.phone || contact.linkedin_url) && (
                 <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                   {safeMailto(contact.email) && (
-                    <a href={safeMailto(contact.email)!} className="flex items-center gap-1 hover:text-primary">
+                    <a
+                      href={safeMailto(contact.email)!}
+                      className="flex items-center gap-1 hover:text-primary"
+                    >
                       <Mail className="h-3 w-3" /> {contact.email}
                     </a>
                   )}
@@ -41,7 +50,12 @@ export function HrContactsCard({ contacts }: { contacts: HrContactDraft[] }) {
                     </span>
                   )}
                   {safeHttpUrl(contact.linkedin_url) && (
-                    <a href={safeHttpUrl(contact.linkedin_url)!} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary">
+                    <a
+                      href={safeHttpUrl(contact.linkedin_url)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:text-primary"
+                    >
                       <Link2 className="h-3 w-3" /> LinkedIn
                     </a>
                   )}

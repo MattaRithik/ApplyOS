@@ -53,7 +53,9 @@ export async function getEntitlement(userId: string): Promise<AiParserEntitlemen
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("ai_parser_entitlements")
-    .select("enabled, daily_request_limit, monthly_budget_usd, suspended_at, suspension_reason, expires_at, granted_at")
+    .select(
+      "enabled, daily_request_limit, monthly_budget_usd, suspended_at, suspension_reason, expires_at, granted_at",
+    )
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -80,7 +82,8 @@ export function resolveEffectiveLimits(entitlement: AiParserEntitlement | null):
 function isEntitlementActive(entitlement: AiParserEntitlement | null): boolean {
   if (!entitlement || !entitlement.enabled) return false;
   if (entitlement.suspendedAt) return false;
-  if (entitlement.expiresAt && new Date(entitlement.expiresAt).getTime() <= Date.now()) return false;
+  if (entitlement.expiresAt && new Date(entitlement.expiresAt).getTime() <= Date.now())
+    return false;
   return true;
 }
 
@@ -91,7 +94,9 @@ function isEntitlementActive(entitlement: AiParserEntitlement | null): boolean {
  * OpenAI call is allowed to happen at all — the API route calls this
  * before touching the provider, the cache, or the rate limiter.
  */
-export async function requireAIParserAccess(supabase: SupabaseClient): Promise<AuthorizedParserContext> {
+export async function requireAIParserAccess(
+  supabase: SupabaseClient,
+): Promise<AuthorizedParserContext> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -123,7 +128,7 @@ export async function hasAIParserAccess(supabase: SupabaseClient): Promise<boole
 
 /** For the user's own Settings "AI Parser Usage" tab — always the caller's own entitlement, never another user's. */
 export async function getCurrentUserEntitlement(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<{ entitlement: AiParserEntitlement | null; limits: EffectiveLimits } | null> {
   const {
     data: { user },

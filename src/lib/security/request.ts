@@ -4,8 +4,7 @@ export { safeLocalPath } from "@/lib/utils/url";
 const JSON_CONTENT_TYPE = "application/json";
 
 export type JsonBodyResult =
-  | { ok: true; value: unknown }
-  | { ok: false; status: 400 | 413 | 415; error: string };
+  { ok: true; value: unknown } | { ok: false; status: 400 | 413 | 415; error: string };
 
 /**
  * Reject browser-initiated cross-site mutations. Supabase's SameSite
@@ -27,7 +26,10 @@ export function isSameOriginMutation(request: Request): boolean {
 }
 
 /** Reads and parses a bounded JSON body without ever reflecting parser errors. */
-export async function readJsonBody(request: Request, maxBytes = 64 * 1024): Promise<JsonBodyResult> {
+export async function readJsonBody(
+  request: Request,
+  maxBytes = 64 * 1024,
+): Promise<JsonBodyResult> {
   const contentType = request.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase();
   if (contentType !== JSON_CONTENT_TYPE) {
     return { ok: false, status: 415, error: "Content-Type must be application/json." };

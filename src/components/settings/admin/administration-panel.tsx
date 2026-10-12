@@ -29,7 +29,8 @@ export function AdministrationPanel() {
         <p className="text-sm font-semibold">Administration</p>
         <p className="text-xs text-muted-foreground">
           Owner-only controls for account access, AI parser entitlements, and security actions.
-          Manage accounts, AI access, and estimated API costs. View signed-in connection activity. User applications and resumes remain private.
+          Manage accounts, AI access, and estimated API costs. View signed-in connection activity.
+          User applications and resumes remain private.
         </p>
       </div>
 
@@ -42,7 +43,7 @@ export function AdministrationPanel() {
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               section === s.value
                 ? "border-primary bg-primary/10 text-primary"
-                : "border-border/50 text-muted-foreground hover:bg-accent/40"
+                : "border-border/50 text-muted-foreground hover:bg-accent/40",
             )}
           >
             {s.label}

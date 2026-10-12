@@ -3,14 +3,36 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { CustomTimelineForm, type CustomTimelineFormValue } from "@/components/timelines/custom-timeline-form";
-import { SYSTEM_TIMELINE_DEFINITIONS, isSystemTimelineAvailable, resolveTimeline } from "@/lib/timelines/resolve";
-import { TIMELINE_ICON_OPTIONS, CATEGORY_DEFAULT_ICON, type TimelineIconKey } from "@/lib/timelines/icons";
+import {
+  CustomTimelineForm,
+  type CustomTimelineFormValue,
+} from "@/components/timelines/custom-timeline-form";
+import {
+  SYSTEM_TIMELINE_DEFINITIONS,
+  isSystemTimelineAvailable,
+  resolveTimeline,
+} from "@/lib/timelines/resolve";
+import {
+  TIMELINE_ICON_OPTIONS,
+  CATEGORY_DEFAULT_ICON,
+  type TimelineIconKey,
+} from "@/lib/timelines/icons";
 import { formatTargetDate, getCountdownLabel } from "@/lib/utils/timeline-date";
-import { createCustomTimeline, pinTimelineToSlot, selectSystemTimeline, updateCustomTimeline } from "@/lib/actions/timelines";
+import {
+  createCustomTimeline,
+  pinTimelineToSlot,
+  selectSystemTimeline,
+  updateCustomTimeline,
+} from "@/lib/actions/timelines";
 import type { InternationalStudentProfile, TimelineType, UserTimeline } from "@/lib/types/database";
 
 const CUSTOM_VALUE = "__custom__";
@@ -24,15 +46,23 @@ interface TimelineSlotPickerProps {
   onSaved: () => void;
 }
 
-export function TimelineSlotPicker({ slot, isInternational, internationalProfile, current, onSaved }: TimelineSlotPickerProps) {
+export function TimelineSlotPicker({
+  slot,
+  isInternational,
+  internationalProfile,
+  current,
+  onSaved,
+}: TimelineSlotPickerProps) {
   const [editing, setEditing] = React.useState(!current);
-  const [choice, setChoice] = React.useState<string>(current?.timeline_type === "custom" ? CUSTOM_VALUE : current?.timeline_type ?? "");
+  const [choice, setChoice] = React.useState<string>(
+    current?.timeline_type === "custom" ? CUSTOM_VALUE : (current?.timeline_type ?? ""),
+  );
   const [saving, setSaving] = React.useState(false);
 
   const availableSystemOptions = SYSTEM_TIMELINE_DEFINITIONS.filter(
     (d) =>
       (!d.requiresInternationalProfile || isInternational) &&
-      isSystemTimelineAvailable(d.type, internationalProfile as InternationalStudentProfile | null)
+      isSystemTimelineAvailable(d.type, internationalProfile as InternationalStudentProfile | null),
   );
 
   const handleSelectSystem = async (type: TimelineType) => {
@@ -72,8 +102,15 @@ export function TimelineSlotPicker({ slot, isInternational, internationalProfile
   };
 
   if (!editing && current) {
-    const resolved = resolveTimeline(current, internationalProfile as InternationalStudentProfile | null);
-    const iconKey = (resolved.icon && resolved.icon in TIMELINE_ICON_OPTIONS ? resolved.icon : CATEGORY_DEFAULT_ICON[resolved.category]) as TimelineIconKey;
+    const resolved = resolveTimeline(
+      current,
+      internationalProfile as InternationalStudentProfile | null,
+    );
+    const iconKey = (
+      resolved.icon && resolved.icon in TIMELINE_ICON_OPTIONS
+        ? resolved.icon
+        : CATEGORY_DEFAULT_ICON[resolved.category]
+    ) as TimelineIconKey;
     const Icon = TIMELINE_ICON_OPTIONS[iconKey];
     const countdown = resolved.targetDate ? getCountdownLabel(resolved.targetDate) : null;
     return (
@@ -90,7 +127,12 @@ export function TimelineSlotPicker({ slot, isInternational, internationalProfile
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => setEditing(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-1.5"
+          onClick={() => setEditing(true)}
+        >
           <Pencil className="h-3.5 w-3.5" /> Replace
         </Button>
       </GlassPanel>
@@ -111,10 +153,14 @@ export function TimelineSlotPicker({ slot, isInternational, internationalProfile
           if (next && next !== CUSTOM_VALUE) handleSelectSystem(next as TimelineType);
         }}
       >
-        <SelectTrigger><SelectValue placeholder="Choose a timeline…" /></SelectTrigger>
+        <SelectTrigger>
+          <SelectValue placeholder="Choose a timeline…" />
+        </SelectTrigger>
         <SelectContent>
           {availableSystemOptions.map((d) => (
-            <SelectItem key={d.type} value={d.type}>{d.label}</SelectItem>
+            <SelectItem key={d.type} value={d.type}>
+              {d.label}
+            </SelectItem>
           ))}
           <SelectItem value={CUSTOM_VALUE}>Custom deadline…</SelectItem>
         </SelectContent>

@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { planSlotAssignment } from "@/lib/timelines/slots";
 import { SYSTEM_TIMELINE_DEFINITIONS } from "@/lib/timelines/resolve";
-import type { RollingRule, TimelineCategory, TimelineSource, TimelineType } from "@/lib/types/database";
+import type {
+  RollingRule,
+  TimelineCategory,
+  TimelineSource,
+  TimelineType,
+} from "@/lib/types/database";
 import { assertAllowedKeys, uuidSchema } from "@/lib/validation/common";
 
 async function requireUser() {
@@ -28,7 +33,8 @@ export async function createCustomTimeline(input: CustomTimelineInput) {
   assertAllowedKeys(input, ["title", "description", "category", "target_date", "icon"]);
   const { supabase, user } = await requireUser();
   if (!input.title.trim()) throw new Error("Title is required.");
-  if (input.title.length > 200 || (input.description?.length ?? 0) > 2_000) throw new Error("Timeline text is too long.");
+  if (input.title.length > 200 || (input.description?.length ?? 0) > 2_000)
+    throw new Error("Timeline text is too long.");
   if (!input.target_date) throw new Error("Target date is required.");
 
   const { data, error } = await supabase
@@ -153,10 +159,10 @@ export async function pinTimelineToSlot(timelineId: string, slot: 1 | 2 | 3) {
 
   const plan = planSlotAssignment(
     (pinnedRows ?? []).filter(
-      (r): r is { id: string; dashboard_slot: 1 | 2 | 3 } => r.dashboard_slot !== null
+      (r): r is { id: string; dashboard_slot: 1 | 2 | 3 } => r.dashboard_slot !== null,
     ),
     timelineId,
-    slot
+    slot,
   );
   if (!plan.ok) throw new Error(plan.error ?? "Could not assign this dashboard slot.");
 
@@ -196,7 +202,11 @@ export async function unpinTimeline(timelineId: string) {
 export async function deleteTimeline(timelineId: string) {
   const { supabase, user } = await requireUser();
   uuidSchema.parse(timelineId);
-  const { error } = await supabase.from("user_timelines").delete().eq("id", timelineId).eq("user_id", user.id);
+  const { error } = await supabase
+    .from("user_timelines")
+    .delete()
+    .eq("id", timelineId)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
   revalidatePath("/settings");

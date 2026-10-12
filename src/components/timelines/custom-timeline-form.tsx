@@ -4,9 +4,19 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { TIMELINE_CATEGORY_OPTIONS, TIMELINE_ICON_OPTIONS, type TimelineIconKey } from "@/lib/timelines/icons";
+import {
+  TIMELINE_CATEGORY_OPTIONS,
+  TIMELINE_ICON_OPTIONS,
+  type TimelineIconKey,
+} from "@/lib/timelines/icons";
 import { cn } from "@/lib/utils";
 import type { TimelineCategory } from "@/lib/types/database";
 import type { CustomTimelineInput } from "@/lib/actions/timelines";
@@ -34,7 +44,10 @@ export function CustomTimelineForm({
   submitLabel?: string;
   saving?: boolean;
 }) {
-  const [value, setValue] = React.useState<CustomTimelineFormValue>({ ...EMPTY_VALUE, ...initialValue });
+  const [value, setValue] = React.useState<CustomTimelineFormValue>({
+    ...EMPTY_VALUE,
+    ...initialValue,
+  });
 
   const canSubmit = value.title.trim().length > 0 && !!value.target_date;
 
@@ -62,12 +75,18 @@ export function CustomTimelineForm({
           <Select
             items={TIMELINE_CATEGORY_OPTIONS}
             value={value.category}
-            onValueChange={(v) => setValue((s) => ({ ...s, category: (v ?? "other") as TimelineCategory }))}
+            onValueChange={(v) =>
+              setValue((s) => ({ ...s, category: (v ?? "other") as TimelineCategory }))
+            }
           >
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {TIMELINE_CATEGORY_OPTIONS.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -99,7 +118,7 @@ export function CustomTimelineForm({
                   "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors",
                   selected
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/50 text-muted-foreground hover:bg-accent/40"
+                    : "border-border/50 text-muted-foreground hover:bg-accent/40",
                 )}
               >
                 <Icon className="h-4 w-4" />

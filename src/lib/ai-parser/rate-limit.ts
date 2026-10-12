@@ -1,11 +1,17 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
-export type RateLimitBlockReason = "minute_limit" | "daily_limit" | "concurrency_limit";
+export type RateLimitBlockReason =
+  | "minute_limit"
+  | "daily_limit"
+  | "concurrency_limit"
+  | "monthly_budget"
+  | "global_budget"
+  | "access_denied"
+  | "unavailable";
 
 export type AcquireSlotResult =
-  | { ok: true; usageRowId: string }
-  | { ok: false; reason: RateLimitBlockReason };
+  { ok: true; usageRowId: string } | { ok: false; reason: RateLimitBlockReason };
 
 export interface RateLimitConfig {
   minuteLimit: number;
@@ -37,26 +43,49 @@ export function getRateLimitConfig(dailyLimit: number): RateLimitConfig {
  * `pending` usage row in one transaction via a Postgres RPC, using the
  * service-role client (never exposed to browser clients).
  */
-export async function acquireParseSlot(userId: string, config: RateLimitConfig): Promise<AcquireSlotResult> {
+export async function acquireParseSlot(
+  userId: string,
+  config: RateLimitConfig,
+  monthlyBudgetUsd: number | null,
+): Promise<AcquireSlotResult> {
   const supabase = createServiceRoleClient();
+  const rawGlobalBudget = Number(process.env.AI_PARSER_GLOBAL_MONTHLY_BUDGET_USD ?? 50);
+  const globalBudget =
+    Number.isFinite(rawGlobalBudget) && rawGlobalBudget >= 0 ? rawGlobalBudget : 0;
   const { data, error } = await supabase
-    .rpc("ai_parser_try_acquire_slot", {
+    .rpc("ai_parser_acquire_slot", {
       p_user_id: userId,
       p_minute_limit: config.minuteLimit,
       p_daily_limit: config.dailyLimit,
       p_concurrency_limit: config.concurrencyLimit,
+      p_monthly_budget_usd: monthlyBudgetUsd,
+      p_global_monthly_budget_usd: globalBudget,
+      p_reserved_cost_usd: 0.3,
     })
     .single();
 
   if (error || !data) {
     // Fail closed: if the RPC itself errors, treat it as blocked rather
     // than silently allowing unlimited requests through.
-    return { ok: false, reason: "daily_limit" };
+    return { ok: false, reason: "unavailable" };
   }
 
   const row = data as { ok: boolean; reason: string | null; usage_id: string | null };
   if (!row.ok || !row.usage_id) {
-    return { ok: false, reason: (row.reason as RateLimitBlockReason) ?? "daily_limit" };
+    const reasons: string[] = [
+      "minute_limit",
+      "daily_limit",
+      "concurrency_limit",
+      "monthly_budget",
+      "global_budget",
+      "access_denied",
+    ];
+    return {
+      ok: false,
+      reason: reasons.includes(row.reason ?? "")
+        ? (row.reason as RateLimitBlockReason)
+        : "unavailable",
+    };
   }
   return { ok: true, usageRowId: row.usage_id };
 }
@@ -115,7 +144,10 @@ const PATCH_KEY_MAP: Record<keyof FinalizeUsagePatch, string> = {
   descriptionHash: "description_hash",
 };
 
-export async function finalizeUsageRow(usageRowId: string, patch: FinalizeUsagePatch): Promise<void> {
+export async function finalizeUsageRow(
+  usageRowId: string,
+  patch: FinalizeUsagePatch,
+): Promise<void> {
   const supabase = createServiceRoleClient();
   const dbPatch: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(patch)) {

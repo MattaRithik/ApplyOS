@@ -3,7 +3,13 @@
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function PageTransition({ children, className }: { children: React.ReactNode; className?: string }) {
+export function PageTransition({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   const pathname = usePathname();
 
   return (

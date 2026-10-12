@@ -24,7 +24,9 @@ export default async function ExportPage() {
     <div className="space-y-5 py-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Export Center</h1>
-        <p className="text-sm text-muted-foreground">Download your data as Excel or CSV, anytime.</p>
+        <p className="text-sm text-muted-foreground">
+          Download your data as Excel or CSV, anytime.
+        </p>
       </div>
 
       <GlassPanel className="glow-emerald flex flex-wrap items-center justify-between gap-4 p-5">
@@ -34,7 +36,9 @@ export default async function ExportPage() {
           </span>
           <div>
             <p className="text-sm font-semibold">Full backup export</p>
-            <p className="text-xs text-muted-foreground">Every table, one multi-sheet .xlsx workbook.</p>
+            <p className="text-xs text-muted-foreground">
+              Every table, one multi-sheet .xlsx workbook.
+            </p>
           </div>
         </div>
         <Button render={<a href="/api/export?entity=full_backup&format=xlsx" />} className="gap-2">
@@ -80,7 +84,9 @@ export default async function ExportPage() {
           <ul className="space-y-2">
             {recentExports.map((ex) => (
               <li key={ex.id} className="flex items-center justify-between text-sm">
-                <span className="capitalize">{ex.entity.replace(/_/g, " ")} · {ex.format.toUpperCase()}</span>
+                <span className="capitalize">
+                  {ex.entity.replace(/_/g, " ")} · {ex.format.toUpperCase()}
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {ex.row_count} rows · {format(new Date(ex.created_at), "MMM d, h:mm a")}
                 </span>

@@ -9,6 +9,8 @@ describe("common validation", () => {
 
   it("rejects unknown server-action properties", () => {
     expect(() => assertAllowedKeys({ name: "Allowed" }, ["name"])).not.toThrow();
-    expect(() => assertAllowedKeys({ name: "Allowed", user_id: "victim" }, ["name"])).toThrow("Invalid input fields.");
+    expect(() => assertAllowedKeys({ name: "Allowed", user_id: "victim" }, ["name"])).toThrow(
+      "Invalid input fields.",
+    );
   });
 });

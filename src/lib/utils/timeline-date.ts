@@ -86,7 +86,11 @@ export function getCountdownLabel(targetDate: Date, today: Date = new Date()): C
  * progress indicator — not a legal or academic-progress measurement, just
  * a visual sense of "how far along is this window."
  */
-export function getProgressPercent(startDate: Date, targetDate: Date, today: Date = new Date()): number {
+export function getProgressPercent(
+  startDate: Date,
+  targetDate: Date,
+  today: Date = new Date(),
+): number {
   const totalDays = differenceInCalendarDays(startOfDay(targetDate), startOfDay(startDate));
   if (totalDays <= 0) return 100;
   const elapsedDays = differenceInCalendarDays(startOfDay(today), startOfDay(startDate));

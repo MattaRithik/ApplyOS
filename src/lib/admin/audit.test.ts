@@ -9,7 +9,7 @@ describe("sanitizeAuditMetadata", () => {
         password: "should-never-appear",
         note: "Bearer very-sensitive-token",
         nested: { token: "not accepted" },
-      })
+      }),
     ).toEqual({ action: "grant", password: "[REDACTED]", note: "[REDACTED]" });
   });
 });

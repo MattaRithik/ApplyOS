@@ -12,7 +12,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ApplicationForm, type ApplicationFormValues } from "@/components/applications/application-form";
+import {
+  ApplicationForm,
+  type ApplicationFormValues,
+} from "@/components/applications/application-form";
 import { AiParserPanel } from "@/components/applications/parser/ai-parser-panel";
 import { updateApplication, saveParsedJobDetails } from "@/app/(app)/applications/actions";
 import { saveApplicationHrContacts } from "@/app/(app)/applications/contacts-actions";
@@ -68,8 +71,17 @@ export function EditApplicationDialog({
     hrContacts: initialHrContacts,
   }));
 
-  const handleApplyExtractedFields = (result: AiParserResult, accepted: Set<AcceptableFieldKey>) => {
-    setValues((prev) => applyParsedResultToForm({ ...prev, job_url: jobUrl, job_description: jobDescription }, result, accepted));
+  const handleApplyExtractedFields = (
+    result: AiParserResult,
+    accepted: Set<AcceptableFieldKey>,
+  ) => {
+    setValues((prev) =>
+      applyParsedResultToForm(
+        { ...prev, job_url: jobUrl, job_description: jobDescription },
+        result,
+        accepted,
+      ),
+    );
   };
 
   const handleSave = async () => {
@@ -78,7 +90,12 @@ export function EditApplicationDialog({
       const { hrContacts, ...applicationFields } = values;
 
       const updated = await updateApplication(application.id, applicationFields);
-      await saveApplicationHrContacts(application.id, updated.company_id, updated.company_name, hrContacts);
+      await saveApplicationHrContacts(
+        application.id,
+        updated.company_id,
+        updated.company_name,
+        hrContacts,
+      );
 
       if (lastParsed) {
         await saveParsedJobDetails(application.id, jobUrl || null, jobDescription, lastParsed);
@@ -113,7 +130,12 @@ export function EditApplicationDialog({
               </TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4">
-              <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} compact />
+              <ApplicationForm
+                values={values}
+                onChange={setValues}
+                resumeOptions={resumeOptions}
+                compact
+              />
             </TabsContent>
             <TabsContent value="parser" className="mt-4">
               <AiParserPanel
@@ -130,7 +152,12 @@ export function EditApplicationDialog({
             </TabsContent>
           </Tabs>
         ) : (
-          <ApplicationForm values={values} onChange={setValues} resumeOptions={resumeOptions} compact />
+          <ApplicationForm
+            values={values}
+            onChange={setValues}
+            resumeOptions={resumeOptions}
+            compact
+          />
         )}
 
         <DialogFooter>

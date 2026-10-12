@@ -59,7 +59,7 @@ export function KanbanView({ applications }: { applications: ApplicationWithResu
             <GlassPanel
               className={cn(
                 "flex h-full min-h-[200px] flex-col p-3 transition-colors",
-                dragOverStatus === statusDef.value && "ring-2 ring-[var(--cyan-accent)]"
+                dragOverStatus === statusDef.value && "ring-2 ring-[var(--cyan-accent)]",
               )}
             >
               <div className="mb-3 flex items-center justify-between px-1">
@@ -90,7 +90,9 @@ export function KanbanView({ applications }: { applications: ApplicationWithResu
                   </motion.div>
                 ))}
                 {columnItems.length === 0 && (
-                  <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">Drop here</p>
+                  <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">
+                    Drop here
+                  </p>
                 )}
               </div>
             </GlassPanel>

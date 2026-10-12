@@ -23,22 +23,39 @@ afterAll(async () => db.close());
 describe("presence database isolation", () => {
   it.each(["anon", "authenticated"])("blocks all direct %s table operations", async (role) => {
     await db.exec(`set role ${role}`);
-    for (const sql of ["select * from public.user_presence_history", "delete from public.user_presence_history", "select * from public.user_presence", "delete from public.user_presence", "update public.user_presence set visible = false",
-      "insert into public.user_presence(user_id) values ('00000000-0000-4000-8000-000000000001')"]) {
+    for (const sql of [
+      "select * from public.user_presence_history",
+      "delete from public.user_presence_history",
+      "select * from public.user_presence",
+      "delete from public.user_presence",
+      "update public.user_presence set visible = false",
+      "insert into public.user_presence(user_id) values ('00000000-0000-4000-8000-000000000001')",
+    ]) {
       await expect(db.exec(sql)).rejects.toMatchObject({ code: "42501" });
     }
     await db.exec("reset role");
   });
   it("retains page transitions and old reports without duplicating unchanged heartbeats", async () => {
     await db.exec("set role service_role");
-    await db.exec("update public.user_presence set last_seen_at = last_seen_at + interval '15 seconds'");
+    await db.exec(
+      "update public.user_presence set last_seen_at = last_seen_at + interval '15 seconds'",
+    );
     expect((await db.query("select * from public.user_presence_history")).rows).toHaveLength(1);
-    await db.exec("update public.user_presence set page = 'export', last_seen_at = last_seen_at + interval '15 seconds'");
-    expect((await db.query("select page from public.user_presence_history order by id")).rows).toEqual([{ page: "dashboard" }, { page: "export" }]);
-    await db.exec("update public.user_presence set last_seen_at = last_seen_at + interval '3 days', last_active_at = last_seen_at + interval '3 days'");
+    await db.exec(
+      "update public.user_presence set page = 'export', last_seen_at = last_seen_at + interval '15 seconds'",
+    );
+    expect(
+      (await db.query("select page from public.user_presence_history order by id")).rows,
+    ).toEqual([{ page: "dashboard" }, { page: "export" }]);
+    await db.exec(
+      "update public.user_presence set last_seen_at = last_seen_at + interval '3 days', last_active_at = last_seen_at + interval '3 days'",
+    );
     expect((await db.query("select * from public.user_presence_history")).rows).toHaveLength(3);
     await db.exec("update public.user_presence set closed = true");
-    expect((await db.query("select status from public.user_presence_history order by id desc limit 1")).rows).toEqual([{ status: "Closed" }]);
+    expect(
+      (await db.query("select status from public.user_presence_history order by id desc limit 1"))
+        .rows,
+    ).toEqual([{ status: "Closed" }]);
     await db.exec("reset role");
   });
   it("allows the server role to read and account deletion cascades", async () => {

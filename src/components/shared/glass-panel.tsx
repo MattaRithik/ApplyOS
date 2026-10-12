@@ -14,10 +14,10 @@ export const GlassPanel = React.forwardRef<HTMLDivElement, GlassPanelProps>(
         "rounded-2xl glass-inset-highlight",
         strong ? "glass-panel-strong" : "glass-panel",
         hoverLift && "card-hover-lift",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 GlassPanel.displayName = "GlassPanel";

@@ -172,7 +172,10 @@ export function CommandPalette({ open, onOpenChange: setOpen }: CommandPalettePr
               <CommandItem key={c.id} onSelect={() => go(`/contacts?highlight=${c.id}`)}>
                 <Users className="mr-2 h-4 w-4" />
                 <span className="truncate">
-                  {c.name} {c.company_name && <span className="text-muted-foreground">· {c.company_name}</span>}
+                  {c.name}{" "}
+                  {c.company_name && (
+                    <span className="text-muted-foreground">· {c.company_name}</span>
+                  )}
                 </span>
               </CommandItem>
             ))}

@@ -12,12 +12,18 @@ import {
   subMonths,
   subWeeks,
 } from "date-fns";
-import type { Application, ApplicationStatus, InterviewRound, FollowUp } from "@/lib/types/database";
+import type {
+  Application,
+  ApplicationStatus,
+  InterviewRound,
+  FollowUp,
+} from "@/lib/types/database";
 
 const TERMINAL_STATUSES: ApplicationStatus[] = ["rejected", "withdrawn", "ghosted", "accepted"];
 const INTERVIEW_STATUSES: ApplicationStatus[] = [
   "recruiter_screen",
-  "oa_assessment", "ai_interview",
+  "oa_assessment",
+  "ai_interview",
   "first_round",
   "technical_round",
   "superday_final_round",
@@ -27,7 +33,8 @@ const INTERVIEW_STATUSES: ApplicationStatus[] = [
 const PROGRESSED_STATUSES: ApplicationStatus[] = [
   "hr_contacted",
   "recruiter_screen",
-  "oa_assessment", "ai_interview",
+  "oa_assessment",
+  "ai_interview",
   "first_round",
   "technical_round",
   "superday_final_round",
@@ -67,24 +74,21 @@ export interface DashboardData {
 
 export async function getDashboardData(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<DashboardData> {
   const today = new Date().toISOString().slice(0, 10);
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString().slice(0, 10);
 
-  const [applicationsRes, outreachRes, followUpsRes, interviewsRes, resumesRes] =
-    await Promise.all([
+  const [applicationsRes, outreachRes, followUpsRes, interviewsRes, resumesRes] = await Promise.all(
+    [
       supabase
         .from("applications")
         .select(
-          "id, job_title, company_name, status, date_applied, resume_id, created_at, updated_at"
+          "id, job_title, company_name, status, date_applied, resume_id, created_at, updated_at",
         )
         .eq("user_id", userId)
         .eq("is_archived", false),
-      supabase
-        .from("outreach")
-        .select("id, date_sent, response_received")
-        .eq("user_id", userId),
+      supabase.from("outreach").select("id, date_sent, response_received").eq("user_id", userId),
       supabase
         .from("follow_ups")
         .select("*")
@@ -98,31 +102,45 @@ export async function getDashboardData(
         .gte("scheduled_at", new Date().toISOString())
         .order("scheduled_at", { ascending: true })
         .limit(6),
-      supabase.from("resumes").select("id, display_name").eq("user_id", userId).eq("is_archived", false),
-    ]);
+      supabase
+        .from("resumes")
+        .select("id, display_name")
+        .eq("user_id", userId)
+        .eq("is_archived", false),
+    ],
+  );
 
-  const applications = (applicationsRes.data ?? []) as (Pick<
+  const applications = (applicationsRes.data ?? []) as Pick<
     Application,
-    "id" | "job_title" | "company_name" | "status" | "date_applied" | "resume_id" | "created_at" | "updated_at"
-  >)[];
+    | "id"
+    | "job_title"
+    | "company_name"
+    | "status"
+    | "date_applied"
+    | "resume_id"
+    | "created_at"
+    | "updated_at"
+  >[];
   const outreach = outreachRes.data ?? [];
   const followUps = (followUpsRes.data ?? []) as FollowUp[];
-  const upcomingInterviews = (interviewsRes.data ?? []) as unknown as DashboardData["upcomingInterviews"];
+  const upcomingInterviews = (interviewsRes.data ??
+    []) as unknown as DashboardData["upcomingInterviews"];
   const resumes = resumesRes.data ?? [];
 
   const totalApplications = applications.length;
   const activeApplications = applications.filter(
-    (a) => !TERMINAL_STATUSES.includes(a.status) && a.status !== "offer"
+    (a) => !TERMINAL_STATUSES.includes(a.status) && a.status !== "offer",
   ).length;
   const rejections = applications.filter((a) => a.status === "rejected").length;
   const offers = applications.filter((a) => a.status === "offer" || a.status === "accepted").length;
   const applicationsThisWeek = applications.filter(
-    (a) => a.date_applied && a.date_applied >= weekStart
+    (a) => a.date_applied && a.date_applied >= weekStart,
   ).length;
 
   const coldEmailsSent = outreach.length;
   const repliedCount = outreach.filter((o) => o.response_received).length;
-  const replyRate = coldEmailsSent > 0 ? Math.round((repliedCount / coldEmailsSent) * 1000) / 10 : 0;
+  const replyRate =
+    coldEmailsSent > 0 ? Math.round((repliedCount / coldEmailsSent) * 1000) / 10 : 0;
 
   const overdueFollowUps = followUps.filter((f) => f.due_date < today);
   const followUpsDueCount = followUps.filter((f) => f.due_date <= today).length;
@@ -152,19 +170,19 @@ export async function getDashboardData(
       (application) =>
         application.date_applied &&
         application.date_applied >= startKey &&
-        application.date_applied < endKey
+        application.date_applied < endKey,
     ).length;
   };
 
   const daily = Array.from({ length: 14 }, (_, index) =>
-    startOfDay(subDays(new Date(), 13 - index))
+    startOfDay(subDays(new Date(), 13 - index)),
   ).map((day) => ({
     label: format(day, "MMM d"),
     count: countApplicationsBetween(day, addDays(day, 1)),
   }));
 
   const weekDates = Array.from({ length: 12 }, (_, index) =>
-    startOfWeek(subWeeks(new Date(), 11 - index), { weekStartsOn: 1 })
+    startOfWeek(subWeeks(new Date(), 11 - index), { weekStartsOn: 1 }),
   );
   const weekly = weekDates.map((week) => ({
     label: format(week, "MMM d"),
@@ -172,7 +190,7 @@ export async function getDashboardData(
   }));
 
   const monthly = Array.from({ length: 12 }, (_, index) =>
-    startOfMonth(subMonths(new Date(), 11 - index))
+    startOfMonth(subMonths(new Date(), 11 - index)),
   ).map((month) => ({
     label: format(month, "MMM yyyy"),
     count: countApplicationsBetween(month, addMonths(month, 1)),
@@ -184,7 +202,7 @@ export async function getDashboardData(
     const week = format(weekDate, "yyyy-MM-dd");
     const nextWeek = format(
       new Date(new Date(week).getTime() + 7 * 24 * 60 * 60 * 1000),
-      "yyyy-MM-dd"
+      "yyyy-MM-dd",
     );
     const rows = outreach.filter((o) => o.date_sent >= week && o.date_sent < nextWeek);
     return {
@@ -201,7 +219,8 @@ export async function getDashboardData(
     "referral_requested",
     "hr_contacted",
     "recruiter_screen",
-    "oa_assessment", "ai_interview",
+    "oa_assessment",
+    "ai_interview",
     "first_round",
     "technical_round",
     "superday_final_round",
@@ -219,9 +238,34 @@ export async function getDashboardData(
     .filter((s) => s.count > 0);
 
   const funnelStages: { stage: string; statuses: ApplicationStatus[] }[] = [
-    { stage: "Applied", statuses: ["applied", ...INTERVIEW_STATUSES, "rejected", "withdrawn", "ghosted"] },
-    { stage: "Recruiter Screen", statuses: ["recruiter_screen", "oa_assessment", "ai_interview", "first_round", "technical_round", "superday_final_round", "offer", "accepted"] },
-    { stage: "Interview Rounds", statuses: ["ai_interview", "first_round", "technical_round", "superday_final_round", "offer", "accepted"] },
+    {
+      stage: "Applied",
+      statuses: ["applied", ...INTERVIEW_STATUSES, "rejected", "withdrawn", "ghosted"],
+    },
+    {
+      stage: "Recruiter Screen",
+      statuses: [
+        "recruiter_screen",
+        "oa_assessment",
+        "ai_interview",
+        "first_round",
+        "technical_round",
+        "superday_final_round",
+        "offer",
+        "accepted",
+      ],
+    },
+    {
+      stage: "Interview Rounds",
+      statuses: [
+        "ai_interview",
+        "first_round",
+        "technical_round",
+        "superday_final_round",
+        "offer",
+        "accepted",
+      ],
+    },
     { stage: "Final Round", statuses: ["superday_final_round", "offer", "accepted"] },
     { stage: "Offer", statuses: ["offer", "accepted"] },
   ];

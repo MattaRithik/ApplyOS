@@ -18,7 +18,13 @@ vi.mock("@/lib/admin/roles", () => ({
   AdminAuthError: FakeAdminAuthError,
 }));
 
-const getOverviewMock = vi.fn(async () => ({ totalUsers: 0, usersWithAiAccess: 0, suspendedAiAccess: 0, aiRequestsThisMonth: 0, aiCostThisMonthUsd: 0 }));
+const getOverviewMock = vi.fn(async () => ({
+  totalUsers: 0,
+  usersWithAiAccess: 0,
+  suspendedAiAccess: 0,
+  aiRequestsThisMonth: 0,
+  aiCostThisMonthUsd: 0,
+}));
 const listUsersMock = vi.fn(async () => ({ users: [], total: 0, page: 0, pageSize: 25 }));
 vi.mock("@/lib/admin/users", () => ({
   getOverview: getOverviewMock,
@@ -70,7 +76,9 @@ describe("owner-only GET admin routes", () => {
 
   it("users list: passes through validated search/page/pageSize for the owner", async () => {
     requireOwnerMock.mockResolvedValueOnce(OWNER);
-    const res = await usersGET(new Request("http://localhost/api/admin/users?search=jane&page=2&pageSize=10"));
+    const res = await usersGET(
+      new Request("http://localhost/api/admin/users?search=jane&page=2&pageSize=10"),
+    );
     expect(res.status).toBe(200);
     expect(listUsersMock).toHaveBeenCalledWith({ search: "jane", page: 2, pageSize: 10 });
   });

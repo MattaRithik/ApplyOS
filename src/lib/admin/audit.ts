@@ -2,12 +2,19 @@ import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 const ADMIN_ACTION_TYPES = [
-  "ai_access_granted", "ai_access_revoked", "ai_access_suspended",
-  "ai_access_reactivated", "ai_limits_updated", "password_reset_sent",
-  "sessions_revoked", "user_disabled", "user_enabled",
-  "user_deletion_requested", "user_deleted",
+  "ai_access_granted",
+  "ai_access_revoked",
+  "ai_access_suspended",
+  "ai_access_reactivated",
+  "ai_limits_updated",
+  "password_reset_sent",
+  "sessions_revoked",
+  "user_disabled",
+  "user_enabled",
+  "user_deletion_requested",
+  "user_deleted",
 ] as const;
-export type AdminActionType = typeof ADMIN_ACTION_TYPES[number];
+export type AdminActionType = (typeof ADMIN_ACTION_TYPES)[number];
 
 export interface RecordAuditEventInput {
   actorUserId: string;
@@ -19,7 +26,8 @@ export interface RecordAuditEventInput {
 }
 
 const SENSITIVE_KEY = /(authorization|cookie|password|secret|token|api[_-]?key|service[_-]?role)/i;
-const SECRET_LIKE_VALUE = /(sk-[A-Za-z0-9_-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|Bearer\s+\S+)/i;
+const SECRET_LIKE_VALUE =
+  /(sk-[A-Za-z0-9_-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|Bearer\s+\S+)/i;
 
 export function sanitizeAuditMetadata(metadata: Record<string, unknown>): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
@@ -71,7 +79,9 @@ export async function listAuditLog(page: number, pageSize: number): Promise<Audi
 
   const { data, count, error } = await supabase
     .from("admin_audit_log")
-    .select("id, actor_user_id, action_type, target_user_id, metadata, request_id, created_at", { count: "exact" })
+    .select("id, actor_user_id, action_type, target_user_id, metadata, request_id, created_at", {
+      count: "exact",
+    })
     .in("action_type", [...ADMIN_ACTION_TYPES])
     .order("created_at", { ascending: false })
     .range(from, to);
@@ -104,7 +114,7 @@ export async function listAuditLog(page: number, pageSize: number): Promise<Audi
 export async function checkRecentActionRate(
   actionType: AdminActionType,
   targetUserId: string,
-  opts: { windowMinutes: number; maxCount: number }
+  opts: { windowMinutes: number; maxCount: number },
 ): Promise<boolean> {
   const supabase = createServiceRoleClient();
   const since = new Date(Date.now() - opts.windowMinutes * 60 * 1000).toISOString();

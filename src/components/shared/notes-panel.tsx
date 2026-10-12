@@ -75,14 +75,22 @@ export function NotesPanel({
       ) : (
         <ul className="space-y-2.5">
           {notes.map((n) => (
-            <li key={n.id} className="flex items-start justify-between gap-2 rounded-lg border border-border/40 p-2.5 text-sm">
+            <li
+              key={n.id}
+              className="flex items-start justify-between gap-2 rounded-lg border border-border/40 p-2.5 text-sm"
+            >
               <div>
                 <p className="whitespace-pre-wrap">{n.body}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {format(new Date(n.created_at), "MMM d, yyyy h:mm a")}
                 </p>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(n.id)} aria-label="Delete note">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setDeletingId(n.id)}
+                aria-label="Delete note"
+              >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             </li>

@@ -113,7 +113,11 @@ function LoginForm() {
                 </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full gap-2">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
                 Sign in
               </Button>
             </form>
@@ -167,7 +171,11 @@ function LoginForm() {
                 </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full gap-2">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
                 Create account
               </Button>
             </form>

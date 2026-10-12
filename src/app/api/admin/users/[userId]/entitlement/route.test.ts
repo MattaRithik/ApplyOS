@@ -119,7 +119,9 @@ describe("PATCH /api/admin/users/[userId]/entitlement", () => {
     requireOwnerMock.mockResolvedValueOnce(OWNER);
     const res = await callPatch(TARGET_ID, { action: "grant" });
     expect(res.status).toBe(200);
-    expect(grantAIAccessMock).toHaveBeenCalledWith(expect.objectContaining({ actorUserId: OWNER.id, targetUserId: TARGET_ID }));
+    expect(grantAIAccessMock).toHaveBeenCalledWith(
+      expect.objectContaining({ actorUserId: OWNER.id, targetUserId: TARGET_ID }),
+    );
   });
 
   it("rate-limits repeated suspend attempts against the same target", async () => {
@@ -141,6 +143,8 @@ describe("PATCH /api/admin/users/[userId]/entitlement", () => {
     requireOwnerMock.mockResolvedValueOnce(OWNER);
     const res = await callPatch(TARGET_ID, { action: "update_limits", dailyRequestLimit: null });
     expect(res.status).toBe(200);
-    expect(updateAILimitsMock).toHaveBeenCalledWith(expect.objectContaining({ dailyRequestLimit: null }));
+    expect(updateAILimitsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ dailyRequestLimit: null }),
+    );
   });
 });

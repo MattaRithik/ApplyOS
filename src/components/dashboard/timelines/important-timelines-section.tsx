@@ -3,10 +3,19 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { CalendarRange, Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
-import { TimelineCard, type TimelineCardData } from "@/components/dashboard/timelines/timeline-card";
+import {
+  TimelineCard,
+  type TimelineCardData,
+} from "@/components/dashboard/timelines/timeline-card";
 import { TimelineSlotPicker } from "@/components/timelines/timeline-slot-picker";
 import type { InternationalStudentProfile, UserTimeline } from "@/lib/types/database";
 
@@ -45,7 +54,12 @@ export function ImportantTimelinesSection({
           <CalendarRange className="h-4 w-4 text-[var(--blue-accent)]" /> Important Timelines
         </h2>
         {cards.length < 3 && nextOpenSlot && (
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditingSlot(nextOpenSlot)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setEditingSlot(nextOpenSlot)}
+          >
             <Plus className="h-3.5 w-3.5" /> Add timeline
           </Button>
         )}
@@ -76,7 +90,9 @@ export function ImportantTimelinesSection({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Dashboard timeline</DialogTitle>
-            <DialogDescription>Choose what appears in this slot. You can change it again anytime.</DialogDescription>
+            <DialogDescription>
+              Choose what appears in this slot. You can change it again anytime.
+            </DialogDescription>
           </DialogHeader>
           {editingSlot && (
             <TimelineSlotPicker

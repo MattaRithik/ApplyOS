@@ -29,7 +29,8 @@ function InterviewCard({ round }: { round: InterviewRow }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">
-            {round.round_name} <span className="text-muted-foreground">· {round.application?.job_title}</span>
+            {round.round_name}{" "}
+            <span className="text-muted-foreground">· {round.application?.job_title}</span>
           </p>
           <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
             <Building2 className="h-3 w-3" /> {round.application?.company_name}
@@ -42,7 +43,11 @@ function InterviewCard({ round }: { round: InterviewRow }) {
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${RESULT_STYLES[round.result]}`}>{round.result}</span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${RESULT_STYLES[round.result]}`}
+          >
+            {round.result}
+          </span>
           <span className="text-xs text-muted-foreground">
             {round.scheduled_at ? format(new Date(round.scheduled_at), "MMM d, h:mm a") : "TBD"}
           </span>
@@ -78,7 +83,9 @@ export function InterviewsList({ rounds }: { rounds: InterviewRow[] }) {
         )}
       </TabsContent>
       <TabsContent value="all" className="mt-4 space-y-2">
-        {rounds.map((r) => <InterviewCard key={r.id} round={r} />)}
+        {rounds.map((r) => (
+          <InterviewCard key={r.id} round={r} />
+        ))}
       </TabsContent>
     </Tabs>
   );

@@ -14,12 +14,21 @@ export default async function OutreachPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: outreach }, { data: contacts }, { data: companies }, { data: templates }] = await Promise.all([
-    supabase.from("outreach").select("*").eq("user_id", user.id).order("date_sent", { ascending: false }),
-    supabase.from("contacts").select("id, name, company_name, email, linkedin_url").eq("user_id", user.id).order("name"),
-    supabase.from("companies").select("id, name").eq("user_id", user.id).order("name"),
-    supabase.from("email_templates").select("id, name").eq("user_id", user.id).order("name"),
-  ]);
+  const [{ data: outreach }, { data: contacts }, { data: companies }, { data: templates }] =
+    await Promise.all([
+      supabase
+        .from("outreach")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date_sent", { ascending: false }),
+      supabase
+        .from("contacts")
+        .select("id, name, company_name, email, linkedin_url")
+        .eq("user_id", user.id)
+        .order("name"),
+      supabase.from("companies").select("id, name").eq("user_id", user.id).order("name"),
+      supabase.from("email_templates").select("id, name").eq("user_id", user.id).order("name"),
+    ]);
 
   if (!outreach || outreach.length === 0) {
     return (
@@ -30,7 +39,11 @@ export default async function OutreachPage() {
           description="Track every cold email and LinkedIn message you send — replies, follow-ups, and which templates actually work."
         />
         <div className="mt-4 flex justify-center">
-          <OutreachFormDialog contactOptions={contacts ?? []} companyOptions={companies ?? []} templateOptions={templates ?? []} />
+          <OutreachFormDialog
+            contactOptions={contacts ?? []}
+            companyOptions={companies ?? []}
+            templateOptions={templates ?? []}
+          />
         </div>
       </div>
     );
@@ -40,10 +53,14 @@ export default async function OutreachPage() {
   const replied = outreach.filter((o) => o.response_received).length;
   const replyRate = totalSent > 0 ? Math.round((replied / totalSent) * 1000) / 10 : 0;
   const today = todayISODate();
-  const followUpsPending = outreach.filter((o) => o.follow_up_date && o.follow_up_date <= today && !o.response_received).length;
+  const followUpsPending = outreach.filter(
+    (o) => o.follow_up_date && o.follow_up_date <= today && !o.response_received,
+  ).length;
 
   const sevenDaysAgo = daysAgoISODate(7);
-  const staleContacts = outreach.filter((o) => !o.response_received && o.date_sent <= sevenDaysAgo).slice(0, 6);
+  const staleContacts = outreach
+    .filter((o) => !o.response_received && o.date_sent <= sevenDaysAgo)
+    .slice(0, 6);
 
   const templateStats = new Map<string, { name: string; sent: number; replied: number }>();
   for (const o of outreach) {
@@ -61,7 +78,8 @@ export default async function OutreachPage() {
 
   const companyCounts = new Map<string, number>();
   outreach.forEach((o) => {
-    if (o.company_name) companyCounts.set(o.company_name, (companyCounts.get(o.company_name) ?? 0) + 1);
+    if (o.company_name)
+      companyCounts.set(o.company_name, (companyCounts.get(o.company_name) ?? 0) + 1);
   });
   const topCompanies = [...companyCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
 
@@ -72,14 +90,23 @@ export default async function OutreachPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Cold Outreach</h1>
           <p className="text-sm text-muted-foreground">{totalSent} messages logged</p>
         </div>
-        <OutreachFormDialog contactOptions={contacts ?? []} companyOptions={companies ?? []} templateOptions={templates ?? []} />
+        <OutreachFormDialog
+          contactOptions={contacts ?? []}
+          companyOptions={companies ?? []}
+          templateOptions={templates ?? []}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile label="Emails Sent" value={totalSent} iconName="send" accent="blue" />
         <StatTile label="Replies Received" value={replied} iconName="reply" accent="emerald" />
         <StatTile label="Reply Rate" value={`${replyRate}%`} iconName="percent" accent="cyan" />
-        <StatTile label="Follow-ups Pending" value={followUpsPending} iconName="listChecks" accent="amber" />
+        <StatTile
+          label="Follow-ups Pending"
+          value={followUpsPending}
+          iconName="listChecks"
+          accent="amber"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -94,7 +121,9 @@ export default async function OutreachPage() {
               {bestTemplates.map((t) => (
                 <li key={t.name} className="flex items-center justify-between text-sm">
                   <span className="truncate">{t.name}</span>
-                  <span className="text-xs font-medium text-muted-foreground">{t.rate}% ({t.sent})</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t.rate}% ({t.sent})
+                  </span>
                 </li>
               ))}
             </ul>
@@ -112,7 +141,9 @@ export default async function OutreachPage() {
               {topCompanies.map(([name, count]) => (
                 <li key={name} className="flex items-center justify-between text-sm">
                   <span className="truncate">{name}</span>
-                  <span className="text-xs font-medium text-muted-foreground">{count} messages</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {count} messages
+                  </span>
                 </li>
               ))}
             </ul>

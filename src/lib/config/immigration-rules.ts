@@ -48,7 +48,8 @@ export const IMMIGRATION_RULES = {
     unit: "days",
     description:
       "STEM OPT extension applications may generally be filed up to this many calendar days before the student's current post-completion OPT (EAD) expires.",
-    sourceUrl: "https://www.uscis.gov/working-in-the-united-states/students-and-exchange-visitors/stem-opt",
+    sourceUrl:
+      "https://www.uscis.gov/working-in-the-united-states/students-and-exchange-visitors/stem-opt",
     sourceAuthority: "USCIS",
     lastReviewedDate: "2025-01-01",
   },

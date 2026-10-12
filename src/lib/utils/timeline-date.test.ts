@@ -72,7 +72,11 @@ describe("getDaysRemaining", () => {
 describe("getCountdownLabel", () => {
   it("labels today as 'Today'", () => {
     const d = new Date(2026, 5, 15);
-    expect(getCountdownLabel(d, d)).toMatchObject({ primary: "Today", isToday: true, isOverdue: false });
+    expect(getCountdownLabel(d, d)).toMatchObject({
+      primary: "Today",
+      isToday: true,
+      isOverdue: false,
+    });
   });
 
   it("labels tomorrow as 'Tomorrow'", () => {

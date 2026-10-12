@@ -5,21 +5,30 @@ import Papa from "papaparse";
 
 describe("spreadsheet export hardening", () => {
   it("neutralizes formula-prefixed CSV cells", () => {
-    const csv = buildCsv([{ name: "=HYPERLINK(\"https://attacker.example\")", safe: "ordinary" }]);
+    const csv = buildCsv([{ name: '=HYPERLINK("https://attacker.example")', safe: "ordinary" }]);
     expect(csv).toContain("'=HYPERLINK");
     expect(csv).toContain("ordinary");
   });
 
   it("stores formula-prefixed XLSX values as inert strings", async () => {
-    const buffer = await buildXlsx([{ name: "Applications", rows: [{ company: "+cmd|' /C calc'!A0" }] }]);
+    const buffer = await buildXlsx([
+      { name: "Applications", rows: [{ company: "+cmd|' /C calc'!A0" }] },
+    ]);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
     expect(workbook.getWorksheet("Applications")?.getCell("A2").value).toBe("'+cmd|' /C calc'!A0");
   });
 
   it("neutralizes formulas in joined arrays and behind whitespace", () => {
-    const csv = buildCsv([{ keywords: ["=1+1", "safe"], company: "  =1+1", notes: "\n@SUM(1)", salary: -100 }]);
+    const csv = buildCsv([
+      { keywords: ["=1+1", "safe"], company: "  =1+1", notes: "\n@SUM(1)", salary: -100 },
+    ]);
     const { data } = Papa.parse<Record<string, string>>(csv, { header: true });
-    expect(data[0]).toEqual({ keywords: "'=1+1, safe", company: "'  =1+1", notes: "'\n@SUM(1)", salary: "-100" });
+    expect(data[0]).toEqual({
+      keywords: "'=1+1, safe",
+      company: "'  =1+1",
+      notes: "'\n@SUM(1)",
+      salary: "-100",
+    });
   });
 });

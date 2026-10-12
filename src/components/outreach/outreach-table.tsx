@@ -6,7 +6,13 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Search, Trash2, Pencil, CheckCircle2, Circle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import {
@@ -31,7 +37,13 @@ export function OutreachTable({
   templateOptions,
 }: {
   outreach: Outreach[];
-  contactOptions: { id: string; name: string; company_name: string | null; email: string | null; linkedin_url: string | null }[];
+  contactOptions: {
+    id: string;
+    name: string;
+    company_name: string | null;
+    email: string | null;
+    linkedin_url: string | null;
+  }[];
   companyOptions: { id: string; name: string }[];
   templateOptions: { id: string; name: string }[];
 }) {
@@ -43,7 +55,13 @@ export function OutreachTable({
 
   const filtered = outreach.filter((o) => {
     const term = search.trim().toLowerCase();
-    if (term && !`${o.person_name ?? ""} ${o.company_name ?? ""} ${o.subject_line ?? ""}`.toLowerCase().includes(term)) return false;
+    if (
+      term &&
+      !`${o.person_name ?? ""} ${o.company_name ?? ""} ${o.subject_line ?? ""}`
+        .toLowerCase()
+        .includes(term)
+    )
+      return false;
     if (typeFilter !== ALL && o.outreach_type !== typeFilter) return false;
     if (responseFilter === "replied" && !o.response_received) return false;
     if (responseFilter === "pending" && o.response_received) return false;
@@ -62,18 +80,27 @@ export function OutreachTable({
       <GlassPanel className="flex flex-wrap items-center gap-2 p-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search outreach…" className="h-8 pl-8 text-sm" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search outreach…"
+            className="h-8 pl-8 text-sm"
+          />
         </div>
         <Select
           items={[{ value: ALL, label: "All types" }, ...OUTREACH_TYPES]}
           value={typeFilter}
           onValueChange={(v) => setTypeFilter(v ?? ALL)}
         >
-          <SelectTrigger className="h-8 w-[170px] text-xs"><SelectValue placeholder="Type" /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[170px] text-xs">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All types</SelectItem>
             {OUTREACH_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -86,7 +113,9 @@ export function OutreachTable({
           value={responseFilter}
           onValueChange={(v) => setResponseFilter(v ?? ALL)}
         >
-          <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Response" /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[150px] text-xs">
+            <SelectValue placeholder="Response" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Any response</SelectItem>
             <SelectItem value="replied">Replied</SelectItem>
@@ -114,14 +143,23 @@ export function OutreachTable({
               {filtered.map((o) => (
                 <TableRow key={o.id}>
                   <TableCell className="font-medium">{o.person_name ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{o.company_name ?? "—"}</TableCell>
-                  <TableCell className="text-xs">{OUTREACH_TYPES.find((t) => t.value === o.outreach_type)?.label}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(o.date_sent), "MMM d, yyyy")}</TableCell>
-                  <TableCell className="text-xs">{o.follow_up_date ? format(new Date(o.follow_up_date), "MMM d") : "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {o.company_name ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {OUTREACH_TYPES.find((t) => t.value === o.outreach_type)?.label}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {format(new Date(o.date_sent), "MMM d, yyyy")}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {o.follow_up_date ? format(new Date(o.follow_up_date), "MMM d") : "—"}
+                  </TableCell>
                   <TableCell>
                     {o.response_received ? (
                       <span className="flex items-center gap-1 text-xs text-[var(--emerald-accent)]">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> {o.response_type?.replace(/_/g, " ") ?? "Replied"}
+                        <CheckCircle2 className="h-3.5 w-3.5" />{" "}
+                        {o.response_type?.replace(/_/g, " ") ?? "Replied"}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -137,9 +175,18 @@ export function OutreachTable({
                         companyOptions={companyOptions}
                         templateOptions={templateOptions}
                         onSaved={() => router.refresh()}
-                        trigger={<Button variant="ghost" size="icon-sm"><Pencil className="h-3.5 w-3.5" /></Button>}
+                        trigger={
+                          <Button variant="ghost" size="icon-sm">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        }
                       />
-                      <Button variant="ghost" size="icon-sm" onClick={() => setDeletingId(o.id)} aria-label="Delete outreach">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setDeletingId(o.id)}
+                        aria-label="Delete outreach"
+                      >
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                     </div>

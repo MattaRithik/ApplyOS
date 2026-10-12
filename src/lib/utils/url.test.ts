@@ -3,7 +3,9 @@ import { safeHttpUrl, safeMailto, formatShortUrl } from "@/lib/utils/url";
 
 describe("safeHttpUrl", () => {
   it("accepts a safe https URL", () => {
-    expect(safeHttpUrl("https://boards.greenhouse.io/acme/jobs/12345")).toBe("https://boards.greenhouse.io/acme/jobs/12345");
+    expect(safeHttpUrl("https://boards.greenhouse.io/acme/jobs/12345")).toBe(
+      "https://boards.greenhouse.io/acme/jobs/12345",
+    );
   });
 
   it("accepts a safe http URL", () => {
@@ -55,7 +57,8 @@ describe("formatShortUrl", () => {
   });
 
   it("leaves the real value untouched — only the display string is shortened", () => {
-    const long = "https://boards.greenhouse.io/some-very-long-company-name/jobs/1234567890123456789";
+    const long =
+      "https://boards.greenhouse.io/some-very-long-company-name/jobs/1234567890123456789";
     const short = formatShortUrl(long, 30);
     expect(short.length).toBeLessThanOrEqual(30);
     expect(short).toContain("…");

@@ -1,7 +1,18 @@
 import { addDays, subDays } from "date-fns";
-import { IMMIGRATION_RULES, getOptEarliestFilingSupportingText, getOptGeneralLatestFilingSupportingText, getStemOptPreparationSupportingText } from "@/lib/config/immigration-rules";
+import {
+  IMMIGRATION_RULES,
+  getOptEarliestFilingSupportingText,
+  getOptGeneralLatestFilingSupportingText,
+  getStemOptPreparationSupportingText,
+} from "@/lib/config/immigration-rules";
 import { parseDateOnly, resolveRollingTargetDate } from "@/lib/utils/timeline-date";
-import type { InternationalStudentProfile, RollingRule, TimelineCategory, TimelineType, UserTimeline } from "@/lib/types/database";
+import type {
+  InternationalStudentProfile,
+  RollingRule,
+  TimelineCategory,
+  TimelineType,
+  UserTimeline,
+} from "@/lib/types/database";
 
 export interface ResolvedTimeline {
   id: string;
@@ -94,7 +105,7 @@ function getDefinition(type: TimelineType) {
 export function resolveTimeline(
   timeline: UserTimeline,
   internationalProfile: InternationalStudentProfile | null,
-  today: Date = new Date()
+  today: Date = new Date(),
 ): ResolvedTimeline {
   const base = {
     id: timeline.id,
@@ -140,7 +151,7 @@ export function resolveTimeline(
       const targetDate = has
         ? subDays(
             parseDateOnly(internationalProfile!.i20_program_end_date!),
-            IMMIGRATION_RULES.POST_COMPLETION_OPT_EARLIEST_DAYS_BEFORE_PROGRAM_END.value
+            IMMIGRATION_RULES.POST_COMPLETION_OPT_EARLIEST_DAYS_BEFORE_PROGRAM_END.value,
           )
         : null;
       return {
@@ -158,7 +169,7 @@ export function resolveTimeline(
       const targetDate = has
         ? addDays(
             parseDateOnly(internationalProfile!.i20_program_end_date!),
-            IMMIGRATION_RULES.POST_COMPLETION_OPT_GENERAL_LATEST_DAYS_AFTER_PROGRAM_END.value
+            IMMIGRATION_RULES.POST_COMPLETION_OPT_GENERAL_LATEST_DAYS_AFTER_PROGRAM_END.value,
           )
         : null;
       return {
@@ -209,10 +220,14 @@ export function resolveTimeline(
     }
 
     case "stem_opt_preparation": {
-      const sourceDate = internationalProfile?.opt_end_date ?? internationalProfile?.ead_expiration_date ?? null;
+      const sourceDate =
+        internationalProfile?.opt_end_date ?? internationalProfile?.ead_expiration_date ?? null;
       const has = !!sourceDate;
       const targetDate = has
-        ? subDays(parseDateOnly(sourceDate!), IMMIGRATION_RULES.STEM_OPT_EXTENSION_EARLIEST_DAYS_BEFORE_OPT_END.value)
+        ? subDays(
+            parseDateOnly(sourceDate!),
+            IMMIGRATION_RULES.STEM_OPT_EXTENSION_EARLIEST_DAYS_BEFORE_OPT_END.value,
+          )
         : null;
       return {
         ...base,
@@ -250,7 +265,7 @@ export function resolveTimeline(
 
 export function isSystemTimelineAvailable(
   type: SystemTimelineDefinition["type"],
-  internationalProfile: InternationalStudentProfile | null
+  internationalProfile: InternationalStudentProfile | null,
 ): boolean {
   const def = getDefinition(type);
   if (!def) return false;

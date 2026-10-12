@@ -3,7 +3,13 @@
 import * as React from "react";
 import { Filter, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { APPLICATION_STATUSES } from "@/lib/types/database";
 
@@ -22,11 +28,19 @@ export function FilteredApplicationsExport() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Select items={APPLICATION_STATUSES} value={status} onValueChange={(v) => setStatus(v ?? status)}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+        <Select
+          items={APPLICATION_STATUSES}
+          value={status}
+          onValueChange={(v) => setStatus(v ?? status)}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {APPLICATION_STATUSES.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

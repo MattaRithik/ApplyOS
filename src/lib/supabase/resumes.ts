@@ -21,7 +21,9 @@ export class ResumeUploadError extends Error {}
 async function readJsonOrThrow(res: Response): Promise<Record<string, unknown>> {
   const json = await res.json().catch(() => ({}) as Record<string, unknown>);
   if (!res.ok) {
-    throw new ResumeUploadError((json.error as string | undefined) || `Request failed (${res.status})`);
+    throw new ResumeUploadError(
+      (json.error as string | undefined) || `Request failed (${res.status})`,
+    );
   }
   return json;
 }
@@ -39,7 +41,9 @@ export async function uploadResume(file: File, displayName?: string): Promise<Re
     throw new ResumeUploadError("The file extension and MIME type do not match.");
   }
   if (file.size > MAX_RESUME_FILE_SIZE_BYTES) {
-    throw new ResumeUploadError(`File must be under ${MAX_RESUME_FILE_SIZE_BYTES / (1024 * 1024)}MB.`);
+    throw new ResumeUploadError(
+      `File must be under ${MAX_RESUME_FILE_SIZE_BYTES / (1024 * 1024)}MB.`,
+    );
   }
 
   // 1. Ask the server for a resume row + a short-lived signed B2 PUT URL.
@@ -53,7 +57,8 @@ export async function uploadResume(file: File, displayName?: string): Promise<Re
       displayName,
     }),
   });
-  const { resume_id: resumeId, signed_upload_url: signedUploadUrl } = await readJsonOrThrow(createRes);
+  const { resume_id: resumeId, signed_upload_url: signedUploadUrl } =
+    await readJsonOrThrow(createRes);
 
   // 2. Upload the file directly to B2 — this request never touches our server.
   const uploadRes = await fetch(signedUploadUrl as string, {
@@ -80,7 +85,10 @@ export async function deleteResume(resumeId: string): Promise<void> {
  * `mode: "view"` (default) opens the file in the browser tab — used for the
  * one-click preview. `mode: "download"` forces a save-to-disk instead.
  */
-export async function getResumeDownloadUrl(resumeId: string, mode: "view" | "download" = "view"): Promise<string> {
+export async function getResumeDownloadUrl(
+  resumeId: string,
+  mode: "view" | "download" = "view",
+): Promise<string> {
   const disposition = mode === "download" ? "attachment" : "inline";
   const res = await fetch(`/api/resumes/${resumeId}/download-url?disposition=${disposition}`);
   const { url } = await readJsonOrThrow(res);

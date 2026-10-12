@@ -32,18 +32,49 @@ export default async function AnalyticsPage() {
     <div className="space-y-5 py-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="text-sm text-muted-foreground">Deep dive into what&apos;s actually working.</p>
+        <p className="text-sm text-muted-foreground">
+          Deep dive into what&apos;s actually working.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile label="Response Rate" value={`${data.responseRate}%`} iconName="percent" accent="blue" />
-        <StatTile label="Interview Conversion" value={`${data.interviewConversionRate}%`} iconName="calendarClock" accent="amber" />
-        <StatTile label="Offer Conversion" value={`${data.offerConversionRate}%`} iconName="trophy" accent="emerald" />
-        <StatTile label="Rejection Rate" value={`${data.rejectionRate}%`} iconName="xCircle" accent="silver" />
-        <StatTile label="Ghosting Rate" value={`${data.ghostingRate}%`} iconName="ghost" accent="silver" />
+        <StatTile
+          label="Response Rate"
+          value={`${data.responseRate}%`}
+          iconName="percent"
+          accent="blue"
+        />
+        <StatTile
+          label="Interview Conversion"
+          value={`${data.interviewConversionRate}%`}
+          iconName="calendarClock"
+          accent="amber"
+        />
+        <StatTile
+          label="Offer Conversion"
+          value={`${data.offerConversionRate}%`}
+          iconName="trophy"
+          accent="emerald"
+        />
+        <StatTile
+          label="Rejection Rate"
+          value={`${data.rejectionRate}%`}
+          iconName="xCircle"
+          accent="silver"
+        />
+        <StatTile
+          label="Ghosting Rate"
+          value={`${data.ghostingRate}%`}
+          iconName="ghost"
+          accent="silver"
+        />
         <StatTile
           label="Avg. App → Response"
-          value={data.avgDaysApplicationToResponse !== null ? `${data.avgDaysApplicationToResponse}d` : "—"}
+          value={
+            data.avgDaysApplicationToResponse !== null
+              ? `${data.avgDaysApplicationToResponse}d`
+              : "—"
+          }
           iconName="timer"
           accent="cyan"
         />
@@ -69,7 +100,11 @@ export default async function AnalyticsPage() {
           <RankedList
             icon={Globe}
             empty="Tag applications with a source to see this."
-            items={data.bestJobBoards.map((b) => ({ label: b.source, sub: `${b.interviewRate}% interview · ${b.count} apps`, value: b.interviewRate }))}
+            items={data.bestJobBoards.map((b) => ({
+              label: b.source,
+              sub: `${b.interviewRate}% interview · ${b.count} apps`,
+              value: b.interviewRate,
+            }))}
           />
         </GlassPanel>
 
@@ -80,7 +115,11 @@ export default async function AnalyticsPage() {
           <RankedList
             icon={FileText}
             empty="Link resumes to applications to see this."
-            items={data.bestResumeVersions.map((r) => ({ label: r.name, sub: `${r.interviewRate}% interview · ${r.applications} apps`, value: r.interviewRate }))}
+            items={data.bestResumeVersions.map((r) => ({
+              label: r.name,
+              sub: `${r.interviewRate}% interview · ${r.applications} apps`,
+              value: r.interviewRate,
+            }))}
           />
         </GlassPanel>
 
@@ -91,7 +130,11 @@ export default async function AnalyticsPage() {
           <RankedList
             icon={Mail}
             empty="Link templates to outreach to see this."
-            items={data.bestColdEmailTemplates.map((t) => ({ label: t.name, sub: `${t.replyRate}% replies · ${t.sent} sent`, value: t.replyRate }))}
+            items={data.bestColdEmailTemplates.map((t) => ({
+              label: t.name,
+              sub: `${t.replyRate}% replies · ${t.sent} sent`,
+              value: t.replyRate,
+            }))}
           />
         </GlassPanel>
 
@@ -102,7 +145,11 @@ export default async function AnalyticsPage() {
           <RankedList
             icon={Building2}
             empty="Not enough data yet."
-            items={data.bestCompaniesByResponse.map((c) => ({ label: c.company, sub: `${c.responseRate}% response · ${c.applications} apps`, value: c.responseRate }))}
+            items={data.bestCompaniesByResponse.map((c) => ({
+              label: c.company,
+              sub: `${c.responseRate}% response · ${c.applications} apps`,
+              value: c.responseRate,
+            }))}
           />
         </GlassPanel>
 
@@ -114,12 +161,20 @@ export default async function AnalyticsPage() {
             <RankedList
               icon={Layers}
               empty="Not enough data yet."
-              items={data.bestRoleCategories.map((c) => ({ label: c.category, sub: `${c.interviewRate}% interview · ${c.applications} apps`, value: c.interviewRate }))}
+              items={data.bestRoleCategories.map((c) => ({
+                label: c.category,
+                sub: `${c.interviewRate}% interview · ${c.applications} apps`,
+                value: c.interviewRate,
+              }))}
             />
             <div className="flex flex-col justify-center gap-3 rounded-xl border border-border/40 p-4">
-              <p className="text-xs text-muted-foreground">Average days from interview to decision</p>
+              <p className="text-xs text-muted-foreground">
+                Average days from interview to decision
+              </p>
               <p className="text-2xl font-semibold tabular-nums">
-                {data.avgDaysInterviewToDecision !== null ? `${data.avgDaysInterviewToDecision} days` : "Not enough data"}
+                {data.avgDaysInterviewToDecision !== null
+                  ? `${data.avgDaysInterviewToDecision} days`
+                  : "Not enough data"}
               </p>
             </div>
           </div>

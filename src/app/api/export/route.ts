@@ -41,14 +41,20 @@ export async function GET(request: Request) {
   const format: ExportFormat = formatResult.data;
   const statusFilter = statusResult?.data ?? null;
   if (statusFilter && entity !== "applications") {
-    return NextResponse.json({ error: "Status filtering is only supported for applications." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Status filtering is only supported for applications." },
+      { status: 400 },
+    );
   }
 
   if (!(await consumeApiRateLimit(user.id, "export", 60, 5))) {
-    return NextResponse.json({ error: "Export rate limit reached. Please try again shortly." }, {
-      status: 429,
-      headers: { "Retry-After": "60", "Cache-Control": "private, no-store" },
-    });
+    return NextResponse.json(
+      { error: "Export rate limit reached. Please try again shortly." },
+      {
+        status: 429,
+        headers: { "Retry-After": "60", "Cache-Control": "private, no-store" },
+      },
+    );
   }
 
   let filename = `applyos-${entity}-${new Date().toISOString().slice(0, 10)}`;
@@ -61,7 +67,7 @@ export async function GET(request: Request) {
         EXPORT_ENTITIES.map(async (e) => ({
           name: e.label,
           rows: await fetchEntityRows(supabase, user.id, e.value),
-        }))
+        })),
       );
       rowCount = sheets.reduce((sum, s) => sum + s.rows.length, 0);
       fileBuffer = await buildXlsx(sheets);

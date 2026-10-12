@@ -54,7 +54,12 @@ export function CalendarView({ applications }: { applications: ApplicationWithRe
           <Button variant="outline" size="icon-sm" onClick={() => setMonth((m) => subMonths(m, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setMonth(new Date())}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={() => setMonth(new Date())}
+          >
             Today
           </Button>
           <Button variant="outline" size="icon-sm" onClick={() => setMonth((m) => addMonths(m, 1))}>
@@ -82,10 +87,12 @@ export function CalendarView({ applications }: { applications: ApplicationWithRe
               className={cn(
                 "min-h-[56px] rounded-lg border border-border/40 p-1 text-left align-top sm:min-h-[86px] sm:p-1.5",
                 !isSameMonth(day, month) && "opacity-40",
-                isToday(day) && "border-[var(--cyan-accent)]/60 bg-[var(--cyan-accent)]/5"
+                isToday(day) && "border-[var(--cyan-accent)]/60 bg-[var(--cyan-accent)]/5",
               )}
             >
-              <span className="text-[10px] text-muted-foreground sm:text-[11px]">{format(day, "d")}</span>
+              <span className="text-[10px] text-muted-foreground sm:text-[11px]">
+                {format(day, "d")}
+              </span>
               <div className="mt-1 space-y-1">
                 {events.slice(0, maxEvents).map((e, i) => (
                   <Link
@@ -95,7 +102,7 @@ export function CalendarView({ applications }: { applications: ApplicationWithRe
                       "block truncate rounded px-1 py-0.5 text-[9px] font-medium sm:text-[10px]",
                       e.kind === "applied"
                         ? "bg-[var(--blue-accent)]/15 text-[var(--blue-accent)]"
-                        : "bg-[var(--amber-accent)]/15 text-[var(--amber-accent)]"
+                        : "bg-[var(--amber-accent)]/15 text-[var(--amber-accent)]",
                     )}
                     title={`${e.app.job_title} · ${e.app.company_name}`}
                   >
@@ -104,7 +111,9 @@ export function CalendarView({ applications }: { applications: ApplicationWithRe
                   </Link>
                 ))}
                 {events.length > maxEvents && (
-                  <span className="block text-[9px] text-muted-foreground sm:text-[10px]">+{events.length - maxEvents} more</span>
+                  <span className="block text-[9px] text-muted-foreground sm:text-[10px]">
+                    +{events.length - maxEvents} more
+                  </span>
                 )}
               </div>
             </div>

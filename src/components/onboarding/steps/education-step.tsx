@@ -28,7 +28,9 @@ export function EducationStep({
       </div>
 
       <div>
-        <Label className="mb-1.5 block text-xs text-muted-foreground">Expected graduation date</Label>
+        <Label className="mb-1.5 block text-xs text-muted-foreground">
+          Expected graduation date
+        </Label>
         <Input
           type="date"
           value={value.expected_graduation_date}

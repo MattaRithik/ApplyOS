@@ -31,17 +31,24 @@ export function ConfirmationStep({
         <h2 className="text-lg font-semibold tracking-tight">You&apos;re all set</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Here&apos;s what you told us. You can edit any of this anytime from Settings → Profile &amp; Timeline
-        Settings.
+        Here&apos;s what you told us. You can edit any of this anytime from Settings → Profile &amp;
+        Timeline Settings.
       </p>
 
       <GlassPanel className="space-y-3 p-4">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Category</p>
-            <p className="text-sm font-medium">{category ? CATEGORY_LABELS[category] : "Not set"}</p>
+            <p className="text-sm font-medium">
+              {category ? CATEGORY_LABELS[category] : "Not set"}
+            </p>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={() => onEditStep(0)} aria-label="Edit category">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => onEditStep(0)}
+            aria-label="Edit category"
+          >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -49,10 +56,19 @@ export function ConfirmationStep({
         {isInternational && (
           <div className="flex items-start justify-between gap-2 border-t border-border/40 pt-3">
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Graduation countdown</p>
-              <p className="text-sm font-medium">{education.expected_graduation_date || "Not set"}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Graduation countdown
+              </p>
+              <p className="text-sm font-medium">
+                {education.expected_graduation_date || "Not set"}
+              </p>
             </div>
-            <Button variant="ghost" size="icon-sm" onClick={() => onEditStep(1)} aria-label="Edit program details">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onEditStep(1)}
+              aria-label="Edit program details"
+            >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
           </div>

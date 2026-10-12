@@ -10,7 +10,9 @@ export function setHeartbeatError(error: string | null) {
 }
 export function subscribeHeartbeat(listener: () => void) {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 export const getHeartbeatSnapshot = () => snapshot;
 export const getServerHeartbeatSnapshot = () => initial;
@@ -18,7 +20,8 @@ export const getServerHeartbeatSnapshot = () => initial;
 export function heartbeatFailure(status: number) {
   if (status === 401) return "Your sign-in could not be verified (401). Refresh or sign in again.";
   if (status === 403) return "The server rejected the request origin (403).";
-  if (status === 404 || status === 405) return `The heartbeat endpoint is missing or outdated (${status}).`;
+  if (status === 404 || status === 405)
+    return `The heartbeat endpoint is missing or outdated (${status}).`;
   if (status === 429) return "The reporting rate limit was reached (429).";
   return `The server could not save the report (${status}).`;
 }

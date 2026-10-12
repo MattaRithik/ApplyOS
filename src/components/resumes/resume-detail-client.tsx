@@ -42,7 +42,13 @@ type ResumeDetailView = Pick<
   | "updated_at"
 >;
 
-export function ResumeDetailClient({ resume, applications }: { resume: ResumeDetailView; applications: ApplicationRow[] }) {
+export function ResumeDetailClient({
+  resume,
+  applications,
+}: {
+  resume: ResumeDetailView;
+  applications: ApplicationRow[];
+}) {
   const router = useRouter();
   const [targetRole, setTargetRole] = React.useState(resume.target_role ?? "");
   const [versionNotes, setVersionNotes] = React.useState(resume.version_notes ?? "");
@@ -58,7 +64,10 @@ export function ResumeDetailClient({ resume, applications }: { resume: ResumeDet
         target_role: targetRole || null,
         version_notes: versionNotes || null,
         resume_match_score: matchScore ? Number(matchScore) : null,
-        missing_keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
+        missing_keywords: keywords
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
       });
       toast.success("Resume details saved.");
       router.refresh();
@@ -85,7 +94,10 @@ export function ResumeDetailClient({ resume, applications }: { resume: ResumeDet
 
   return (
     <div className="space-y-5 py-6">
-      <Link href="/resumes" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/resumes"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to resumes
       </Link>
 
@@ -98,7 +110,8 @@ export function ResumeDetailClient({ resume, applications }: { resume: ResumeDet
             <div>
               <h1 className="text-xl font-semibold tracking-tight">{resume.display_name}</h1>
               <p className="text-xs uppercase text-muted-foreground">
-                {resume.original_file_name} · .{resume.file_extension ?? "file"} · {formatFileSize(resume.file_size)}
+                {resume.original_file_name} · .{resume.file_extension ?? "file"} ·{" "}
+                {formatFileSize(resume.file_size)}
               </p>
             </div>
           </div>
@@ -107,7 +120,12 @@ export function ResumeDetailClient({ resume, applications }: { resume: ResumeDet
               <Eye className="h-3.5 w-3.5" /> View
             </Button>
             <RenameResumeDialog resume={resume} onRenamed={() => router.refresh()} />
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={() => setDeleteOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
             <ConfirmDeleteDialog
@@ -133,20 +151,38 @@ export function ResumeDetailClient({ resume, applications }: { resume: ResumeDet
           <h2 className="text-sm font-semibold">Version details</h2>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Target role</Label>
-            <Input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Backend SWE, Quant Analyst" />
+            <Input
+              value={targetRole}
+              onChange={(e) => setTargetRole(e.target.value)}
+              placeholder="e.g. Backend SWE, Quant Analyst"
+            />
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Version notes</Label>
-            <Textarea rows={3} value={versionNotes} onChange={(e) => setVersionNotes(e.target.value)} />
+            <Textarea
+              rows={3}
+              value={versionNotes}
+              onChange={(e) => setVersionNotes(e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="mb-1.5 block text-xs text-muted-foreground">Resume match score</Label>
-              <Input type="number" min={0} max={100} value={matchScore} onChange={(e) => setMatchScore(e.target.value)} />
+              <Label className="mb-1.5 block text-xs text-muted-foreground">
+                Resume match score
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={matchScore}
+                onChange={(e) => setMatchScore(e.target.value)}
+              />
             </div>
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Missing keywords (comma-separated)</Label>
+            <Label className="mb-1.5 block text-xs text-muted-foreground">
+              Missing keywords (comma-separated)
+            </Label>
             <Textarea rows={2} value={keywords} onChange={(e) => setKeywords(e.target.value)} />
           </div>
           <Button onClick={handleSaveMeta} disabled={saving} size="sm">
@@ -155,14 +191,19 @@ export function ResumeDetailClient({ resume, applications }: { resume: ResumeDet
         </GlassPanel>
 
         <GlassPanel className="p-5">
-          <h2 className="mb-4 text-sm font-semibold">Applications using this resume ({applications.length})</h2>
+          <h2 className="mb-4 text-sm font-semibold">
+            Applications using this resume ({applications.length})
+          </h2>
           {applications.length === 0 ? (
             <p className="text-sm text-muted-foreground">Not linked to any applications yet.</p>
           ) : (
             <ul className="space-y-2">
               {applications.map((a) => (
                 <li key={a.id}>
-                  <Link href={`/applications/${a.id}`} className="flex items-center justify-between rounded-lg border border-border/40 p-2.5 text-sm hover:bg-accent/40">
+                  <Link
+                    href={`/applications/${a.id}`}
+                    className="flex items-center justify-between rounded-lg border border-border/40 p-2.5 text-sm hover:bg-accent/40"
+                  >
                     <div className="min-w-0">
                       <p className="truncate font-medium">{a.job_title}</p>
                       <p className="truncate text-xs text-muted-foreground">{a.company_name}</p>

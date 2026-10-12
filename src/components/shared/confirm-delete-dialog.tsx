@@ -87,11 +87,13 @@ export function ConfirmDeleteDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            {description
-              ? description
-              : itemName
-                ? <>You are about to delete &ldquo;{itemName}&rdquo;.</>
-                : "This action cannot be undone."}
+            {description ? (
+              description
+            ) : itemName ? (
+              <>You are about to delete &ldquo;{itemName}&rdquo;.</>
+            ) : (
+              "This action cannot be undone."
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -109,7 +111,10 @@ export function ConfirmDeleteDialog({
         )}
 
         {error && (
-          <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs font-medium text-destructive">
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs font-medium text-destructive"
+          >
             {error}
           </p>
         )}

@@ -1,7 +1,15 @@
 import * as React from "react";
 import { GlassPanel } from "@/components/shared/glass-panel";
 
-export function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
+export function StatCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+}) {
   return (
     <GlassPanel className="space-y-1 p-3">
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>

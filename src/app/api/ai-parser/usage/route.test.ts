@@ -27,18 +27,28 @@ const { GET } = await import("@/app/api/ai-parser/usage/route");
 
 beforeEach(() => {
   vi.clearAllMocks();
-  getUsageSummaryMock.mockResolvedValue({ range: "month", totals: {}, spend: {}, perModel: [], recentActivity: [] });
+  getUsageSummaryMock.mockResolvedValue({
+    range: "month",
+    totals: {},
+    spend: {},
+    perModel: [],
+    recentActivity: [],
+  });
 });
 
 describe("GET /api/ai-parser/usage", () => {
   it("returns 401 when unauthenticated", async () => {
-    requireAIParserAccessMock.mockRejectedValueOnce(new FakeParserAuthError("Not authenticated.", 401));
+    requireAIParserAccessMock.mockRejectedValueOnce(
+      new FakeParserAuthError("Not authenticated.", 401),
+    );
     const res = await GET(new Request("http://localhost/api/ai-parser/usage"));
     expect(res.status).toBe(401);
   });
 
   it("returns 403 for an account with no active entitlement", async () => {
-    requireAIParserAccessMock.mockRejectedValueOnce(new FakeParserAuthError("AI parsing is not enabled for this account.", 403));
+    requireAIParserAccessMock.mockRejectedValueOnce(
+      new FakeParserAuthError("AI parsing is not enabled for this account.", 403),
+    );
     const res = await GET(new Request("http://localhost/api/ai-parser/usage"));
     expect(res.status).toBe(403);
   });
@@ -53,7 +63,9 @@ describe("GET /api/ai-parser/usage", () => {
     // An attacker might try to override the scope via a query param — the
     // route has no such parameter at all, and getUsageSummary is always
     // called with the session's own user id, never anything from the URL.
-    await GET(new Request("http://localhost/api/ai-parser/usage?range=month&userId=some-other-user"));
+    await GET(
+      new Request("http://localhost/api/ai-parser/usage?range=month&userId=some-other-user"),
+    );
 
     expect(getUsageSummaryMock).toHaveBeenCalledWith("user-1", "month");
   });
@@ -67,6 +79,10 @@ describe("GET /api/ai-parser/usage", () => {
 
     const res = await GET(new Request("http://localhost/api/ai-parser/usage"));
     const json = await res.json();
-    expect(json.entitlement).toEqual({ dailyRequestLimit: 42, monthlyBudgetUsd: 9, expiresAt: "2099-01-01T00:00:00Z" });
+    expect(json.entitlement).toEqual({
+      dailyRequestLimit: 42,
+      monthlyBudgetUsd: 9,
+      expiresAt: "2099-01-01T00:00:00Z",
+    });
   });
 });

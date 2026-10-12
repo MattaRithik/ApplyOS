@@ -4,7 +4,15 @@ import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { ArrowUpRight, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogDescription, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface AiParserLayoutProps {
   open: boolean;
@@ -30,7 +38,11 @@ export function AiParserLayout({ open, onOpenChange, children }: AiParserLayoutP
         <DialogOverlay className="bg-black/35 backdrop-blur-md data-closed:hidden motion-reduce:animate-none" />
         <DialogPrimitive.Popup
           ref={contentRef}
-          initialFocus={(interaction) => interaction === "touch" ? contentRef.current : contentRef.current?.querySelector("textarea") ?? true}
+          initialFocus={(interaction) =>
+            interaction === "touch"
+              ? contentRef.current
+              : (contentRef.current?.querySelector("textarea") ?? true)
+          }
           className="ai-parser-dialog fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[780px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] text-foreground outline-none duration-200 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:hidden motion-reduce:animate-none sm:rounded-[32px]"
         >
           <div className="relative shrink-0 border-b border-border/60 px-5 py-5 sm:px-8">
@@ -39,15 +51,25 @@ export function AiParserLayout({ open, onOpenChange, children }: AiParserLayoutP
                 <Sparkles className="size-6" />
               </span>
               <div>
-                <DialogTitle className="text-xl font-semibold tracking-tight sm:text-2xl">Parse a job description</DialogTitle>
-                <DialogDescription className="mt-2 text-sm leading-relaxed">Extract all details, review the result, then fill your application form.</DialogDescription>
+                <DialogTitle className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  Parse a job description
+                </DialogTitle>
+                <DialogDescription className="mt-2 text-sm leading-relaxed">
+                  Extract all details, review the result, then fill your application form.
+                </DialogDescription>
               </div>
             </div>
-            <DialogClose render={<Button variant="ghost" size="icon" />} className="absolute top-4 right-4 size-9 rounded-full border border-border/60 bg-background/30 text-muted-foreground" aria-label="Close AI parser">
+            <DialogClose
+              render={<Button variant="ghost" size="icon" />}
+              className="absolute top-4 right-4 size-9 rounded-full border border-border/60 bg-background/30 text-muted-foreground"
+              aria-label="Close AI parser"
+            >
               <X className="size-4" />
             </DialogClose>
           </div>
-          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pt-5 scrollbar-thin [--parser-gutter:1.25rem] sm:px-8 sm:pt-6 sm:[--parser-gutter:2rem]">{children}</div>
+          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pt-5 scrollbar-thin [--parser-gutter:1.25rem] sm:px-8 sm:pt-6 sm:[--parser-gutter:2rem]">
+            {children}
+          </div>
         </DialogPrimitive.Popup>
       </DialogPortal>
     </Dialog>

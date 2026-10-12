@@ -10,7 +10,7 @@ export async function addNote(
   entityType: Note["entity_type"],
   entityId: string,
   body: string,
-  revalidate?: string
+  revalidate?: string,
 ) {
   const supabase = await createClient();
   const {
@@ -18,7 +18,8 @@ export async function addNote(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   uuidSchema.parse(entityId);
-  if (!body.trim() || body.length > 20_000) throw new Error("Note must be between 1 and 20,000 characters.");
+  if (!body.trim() || body.length > 20_000)
+    throw new Error("Note must be between 1 and 20,000 characters.");
   await assertOwnedEntity(supabase, user.id, entityType as OwnedEntityType, entityId);
 
   const { data, error } = await supabase

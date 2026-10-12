@@ -16,7 +16,12 @@ describe("resume file hardening", () => {
   it("recognizes only the expected file signatures", () => {
     expect(isResumeSignatureValid("pdf", new TextEncoder().encode("%PDF-1.7"))).toBe(true);
     expect(isResumeSignatureValid("pdf", new TextEncoder().encode("MZ executable"))).toBe(false);
-    expect(isResumeSignatureValid("doc", Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]))).toBe(true);
+    expect(
+      isResumeSignatureValid(
+        "doc",
+        Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]),
+      ),
+    ).toBe(true);
     expect(isResumeSignatureValid("docx", Uint8Array.from([0x50, 0x4b, 0x03, 0x04]))).toBe(true);
   });
 

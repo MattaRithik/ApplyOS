@@ -15,8 +15,10 @@ const uuidSchema = z.string().uuid();
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidSchema.safeParse(id).success) return NextResponse.json({ error: "Invalid resume id." }, { status: 400 });
-  const disposition = new URL(request.url).searchParams.get("disposition") === "attachment" ? "attachment" : "inline";
+  if (!uuidSchema.safeParse(id).success)
+    return NextResponse.json({ error: "Invalid resume id." }, { status: 400 });
+  const disposition =
+    new URL(request.url).searchParams.get("disposition") === "attachment" ? "attachment" : "inline";
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,7 +43,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   if (resume.status !== "uploaded") {
-    return NextResponse.json({ error: "This resume hasn't finished uploading yet." }, { status: 409 });
+    return NextResponse.json(
+      { error: "This resume hasn't finished uploading yet." },
+      { status: 409 },
+    );
   }
 
   const downloadFileName = resume.file_extension
@@ -53,7 +58,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const contentType = isAllowedResumeExtension(resume.file_extension ?? "")
       ? canonicalMimeType(resume.file_extension)
       : "application/octet-stream";
-    const { url, expiresIn } = await createResumeDownloadUrl(resume.storage_key, downloadFileName, disposition, contentType);
+    const { url, expiresIn } = await createResumeDownloadUrl(
+      resume.storage_key,
+      downloadFileName,
+      disposition,
+      contentType,
+    );
 
     if (disposition === "attachment") await recordDownload(user.id, "resume", downloadFileName);
 

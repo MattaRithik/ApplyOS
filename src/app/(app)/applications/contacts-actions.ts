@@ -20,7 +20,7 @@ export async function saveApplicationHrContacts(
   applicationId: string,
   companyId: string | null,
   companyName: string,
-  contacts: HrContactDraft[]
+  contacts: HrContactDraft[],
 ) {
   const supabase = await createClient();
   const {
@@ -46,7 +46,11 @@ export async function saveApplicationHrContacts(
     .eq("application_id", applicationId);
 
   const existingHrContactIds = (existingLinks ?? [])
-    .filter((l) => HR_RELATIONSHIP_TYPES.includes((l.contacts as unknown as { relationship_type: string }).relationship_type as never))
+    .filter((l) =>
+      HR_RELATIONSHIP_TYPES.includes(
+        (l.contacts as unknown as { relationship_type: string }).relationship_type as never,
+      ),
+    )
     .map((l) => l.contact_id);
 
   if (existingHrContactIds.length > 0) {
@@ -101,7 +105,9 @@ export async function getApplicationHrContacts(applicationId: string): Promise<H
 
   const { data } = await supabase
     .from("application_contacts")
-    .select("contacts!inner(id, name, role_title, email, phone, linkedin_url, relationship_type, user_id)")
+    .select(
+      "contacts!inner(id, name, role_title, email, phone, linkedin_url, relationship_type, user_id)",
+    )
     .eq("application_id", applicationId);
 
   type JoinedContact = {
@@ -117,7 +123,9 @@ export async function getApplicationHrContacts(applicationId: string): Promise<H
 
   return (data ?? [])
     .map((row) => row.contacts as unknown as JoinedContact)
-    .filter((c) => c.user_id === user.id && HR_RELATIONSHIP_TYPES.includes(c.relationship_type as never))
+    .filter(
+      (c) => c.user_id === user.id && HR_RELATIONSHIP_TYPES.includes(c.relationship_type as never),
+    )
     .map((c) => ({
       id: c.id,
       name: c.name,

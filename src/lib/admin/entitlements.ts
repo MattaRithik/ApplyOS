@@ -10,7 +10,7 @@ export interface EntitlementActionParams {
 async function mutateEntitlement(
   params: EntitlementActionParams,
   action: "grant" | "revoke" | "suspend" | "reactivate" | "update_limits",
-  patch: Record<string, unknown> = {}
+  patch: Record<string, unknown> = {},
 ): Promise<void> {
   const supabase = createServiceRoleClient();
   const { error } = await supabase.rpc("admin_mutate_ai_entitlement", {
@@ -51,13 +51,10 @@ export interface UpdateLimitsParams extends EntitlementActionParams {
 
 /** Fields left undefined (vs. explicit null) are omitted from the patch entirely, so a partial call only touches the limits it names. */
 export async function updateAILimits(params: UpdateLimitsParams): Promise<void> {
-  const patch: Record<string, unknown> = {};
-  if (params.dailyRequestLimit !== undefined) patch.daily_request_limit = params.dailyRequestLimit;
-  if (params.monthlyBudgetUsd !== undefined) patch.monthly_budget_usd = params.monthlyBudgetUsd;
-  if (params.expiresAt !== undefined) patch.expires_at = params.expiresAt;
-
   await mutateEntitlement(params, "update_limits", {
-    ...(params.dailyRequestLimit !== undefined ? { dailyRequestLimit: params.dailyRequestLimit } : {}),
+    ...(params.dailyRequestLimit !== undefined
+      ? { dailyRequestLimit: params.dailyRequestLimit }
+      : {}),
     ...(params.monthlyBudgetUsd !== undefined ? { monthlyBudgetUsd: params.monthlyBudgetUsd } : {}),
     ...(params.expiresAt !== undefined ? { expiresAt: params.expiresAt } : {}),
   });

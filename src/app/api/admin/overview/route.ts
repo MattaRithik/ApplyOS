@@ -8,7 +8,8 @@ export async function GET() {
   try {
     await requireOwner(supabase);
   } catch (err) {
-    if (err instanceof AdminAuthError) return NextResponse.json({ error: err.message }, { status: err.status });
+    if (err instanceof AdminAuthError)
+      return NextResponse.json({ error: err.message }, { status: err.status });
     return NextResponse.json({ error: "Authorization check failed." }, { status: 503 });
   }
 

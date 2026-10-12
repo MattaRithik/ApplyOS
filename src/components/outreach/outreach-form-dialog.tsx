@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -24,7 +30,13 @@ const NONE = "__none__";
 
 interface OutreachFormDialogProps {
   outreach?: Outreach;
-  contactOptions: { id: string; name: string; company_name: string | null; email: string | null; linkedin_url: string | null }[];
+  contactOptions: {
+    id: string;
+    name: string;
+    company_name: string | null;
+    email: string | null;
+    linkedin_url: string | null;
+  }[];
   companyOptions: { id: string; name: string }[];
   templateOptions: { id: string; name: string }[];
   onSaved?: () => void;
@@ -77,7 +89,7 @@ export function OutreachFormDialog({
           follow_up_date: "",
           response_received: false,
           notes: "",
-        }
+        },
   );
 
   const set = <K extends keyof OutreachInput>(key: K, v: OutreachInput[K]) =>
@@ -136,15 +148,26 @@ export function OutreachFormDialog({
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Existing contact</Label>
             <Select
-              items={[{ value: NONE, label: "New / one-off contact" }, ...contactOptions.map((c) => ({ value: c.id, label: c.company_name ? `${c.name} · ${c.company_name}` : c.name }))]}
+              items={[
+                { value: NONE, label: "New / one-off contact" },
+                ...contactOptions.map((c) => ({
+                  value: c.id,
+                  label: c.company_name ? `${c.name} · ${c.company_name}` : c.name,
+                })),
+              ]}
               value={values.contact_id ?? NONE}
               onValueChange={(v) => handleContactSelect(v ?? NONE)}
             >
-              <SelectTrigger><SelectValue placeholder="Pick a saved contact (optional)" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Pick a saved contact (optional)" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>New / one-off contact</SelectItem>
                 {contactOptions.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}{c.company_name ? ` · ${c.company_name}` : ""}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                    {c.company_name ? ` · ${c.company_name}` : ""}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -153,12 +176,18 @@ export function OutreachFormDialog({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Person name</Label>
-              <Input value={values.person_name ?? ""} onChange={(e) => set("person_name", e.target.value)} />
+              <Input
+                value={values.person_name ?? ""}
+                onChange={(e) => set("person_name", e.target.value)}
+              />
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Company</Label>
               <Select
-                items={[{ value: NONE, label: "—" }, ...companyOptions.map((c) => ({ value: c.id, label: c.name }))]}
+                items={[
+                  { value: NONE, label: "—" },
+                  ...companyOptions.map((c) => ({ value: c.id, label: c.name })),
+                ]}
                 value={values.company_id ?? NONE}
                 onValueChange={(v) => {
                   const c = companyOptions.find((co) => co.id === v);
@@ -166,11 +195,15 @@ export function OutreachFormDialog({
                   set("company_name", c?.name ?? values.company_name);
                 }}
               >
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>—</SelectItem>
                   {companyOptions.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -184,7 +217,10 @@ export function OutreachFormDialog({
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">LinkedIn</Label>
-              <Input value={values.linkedin_url ?? ""} onChange={(e) => set("linkedin_url", e.target.value)} />
+              <Input
+                value={values.linkedin_url ?? ""}
+                onChange={(e) => set("linkedin_url", e.target.value)}
+              />
             </div>
           </div>
 
@@ -194,12 +230,18 @@ export function OutreachFormDialog({
               <Select
                 items={OUTREACH_TYPES}
                 value={values.outreach_type}
-                onValueChange={(v) => set("outreach_type", (v ?? "cold_email") as OutreachInput["outreach_type"])}
+                onValueChange={(v) =>
+                  set("outreach_type", (v ?? "cold_email") as OutreachInput["outreach_type"])
+                }
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {OUTREACH_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -207,15 +249,22 @@ export function OutreachFormDialog({
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Template used</Label>
               <Select
-                items={[{ value: NONE, label: "—" }, ...templateOptions.map((t) => ({ value: t.id, label: t.name }))]}
+                items={[
+                  { value: NONE, label: "—" },
+                  ...templateOptions.map((t) => ({ value: t.id, label: t.name })),
+                ]}
                 value={values.template_id ?? NONE}
                 onValueChange={(v) => set("template_id", v === NONE ? null : v)}
               >
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>—</SelectItem>
                   {templateOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -224,27 +273,45 @@ export function OutreachFormDialog({
 
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Subject line</Label>
-            <Input value={values.subject_line ?? ""} onChange={(e) => set("subject_line", e.target.value)} />
+            <Input
+              value={values.subject_line ?? ""}
+              onChange={(e) => set("subject_line", e.target.value)}
+            />
           </div>
 
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Message sent</Label>
-            <Textarea rows={3} value={values.message_sent ?? ""} onChange={(e) => set("message_sent", e.target.value)} />
+            <Textarea
+              rows={3}
+              value={values.message_sent ?? ""}
+              onChange={(e) => set("message_sent", e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Date sent *</Label>
-              <Input type="date" value={values.date_sent} onChange={(e) => set("date_sent", e.target.value)} />
+              <Input
+                type="date"
+                value={values.date_sent}
+                onChange={(e) => set("date_sent", e.target.value)}
+              />
             </div>
             <div>
               <Label className="mb-1.5 block text-xs text-muted-foreground">Follow-up date</Label>
-              <Input type="date" value={values.follow_up_date ?? ""} onChange={(e) => set("follow_up_date", e.target.value)} />
+              <Input
+                type="date"
+                value={values.follow_up_date ?? ""}
+                onChange={(e) => set("follow_up_date", e.target.value)}
+              />
             </div>
           </div>
 
           <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={values.response_received ?? false} onCheckedChange={(v) => set("response_received", !!v)} />
+            <Checkbox
+              checked={values.response_received ?? false}
+              onCheckedChange={(v) => set("response_received", !!v)}
+            />
             Response received
           </label>
 
@@ -255,31 +322,49 @@ export function OutreachFormDialog({
                 <Select
                   items={RESPONSE_STATUSES.filter((r) => r.value !== "no_response")}
                   value={values.response_type ?? "opened"}
-                  onValueChange={(v) => set("response_type", (v ?? "opened") as OutreachInput["response_type"])}
+                  onValueChange={(v) =>
+                    set("response_type", (v ?? "opened") as OutreachInput["response_type"])
+                  }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {RESPONSE_STATUSES.filter((r) => r.value !== "no_response").map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="mb-1.5 block text-xs text-muted-foreground">Response date</Label>
-                <Input type="date" value={values.response_date ?? ""} onChange={(e) => set("response_date", e.target.value)} />
+                <Input
+                  type="date"
+                  value={values.response_date ?? ""}
+                  onChange={(e) => set("response_date", e.target.value)}
+                />
               </div>
             </div>
           )}
 
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Notes</Label>
-            <Textarea rows={2} value={values.notes ?? ""} onChange={(e) => set("notes", e.target.value)} />
+            <Textarea
+              rows={2}
+              value={values.notes ?? ""}
+              onChange={(e) => set("notes", e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

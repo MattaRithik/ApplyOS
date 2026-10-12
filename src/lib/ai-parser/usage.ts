@@ -1,9 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { finalizeUsageRow, type FinalizeUsagePatch } from "@/lib/ai-parser/rate-limit";
-
-export const recordUsage = finalizeUsageRow;
-export type { FinalizeUsagePatch };
+import { readAllRows } from "@/lib/supabase/pagination";
 
 export type UsageRange = "today" | "7d" | "month" | "30d" | "all";
 
@@ -97,25 +94,31 @@ export async function getUsageSummary(userId: string, range: UsageRange): Promis
 
   let query = supabase
     .from("ai_parser_usage")
-    .select("id, created_at, model, status, cache_hit, fallback_used, input_tokens, output_tokens, total_tokens, estimated_total_cost_usd, latency_ms")
+    .select(
+      "id, created_at, model, status, cache_hit, fallback_used, input_tokens, output_tokens, total_tokens, estimated_total_cost_usd, latency_ms",
+    )
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .lte("created_at", now.toISOString())
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
   if (since) query = query.gte("created_at", since);
 
-  const { data } = await query.limit(2000);
-  const rows: UsageRow[] = (data as UsageRow[] | null) ?? [];
+  const rows = await readAllRows<UsageRow>(query);
 
   const todayStart = rangeStartUtc("today", now)!;
   const monthStart = rangeStartUtc("month", now)!;
 
-  const [{ data: todayRows }, { data: monthRows }, { data: allRows }] = await Promise.all([
-    supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId).gte("created_at", todayStart),
-    supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId).gte("created_at", monthStart),
-    supabase.from("ai_parser_usage").select("estimated_total_cost_usd").eq("user_id", userId),
+  const spendResults = await Promise.all([
+    supabase.rpc("ai_parser_cost_total", { p_user_id: userId, p_since: todayStart }),
+    supabase.rpc("ai_parser_cost_total", { p_user_id: userId, p_since: monthStart }),
+    supabase.rpc("ai_parser_cost_total", { p_user_id: userId, p_since: null }),
   ]);
-
-  const sumCost = (r: { estimated_total_cost_usd: number | null }[] | null) =>
-    (r ?? []).reduce((s, row) => s + Number(row.estimated_total_cost_usd ?? 0), 0);
+  const spend = spendResults.map(({ data, error }) => {
+    const amount = Number(data);
+    if (error || data === null || !Number.isFinite(amount))
+      throw new Error("Could not load spending totals.");
+    return amount;
+  });
 
   const successful = rows.filter((r) => r.status === "success");
   const failed = rows.filter((r) => r.status === "failed");
@@ -126,16 +129,21 @@ export async function getUsageSummary(userId: string, range: UsageRange): Promis
   const outputTokens = rows.reduce((s, r) => s + Number(r.output_tokens ?? 0), 0);
   const totalTokens = rows.reduce((s, r) => s + Number(r.total_tokens ?? 0), 0);
   const latencies = rows.map((r) => r.latency_ms).filter((v): v is number => typeof v === "number");
-  const avgLatencyMs = latencies.length ? latencies.reduce((s, v) => s + v, 0) / latencies.length : 0;
+  const avgLatencyMs = latencies.length
+    ? latencies.reduce((s, v) => s + v, 0) / latencies.length
+    : 0;
   const avgCostPerSuccessfulParseUsd = successful.length
-    ? successful.reduce((s, r) => s + Number(r.estimated_total_cost_usd ?? 0), 0) / successful.length
+    ? successful.reduce((s, r) => s + Number(r.estimated_total_cost_usd ?? 0), 0) /
+      successful.length
     : 0;
 
   const modelKeys = [...new Set(rows.map((r) => r.model).filter((m): m is string => !!m))];
   const perModel: ModelBreakdown[] = modelKeys.map((model) => {
     const modelRows = rows.filter((r) => r.model === model);
     const modelCost = modelRows.reduce((s, r) => s + Number(r.estimated_total_cost_usd ?? 0), 0);
-    const modelLatencies = modelRows.map((r) => r.latency_ms).filter((v): v is number => typeof v === "number");
+    const modelLatencies = modelRows
+      .map((r) => r.latency_ms)
+      .filter((v): v is number => typeof v === "number");
     const modelSuccessful = modelRows.filter((r) => r.status === "success").length;
     return {
       model,
@@ -145,7 +153,9 @@ export async function getUsageSummary(userId: string, range: UsageRange): Promis
       totalTokens: modelRows.reduce((s, r) => s + Number(r.total_tokens ?? 0), 0),
       costUsd: modelCost,
       percentOfTotalCost: totalCostUsd > 0 ? (modelCost / totalCostUsd) * 100 : 0,
-      avgLatencyMs: modelLatencies.length ? modelLatencies.reduce((s, v) => s + v, 0) / modelLatencies.length : 0,
+      avgLatencyMs: modelLatencies.length
+        ? modelLatencies.reduce((s, v) => s + v, 0) / modelLatencies.length
+        : 0,
       successRate: modelRows.length ? (modelSuccessful / modelRows.length) * 100 : 0,
     };
   });
@@ -166,9 +176,9 @@ export async function getUsageSummary(userId: string, range: UsageRange): Promis
       avgLatencyMs,
     },
     spend: {
-      todayUsd: sumCost(todayRows),
-      monthUsd: sumCost(monthRows),
-      allTimeUsd: sumCost(allRows),
+      todayUsd: spend[0],
+      monthUsd: spend[1],
+      allTimeUsd: spend[2],
     },
     perModel,
     recentActivity: rows.slice(0, 50).map((r) => ({

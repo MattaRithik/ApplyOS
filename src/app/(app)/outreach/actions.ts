@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { OutreachType, ResponseStatus } from "@/lib/types/database";
 import { assertOptionalOwnedEntity } from "@/lib/security/ownership";
-import { assertAllowedKeys, optionalHttpUrlSchema, uuidSchema } from "@/lib/validation/common";
+import { uuidSchema } from "@/lib/validation/common";
+import { outreachInputSchema, parseActionInput } from "@/lib/validation/forms";
 
-const OUTREACH_INPUT_KEYS = ["contact_id", "company_id", "application_id", "template_id", "person_name", "company_name", "email", "linkedin_url", "outreach_type", "subject_line", "message_sent", "date_sent", "follow_up_date", "response_received", "response_type", "response_date", "notes"] as const;
-
-async function validateRelations(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, input: Partial<OutreachInput>) {
-  optionalHttpUrlSchema.parse(input.linkedin_url);
-  if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) throw new Error("Invalid email address.");
+async function validateRelations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  input: Partial<OutreachInput>,
+) {
   await Promise.all([
     assertOptionalOwnedEntity(supabase, userId, "contact", input.contact_id),
     assertOptionalOwnedEntity(supabase, userId, "company", input.company_id),
@@ -40,7 +41,7 @@ export interface OutreachInput {
 }
 
 export async function createOutreach(input: OutreachInput) {
-  assertAllowedKeys(input, OUTREACH_INPUT_KEYS);
+  input = parseActionInput(outreachInputSchema, input);
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,7 +63,7 @@ export async function createOutreach(input: OutreachInput) {
 }
 
 export async function updateOutreach(id: string, input: Partial<OutreachInput>) {
-  assertAllowedKeys(input, OUTREACH_INPUT_KEYS);
+  input = parseActionInput(outreachInputSchema.partial(), input);
   const supabase = await createClient();
   const {
     data: { user },

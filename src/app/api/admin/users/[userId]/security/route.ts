@@ -5,7 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOwner, AdminAuthError } from "@/lib/admin/roles";
 import { getUserDetail } from "@/lib/admin/users";
 import { checkRecentActionRate } from "@/lib/admin/audit";
-import { sendPasswordResetForUser, revokeSessionsForUser, disableUser, enableUser } from "@/lib/admin/security";
+import {
+  sendPasswordResetForUser,
+  revokeSessionsForUser,
+  disableUser,
+  enableUser,
+} from "@/lib/admin/security";
 import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
 import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 
@@ -34,7 +39,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
   try {
     owner = await requireOwner(supabase);
   } catch (err) {
-    if (err instanceof AdminAuthError) return NextResponse.json({ error: err.message }, { status: err.status });
+    if (err instanceof AdminAuthError)
+      return NextResponse.json({ error: err.message }, { status: err.status });
     return NextResponse.json({ error: "Authorization check failed." }, { status: 503 });
   }
   if (!(await consumeApiRateLimit(owner.id, "admin_mutation", 60, 30))) {
@@ -53,35 +59,44 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
   const body = parsedBody.data;
 
   if (existing.role === "owner" && body.action === "disable") {
-    return NextResponse.json({ error: "The permanent owner account cannot be disabled." }, { status: 400 });
+    return NextResponse.json(
+      { error: "The permanent owner account cannot be disabled." },
+      { status: 400 },
+    );
   }
 
   const requestId = randomUUID();
   const actorParams = { actorUserId: owner.id, targetUserId, requestId };
 
   if (body.action === "send_password_reset") {
-    const allowed = await checkRecentActionRate("password_reset_sent", targetUserId, { windowMinutes: 5, maxCount: 1 });
+    const allowed = await checkRecentActionRate("password_reset_sent", targetUserId, {
+      windowMinutes: 5,
+      maxCount: 1,
+    });
     if (!allowed) {
-      return NextResponse.json({ error: "A reset email was already sent recently. Try again later." }, { status: 429 });
+      return NextResponse.json(
+        { error: "A reset email was already sent recently. Try again later." },
+        { status: 429 },
+      );
     }
   }
 
   let result;
   try {
-  switch (body.action) {
-    case "send_password_reset":
-      result = await sendPasswordResetForUser(actorParams);
-      break;
-    case "revoke_sessions":
-      result = await revokeSessionsForUser(actorParams);
-      break;
-    case "disable":
-      result = await disableUser(actorParams);
-      break;
-    case "enable":
-      result = await enableUser(actorParams);
-      break;
-  }
+    switch (body.action) {
+      case "send_password_reset":
+        result = await sendPasswordResetForUser(actorParams);
+        break;
+      case "revoke_sessions":
+        result = await revokeSessionsForUser(actorParams);
+        break;
+      case "disable":
+        result = await disableUser(actorParams);
+        break;
+      case "enable":
+        result = await enableUser(actorParams);
+        break;
+    }
   } catch {
     return NextResponse.json({ error: "Administrative action failed." }, { status: 500 });
   }

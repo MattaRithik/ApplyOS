@@ -16,7 +16,9 @@ export function CompaniesGrid({ companies }: { companies: CompanyWithCount[] }) 
   const [search, setSearch] = React.useState("");
 
   const filtered = companies.filter((c) =>
-    `${c.name} ${c.industry ?? ""} ${c.location ?? ""}`.toLowerCase().includes(search.toLowerCase())
+    `${c.name} ${c.industry ?? ""} ${c.location ?? ""}`
+      .toLowerCase()
+      .includes(search.toLowerCase()),
   );
 
   return (
@@ -24,7 +26,12 @@ export function CompaniesGrid({ companies }: { companies: CompanyWithCount[] }) 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search companies…" className="h-9 pl-8" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search companies…"
+            className="h-9 pl-8"
+          />
         </div>
         <span className="text-xs text-muted-foreground">{filtered.length} companies</span>
       </div>
@@ -53,7 +60,9 @@ export function CompaniesGrid({ companies }: { companies: CompanyWithCount[] }) 
                 </p>
               )}
               <div className="mt-auto flex items-center justify-between border-t border-border/40 pt-2.5 text-xs text-muted-foreground">
-                <span>{c.application_count} application{c.application_count === 1 ? "" : "s"}</span>
+                <span>
+                  {c.application_count} application{c.application_count === 1 ? "" : "s"}
+                </span>
               </div>
             </GlassPanel>
           </Link>

@@ -57,8 +57,12 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
       if (!res.ok) throw new Error(json.error || "Failed to load user");
       const data = json as AdminUserDetail;
       setDetail(data);
-      setDailyLimit(data.aiAccess.dailyRequestLimit != null ? String(data.aiAccess.dailyRequestLimit) : "");
-      setMonthlyBudget(data.aiAccess.monthlyBudgetUsd != null ? String(data.aiAccess.monthlyBudgetUsd) : "");
+      setDailyLimit(
+        data.aiAccess.dailyRequestLimit != null ? String(data.aiAccess.dailyRequestLimit) : "",
+      );
+      setMonthlyBudget(
+        data.aiAccess.monthlyBudgetUsd != null ? String(data.aiAccess.monthlyBudgetUsd) : "",
+      );
       setExpiresAt(data.aiAccess.expiresAt ? data.aiAccess.expiresAt.slice(0, 10) : "");
     } catch (e) {
       setDetail(null);
@@ -126,7 +130,12 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
   };
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => { if (!busy) onOpenChange(nextOpen); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!busy) onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="max-h-[85vh] w-full max-w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{detail?.displayName || detail?.email || "User"}</DialogTitle>
@@ -136,7 +145,9 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
         {loadError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
             <p>{loadError}</p>
-            <Button variant="outline" onClick={fetchDetail}>Retry</Button>
+            <Button variant="outline" onClick={fetchDetail}>
+              Retry
+            </Button>
           </div>
         ) : loading || !detail ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
@@ -157,7 +168,9 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
               </div>
               <div>
                 <p className="text-muted-foreground">Last sign-in</p>
-                <p className="font-medium">{detail.lastSignInAt ? new Date(detail.lastSignInAt).toLocaleDateString() : "—"}</p>
+                <p className="font-medium">
+                  {detail.lastSignInAt ? new Date(detail.lastSignInAt).toLocaleDateString() : "—"}
+                </p>
               </div>
             </GlassPanel>
 
@@ -165,11 +178,27 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
               <p className="text-xs font-semibold">AI parser access</p>
               <GlassPanel className="space-y-3 p-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={detail.aiAccess.suspended ? "destructive" : detail.aiAccess.enabled ? "default" : "secondary"}>
-                    {detail.aiAccess.suspended ? "Suspended" : detail.aiAccess.enabled ? "Enabled" : "Disabled"}
+                  <Badge
+                    variant={
+                      detail.aiAccess.suspended
+                        ? "destructive"
+                        : detail.aiAccess.enabled
+                          ? "default"
+                          : "secondary"
+                    }
+                  >
+                    {detail.aiAccess.suspended
+                      ? "Suspended"
+                      : detail.aiAccess.enabled
+                        ? "Enabled"
+                        : "Disabled"}
                   </Badge>
                   {!detail.aiAccess.enabled && (
-                    <Button size="sm" disabled={busy} onClick={() => callEntitlement({ action: "grant" })}>
+                    <Button
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => callEntitlement({ action: "grant" })}
+                    >
                       Grant access
                     </Button>
                   )}
@@ -186,11 +215,22 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                       busy={busy}
                       reason={suspendReason}
                       setReason={setSuspendReason}
-                      onConfirm={() => callEntitlement({ action: "suspend", confirm: true, reason: suspendReason || undefined })}
+                      onConfirm={() =>
+                        callEntitlement({
+                          action: "suspend",
+                          confirm: true,
+                          reason: suspendReason || undefined,
+                        })
+                      }
                     />
                   )}
                   {detail.aiAccess.suspended && (
-                    <Button size="sm" variant="outline" disabled={busy} onClick={() => callEntitlement({ action: "reactivate" })}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => callEntitlement({ action: "reactivate" })}
+                    >
                       Reactivate
                     </Button>
                   )}
@@ -198,16 +238,36 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <div>
-                    <Label className="mb-1 block text-[10px] text-muted-foreground">Daily request limit</Label>
-                    <Input value={dailyLimit} onChange={(e) => setDailyLimit(e.target.value)} placeholder="Default" inputMode="numeric" />
+                    <Label className="mb-1 block text-[10px] text-muted-foreground">
+                      Daily request limit
+                    </Label>
+                    <Input
+                      value={dailyLimit}
+                      onChange={(e) => setDailyLimit(e.target.value)}
+                      placeholder="Default"
+                      inputMode="numeric"
+                    />
                   </div>
                   <div>
-                    <Label className="mb-1 block text-[10px] text-muted-foreground">Monthly budget (USD)</Label>
-                    <Input value={monthlyBudget} onChange={(e) => setMonthlyBudget(e.target.value)} placeholder="Default" inputMode="decimal" />
+                    <Label className="mb-1 block text-[10px] text-muted-foreground">
+                      Monthly budget (USD)
+                    </Label>
+                    <Input
+                      value={monthlyBudget}
+                      onChange={(e) => setMonthlyBudget(e.target.value)}
+                      placeholder="Default"
+                      inputMode="decimal"
+                    />
                   </div>
                   <div>
-                    <Label className="mb-1 block text-[10px] text-muted-foreground">Access expires</Label>
-                    <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+                    <Label className="mb-1 block text-[10px] text-muted-foreground">
+                      Access expires
+                    </Label>
+                    <Input
+                      type="date"
+                      value={expiresAt}
+                      onChange={(e) => setExpiresAt(e.target.value)}
+                    />
                   </div>
                 </div>
                 <Button size="sm" variant="outline" disabled={busy} onClick={handleSaveLimits}>
@@ -225,7 +285,9 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                 </GlassPanel>
                 <GlassPanel className="p-2 text-xs">
                   <p className="text-muted-foreground">Cost (mo)</p>
-                  <p className="font-semibold">{formatUsd(detail.usageThisMonth.estimatedCostUsd)}</p>
+                  <p className="font-semibold">
+                    {formatUsd(detail.usageThisMonth.estimatedCostUsd)}
+                  </p>
                 </GlassPanel>
                 <GlassPanel className="p-2 text-xs">
                   <p className="text-muted-foreground">Requests (all-time)</p>
@@ -254,7 +316,12 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                   onConfirm={() => callSecurity({ action: "revoke_sessions", confirm: true })}
                 />
                 {detail.banned ? (
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => callSecurity({ action: "enable" })}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => callSecurity({ action: "enable" })}
+                  >
                     Re-enable account
                   </Button>
                 ) : (
@@ -265,10 +332,15 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
                     onConfirm={() => callSecurity({ action: "disable", confirm: true })}
                   />
                 )}
-                <DeleteUserDialog user={detail} disabled={busy} onBusyChange={setBusy} onDeleted={() => {
-                  onOpenChange(false);
-                  onChanged();
-                }} />
+                <DeleteUserDialog
+                  user={detail}
+                  disabled={busy}
+                  onBusyChange={setBusy}
+                  onDeleted={() => {
+                    onOpenChange(false);
+                    onChanged();
+                  }}
+                />
               </GlassPanel>
             </div>
           </div>
@@ -293,7 +365,9 @@ function ConfirmButton({
 }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button size="sm" variant="destructive" disabled={disabled} />}>{label}</AlertDialogTrigger>
+      <AlertDialogTrigger render={<Button size="sm" variant="destructive" disabled={disabled} />}>
+        {label}
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{label}?</AlertDialogTitle>
@@ -321,13 +395,22 @@ function SuspendControl({
 }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button size="sm" variant="outline" disabled={busy} />}>Suspend</AlertDialogTrigger>
+      <AlertDialogTrigger render={<Button size="sm" variant="outline" disabled={busy} />}>
+        Suspend
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Suspend AI access?</AlertDialogTitle>
-          <AlertDialogDescription>Temporarily blocks parsing without losing the entitlement configuration.</AlertDialogDescription>
+          <AlertDialogDescription>
+            Temporarily blocks parsing without losing the entitlement configuration.
+          </AlertDialogDescription>
         </AlertDialogHeader>
-        <Textarea rows={2} placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <Textarea
+          rows={2}
+          placeholder="Reason (optional)"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>Suspend</AlertDialogAction>

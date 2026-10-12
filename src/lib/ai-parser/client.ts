@@ -14,6 +14,8 @@ export function getOpenAIClient(): OpenAI {
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured on the server.");
   }
-  cachedClient = new OpenAI({ apiKey });
+  // Retry policy belongs to service.ts; SDK retries would multiply billed
+  // calls and can outlive the API route's 60-second execution window.
+  cachedClient = new OpenAI({ apiKey, maxRetries: 0, timeout: 25_000 });
   return cachedClient;
 }

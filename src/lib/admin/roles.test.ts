@@ -8,9 +8,15 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 // Imported after the mock so the module under test picks up the mocked dependency.
-const { requireAuthenticatedUser, requireOwner, isOwner, ensureOwnerBootstrap, getUserRole, getNormalizedOwnerEmail, AdminAuthError } = await import(
-  "@/lib/admin/roles"
-);
+const {
+  requireAuthenticatedUser,
+  requireOwner,
+  isOwner,
+  ensureOwnerBootstrap,
+  getUserRole,
+  getNormalizedOwnerEmail,
+  AdminAuthError,
+} = await import("@/lib/admin/roles");
 
 const OWNER_EMAIL = "owner@example.com";
 
@@ -31,7 +37,9 @@ function makeUser(overrides: Record<string, unknown> = {}): Partial<User> {
   } as Partial<User>;
 }
 
-function makeQueryBuilder(finalResult: { data?: unknown; error?: unknown } = { data: null, error: null }) {
+function makeQueryBuilder(
+  finalResult: { data?: unknown; error?: unknown } = { data: null, error: null },
+) {
   const builder: Record<string, unknown> = {};
   const self = () => builder;
   builder.select = vi.fn(self);
@@ -66,12 +74,16 @@ describe("getNormalizedOwnerEmail", () => {
 
 describe("requireAuthenticatedUser", () => {
   it("throws 401 when there is no session", async () => {
-    await expect(requireAuthenticatedUser(fakeSupabase(null))).rejects.toMatchObject({ status: 401 });
+    await expect(requireAuthenticatedUser(fakeSupabase(null))).rejects.toMatchObject({
+      status: 401,
+    });
   });
 
   it("returns the user when authenticated", async () => {
     const user = makeUser();
-    await expect(requireAuthenticatedUser(fakeSupabase(user))).resolves.toMatchObject({ id: "user-1" });
+    await expect(requireAuthenticatedUser(fakeSupabase(user))).resolves.toMatchObject({
+      id: "user-1",
+    });
   });
 });
 
@@ -89,18 +101,26 @@ describe("ensureOwnerBootstrap", () => {
   it("grants the owner role and an enabled entitlement on first bootstrap", async () => {
     const roleBuilder = makeQueryBuilder({ data: null });
     const entitlementBuilder = makeQueryBuilder({ data: null });
-    fromMock.mockImplementation((table: string) => (table === "app_user_roles" ? roleBuilder : entitlementBuilder));
+    fromMock.mockImplementation((table: string) =>
+      table === "app_user_roles" ? roleBuilder : entitlementBuilder,
+    );
 
     await ensureOwnerBootstrap(makeUser() as User);
 
-    expect(roleBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", role: "owner" }));
-    expect(entitlementBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "user-1", enabled: true }));
+    expect(roleBuilder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: "user-1", role: "owner" }),
+    );
+    expect(entitlementBuilder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: "user-1", enabled: true }),
+    );
   });
 
   it("does not re-upsert when the owner role is already active", async () => {
     const roleBuilder = makeQueryBuilder({ data: { role: "owner", revoked_at: null } });
     const entitlementBuilder = makeQueryBuilder({ data: { enabled: true, suspended_at: null } });
-    fromMock.mockImplementation((table: string) => (table === "app_user_roles" ? roleBuilder : entitlementBuilder));
+    fromMock.mockImplementation((table: string) =>
+      table === "app_user_roles" ? roleBuilder : entitlementBuilder,
+    );
 
     await ensureOwnerBootstrap(makeUser() as User);
 
@@ -116,12 +136,16 @@ describe("getUserRole", () => {
   });
 
   it("returns 'user' for a revoked role, even if the stored role is 'owner'", async () => {
-    fromMock.mockImplementation(() => makeQueryBuilder({ data: { role: "owner", revoked_at: "2026-01-01T00:00:00Z" } }));
+    fromMock.mockImplementation(() =>
+      makeQueryBuilder({ data: { role: "owner", revoked_at: "2026-01-01T00:00:00Z" } }),
+    );
     await expect(getUserRole("user-1")).resolves.toBe("user");
   });
 
   it("returns the stored role when active", async () => {
-    fromMock.mockImplementation(() => makeQueryBuilder({ data: { role: "admin", revoked_at: null } }));
+    fromMock.mockImplementation(() =>
+      makeQueryBuilder({ data: { role: "admin", revoked_at: null } }),
+    );
     await expect(getUserRole("user-1")).resolves.toBe("admin");
   });
 });
@@ -137,7 +161,11 @@ describe("requireOwner / isOwner", () => {
     // A malicious client can set arbitrary fields on the User object it thinks it's sending,
     // but requireOwner never reads role/email off anything other than the verified session
     // + server-side app_user_roles lookup.
-    const spoofedUser = makeUser({ email: "attacker@example.com", role: "owner", user_metadata: { role: "owner" } });
+    const spoofedUser = makeUser({
+      email: "attacker@example.com",
+      role: "owner",
+      user_metadata: { role: "owner" },
+    });
     await expect(requireOwner(fakeSupabase(spoofedUser))).rejects.toMatchObject({ status: 403 });
     await expect(isOwner(fakeSupabase(spoofedUser))).resolves.toBe(false);
   });
@@ -145,7 +173,9 @@ describe("requireOwner / isOwner", () => {
   it("resolves for the bootstrapped owner account", async () => {
     const roleBuilder = makeQueryBuilder({ data: { role: "owner", revoked_at: null } });
     const entitlementBuilder = makeQueryBuilder({ data: { enabled: true, suspended_at: null } });
-    fromMock.mockImplementation((table: string) => (table === "app_user_roles" ? roleBuilder : entitlementBuilder));
+    fromMock.mockImplementation((table: string) =>
+      table === "app_user_roles" ? roleBuilder : entitlementBuilder,
+    );
 
     const user = makeUser();
     await expect(requireOwner(fakeSupabase(user))).resolves.toMatchObject({ id: "user-1" });
@@ -161,21 +191,30 @@ describe("requireOwner / isOwner", () => {
 });
 
 describe("single identity presence access", () => {
-  it.each([
-    { email: "another@example.com" },
-    { email_confirmed_at: null },
-  ])("rejects a different or unverified identity before privileged queries: %j", async (overrides) => {
-    const { requirePrimaryOwner } = await import("@/lib/admin/roles");
-    await expect(requirePrimaryOwner(fakeSupabase(makeUser(overrides)))).rejects.toMatchObject({ status: 403 });
-    expect(fromMock).not.toHaveBeenCalled();
-  });
+  it.each([{ email: "another@example.com" }, { email_confirmed_at: null }])(
+    "rejects a different or unverified identity before privileged queries: %j",
+    async (overrides) => {
+      const { requirePrimaryOwner } = await import("@/lib/admin/roles");
+      await expect(requirePrimaryOwner(fakeSupabase(makeUser(overrides)))).rejects.toMatchObject({
+        status: 403,
+      });
+      expect(fromMock).not.toHaveBeenCalled();
+    },
+  );
   it("denies access when no owner email is configured", async () => {
     delete process.env.APP_OWNER_EMAIL;
     const { requirePrimaryOwner } = await import("@/lib/admin/roles");
-    await expect(requirePrimaryOwner(fakeSupabase(makeUser()))).rejects.toMatchObject({ status: 403 });
+    await expect(requirePrimaryOwner(fakeSupabase(makeUser()))).rejects.toMatchObject({
+      status: 403,
+    });
   });
   it("accepts the verified configured owner with an active role", async () => {
-    fromMock.mockReturnValue(makeQueryBuilder({ data: { role: "owner", revoked_at: null, enabled: true, suspended_at: null }, error: null }));
+    fromMock.mockReturnValue(
+      makeQueryBuilder({
+        data: { role: "owner", revoked_at: null, enabled: true, suspended_at: null },
+        error: null,
+      }),
+    );
     const { requirePrimaryOwner } = await import("@/lib/admin/roles");
     expect((await requirePrimaryOwner(fakeSupabase(makeUser()))).id).toBe("user-1");
   });

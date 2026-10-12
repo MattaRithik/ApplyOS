@@ -9,15 +9,17 @@ import { isActivityExcluded } from "./profiles";
 
 const headers = { "Cache-Control": "private, no-store" };
 export async function recordHeartbeat(request: Request) {
-  if (!isSameOriginMutation(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403, headers });
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: "Invalid origin." }, { status: 403, headers });
   try {
     const user = await requireAuthenticatedUser(await createClient());
     if (isActivityExcluded(user)) return new NextResponse(null, { status: 204, headers });
     const body = await readJsonBody(request, 2048);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status, headers });
     const parsed = heartbeatSchema.safeParse(body.value);
-    if (!parsed.success) return NextResponse.json({ error: "Invalid heartbeat." }, { status: 400, headers });
-    if (!await consumeApiRateLimit(user.id, "presence", 60, 60)) {
+    if (!parsed.success)
+      return NextResponse.json({ error: "Invalid heartbeat." }, { status: 400, headers });
+    if (!(await consumeApiRateLimit(user.id, "presence", 60, 60))) {
       return NextResponse.json({ error: "Too many heartbeats." }, { status: 429, headers });
     }
     const now = Date.now();
@@ -27,24 +29,33 @@ export async function recordHeartbeat(request: Request) {
     if (interactionAt && Date.parse(interactionAt) > now + 5000) {
       return NextResponse.json({ error: "Invalid interaction time." }, { status: 400, headers });
     }
-    const lastActiveAt = interactionAt === undefined
-      ? new Date(now - parsed.data.idleSeconds * 1000).toISOString()
-      : interactionAt === null ? null : new Date(Math.min(now, Date.parse(interactionAt))).toISOString();
-    const { error } = await createServiceRoleClient().from("user_presence").upsert({
-      user_id: user.id,
-      email: user.email ?? null,
-      session_id: parsed.data.sessionId,
-      page: parsed.data.page,
-      visible: parsed.data.visible,
-      closed: parsed.data.closed,
-      last_seen_at: new Date(now).toISOString(),
-      last_active_at: lastActiveAt,
-      ...connectionDetails(request),
-    }, { onConflict: "user_id,session_id" });
+    const lastActiveAt =
+      interactionAt === undefined
+        ? new Date(now - parsed.data.idleSeconds * 1000).toISOString()
+        : interactionAt === null
+          ? null
+          : new Date(Math.min(now, Date.parse(interactionAt))).toISOString();
+    const { error } = await createServiceRoleClient()
+      .from("user_presence")
+      .upsert(
+        {
+          user_id: user.id,
+          email: user.email ?? null,
+          session_id: parsed.data.sessionId,
+          page: parsed.data.page,
+          visible: parsed.data.visible,
+          closed: parsed.data.closed,
+          last_seen_at: new Date(now).toISOString(),
+          last_active_at: lastActiveAt,
+          ...connectionDetails(request),
+        },
+        { onConflict: "user_id,session_id" },
+      );
     if (error) throw new Error("Presence write failed.");
     return new NextResponse(null, { status: 204, headers });
   } catch (error) {
-    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status, headers });
+    if (error instanceof AdminAuthError)
+      return NextResponse.json({ error: error.message }, { status: error.status, headers });
     return NextResponse.json({ error: "Activity service unavailable." }, { status: 503, headers });
   }
 }

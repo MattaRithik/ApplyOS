@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { assertResumeObjectKeyOwnership, buildFinalResumeObjectKey, buildResumeObjectKey } from "@/lib/storage/b2";
+import {
+  assertResumeObjectKeyOwnership,
+  buildFinalResumeObjectKey,
+  buildResumeObjectKey,
+} from "@/lib/storage/b2";
 
 describe("B2 object-key isolation", () => {
   it("separates browser-uploadable temp keys from server-only final keys", () => {
@@ -11,8 +15,14 @@ describe("B2 object-key isolation", () => {
   });
 
   it("rejects cross-user and traversal keys", () => {
-    expect(() => assertResumeObjectKeyOwnership("users/user-a/resumes/resume-a/files/file.pdf", "user-a")).not.toThrow();
-    expect(() => assertResumeObjectKeyOwnership("users/user-b/resumes/resume-b/files/file.pdf", "user-a")).toThrow();
-    expect(() => assertResumeObjectKeyOwnership("users/user-a/resumes/../user-b/file.pdf", "user-a")).toThrow();
+    expect(() =>
+      assertResumeObjectKeyOwnership("users/user-a/resumes/resume-a/files/file.pdf", "user-a"),
+    ).not.toThrow();
+    expect(() =>
+      assertResumeObjectKeyOwnership("users/user-b/resumes/resume-b/files/file.pdf", "user-a"),
+    ).toThrow();
+    expect(() =>
+      assertResumeObjectKeyOwnership("users/user-a/resumes/../user-b/file.pdf", "user-a"),
+    ).toThrow();
   });
 });

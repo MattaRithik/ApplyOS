@@ -13,12 +13,32 @@ interface PreviewRow {
 }
 
 const PREVIEW_ROWS: PreviewRow[] = [
-  { company: "Jane Street", role: "Quantitative Researcher", status: "technical_round", visa: "opt_accepted" },
-  { company: "Citadel Securities", role: "Quantitative Trader", status: "applied", visa: "future_possible" },
+  {
+    company: "Jane Street",
+    role: "Quantitative Researcher",
+    status: "technical_round",
+    visa: "opt_accepted",
+  },
+  {
+    company: "Citadel Securities",
+    role: "Quantitative Trader",
+    status: "applied",
+    visa: "future_possible",
+  },
   { company: "Goldman Sachs", role: "Investment Analyst", status: "offer", visa: "h1b_available" },
   { company: "BlackRock", role: "Risk Analyst", status: "recruiter_screen", visa: "h1b_available" },
-  { company: "JPMorgan", role: "Market Risk Analyst", status: "oa_assessment", visa: "requires_existing_auth" },
-  { company: "Bloomberg", role: "Financial Data Engineer", status: "first_round", visa: "opt_accepted" },
+  {
+    company: "JPMorgan",
+    role: "Market Risk Analyst",
+    status: "oa_assessment",
+    visa: "requires_existing_auth",
+  },
+  {
+    company: "Bloomberg",
+    role: "Financial Data Engineer",
+    status: "first_round",
+    visa: "opt_accepted",
+  },
 ];
 
 /**
@@ -41,10 +61,38 @@ export function DashboardPreview() {
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <StatTile compact label="Applications" value={42} iconName="briefcase" accent="blue" delay={0} />
-        <StatTile compact label="Interviews" value={5} iconName="calendarClock" accent="amber" delay={0.04} />
-        <StatTile compact label="Offers" value={2} iconName="trophy" accent="emerald" delay={0.08} />
-        <StatTile compact label="Reply Rate" value="38%" iconName="reply" accent="cyan" delay={0.12} />
+        <StatTile
+          compact
+          label="Applications"
+          value={42}
+          iconName="briefcase"
+          accent="blue"
+          delay={0}
+        />
+        <StatTile
+          compact
+          label="Interviews"
+          value={5}
+          iconName="calendarClock"
+          accent="amber"
+          delay={0.04}
+        />
+        <StatTile
+          compact
+          label="Offers"
+          value={2}
+          iconName="trophy"
+          accent="emerald"
+          delay={0.08}
+        />
+        <StatTile
+          compact
+          label="Reply Rate"
+          value="38%"
+          iconName="reply"
+          accent="cyan"
+          delay={0.12}
+        />
       </div>
 
       <div className="mt-4 space-y-1.5">
@@ -71,9 +119,15 @@ export function DashboardPreview() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-border/40 pt-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1.5"><Briefcase className="h-3 w-3" /> 6 active pipelines</span>
-        <span className="flex items-center gap-1.5"><CalendarClock className="h-3 w-3" /> 2 interviews this week</span>
-        <span className="flex items-center gap-1.5"><Trophy className="h-3 w-3" /> Best resume: 61% interview rate</span>
+        <span className="flex items-center gap-1.5">
+          <Briefcase className="h-3 w-3" /> 6 active pipelines
+        </span>
+        <span className="flex items-center gap-1.5">
+          <CalendarClock className="h-3 w-3" /> 2 interviews this week
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Trophy className="h-3 w-3" /> Best resume: 61% interview rate
+        </span>
       </div>
     </GlassPanel>
   );

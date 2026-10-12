@@ -13,7 +13,9 @@ export default async function ResumeDetailPage({ params }: { params: Promise<{ i
   const [{ data: resume }, { data: applications }] = await Promise.all([
     supabase
       .from("resumes")
-      .select("id, display_name, original_file_name, file_extension, file_size, target_role, version_notes, resume_match_score, missing_keywords, status, created_at, updated_at")
+      .select(
+        "id, display_name, original_file_name, file_extension, file_size, target_role, version_notes, resume_match_score, missing_keywords, status, created_at, updated_at",
+      )
       .eq("id", id)
       .eq("user_id", user.id)
       .single(),

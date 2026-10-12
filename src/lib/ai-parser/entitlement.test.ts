@@ -13,9 +13,13 @@ vi.mock("@/lib/admin/roles", () => ({
   ensureOwnerBootstrap: vi.fn(async () => {}),
 }));
 
-const { requireAIParserAccess, hasAIParserAccess, getCurrentUserEntitlement, resolveEffectiveLimits, ParserAuthError } = await import(
-  "@/lib/ai-parser/entitlement"
-);
+const {
+  requireAIParserAccess,
+  hasAIParserAccess,
+  getCurrentUserEntitlement,
+  resolveEffectiveLimits,
+  ParserAuthError,
+} = await import("@/lib/ai-parser/entitlement");
 
 function fakeSupabase(user: Partial<User> | null): SupabaseClient {
   return {
@@ -26,7 +30,12 @@ function fakeSupabase(user: Partial<User> | null): SupabaseClient {
 }
 
 function makeUser(overrides: Record<string, unknown> = {}): Partial<User> {
-  return { id: "user-1", email: "someone@example.com", email_confirmed_at: "2026-01-01T00:00:00Z", ...overrides } as Partial<User>;
+  return {
+    id: "user-1",
+    email: "someone@example.com",
+    email_confirmed_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  } as Partial<User>;
 }
 
 function entitlementRow(overrides: Record<string, unknown> = {}) {
@@ -102,26 +111,40 @@ describe("requireAIParserAccess", () => {
 
   it("throws 403 when there is no entitlement row at all", async () => {
     mockEntitlementRow(null);
-    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({ status: 403 });
+    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({
+      status: 403,
+    });
   });
 
   it("throws 403 when the entitlement is disabled", async () => {
     mockEntitlementRow(entitlementRow({ enabled: false }));
-    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({ status: 403 });
+    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({
+      status: 403,
+    });
   });
 
   it("throws 403 when the entitlement is suspended", async () => {
     mockEntitlementRow(entitlementRow({ suspended_at: "2026-01-01T00:00:00Z" }));
-    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({ status: 403 });
+    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({
+      status: 403,
+    });
   });
 
   it("throws 403 when the entitlement has expired", async () => {
     mockEntitlementRow(entitlementRow({ expires_at: "2020-01-01T00:00:00Z" }));
-    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({ status: 403 });
+    await expect(requireAIParserAccess(fakeSupabase(makeUser()))).rejects.toMatchObject({
+      status: 403,
+    });
   });
 
   it("resolves with per-user limits for an active, unexpired, unsuspended entitlement", async () => {
-    mockEntitlementRow(entitlementRow({ daily_request_limit: 5, monthly_budget_usd: 1, expires_at: "2099-01-01T00:00:00Z" }));
+    mockEntitlementRow(
+      entitlementRow({
+        daily_request_limit: 5,
+        monthly_budget_usd: 1,
+        expires_at: "2099-01-01T00:00:00Z",
+      }),
+    );
     const ctx = await requireAIParserAccess(fakeSupabase(makeUser()));
     expect(ctx.limits).toEqual({ dailyRequestLimit: 5, monthlyBudgetUsd: 1 });
   });

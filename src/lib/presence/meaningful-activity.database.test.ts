@@ -18,18 +18,37 @@ beforeAll(async () => {
     grant usage on schema public, auth to anon, authenticated, service_role;
     grant select on app_user_roles to service_role;
     alter default privileges in schema public grant all on tables to anon, authenticated;`);
-  for (const table of ["applications", "companies", "contacts", "outreach", "interview_rounds", "follow_ups", "email_templates", "exports"]) {
-    await db.exec(`create table public.${table}(user_id uuid references auth.users(id) on delete cascade, status text, notes text, updated_at timestamptz)`);
+  for (const table of [
+    "applications",
+    "companies",
+    "contacts",
+    "outreach",
+    "interview_rounds",
+    "follow_ups",
+    "email_templates",
+    "exports",
+  ]) {
+    await db.exec(
+      `create table public.${table}(user_id uuid references auth.users(id) on delete cascade, status text, notes text, updated_at timestamptz)`,
+    );
   }
   await db.exec(`create table public.ai_parser_usage(id uuid primary key, user_id uuid, status text, created_at timestamptz);
     grant select on ai_parser_usage to service_role;`);
-  for (const file of ["20260930090000_owner_presence.sql", "20261001090000_presence_history.sql", "20261002160000_page_usage.sql", "20261007150000_download_activity.sql", "20261008190000_meaningful_activity.sql"]) {
+  for (const file of [
+    "20260930090000_owner_presence.sql",
+    "20261001090000_presence_history.sql",
+    "20261002160000_page_usage.sql",
+    "20261007150000_download_activity.sql",
+    "20261008190000_meaningful_activity.sql",
+  ]) {
     await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
   }
   await db.exec(await readFile(migration, "utf8"));
 }, 30000);
 beforeEach(async () => {
-  await db.exec("reset role; truncate user_presence, user_presence_history, user_page_visits, ai_parser_usage, download_activity restart identity; set request.jwt.claim.sub='';");
+  await db.exec(
+    "reset role; truncate user_presence, user_presence_history, user_page_visits, ai_parser_usage, download_activity restart identity; set request.jwt.claim.sub='';",
+  );
 });
 afterAll(async () => db.close());
 
@@ -51,13 +70,19 @@ describe("meaningful activity tracking", () => {
       values ('${user}', '${session}', 'applications', true, '2026-10-08T12:00:00Z', null);
       update user_presence set last_seen_at='2026-10-08T12:00:15Z';`);
     expect((await db.query("select * from user_page_visits")).rows).toHaveLength(0);
-    await db.exec(`update user_presence set last_seen_at='2026-10-08T12:00:20Z', last_active_at='2026-10-08T12:00:20Z';`);
+    await db.exec(
+      `update user_presence set last_seen_at='2026-10-08T12:00:20Z', last_active_at='2026-10-08T12:00:20Z';`,
+    );
     for (let i = 0; i < 100; i++) {
       await db.exec("update user_presence set last_seen_at=last_seen_at + interval '15 seconds'");
     }
-    expect((await db.query("select active_seconds from user_page_visits")).rows).toEqual([{ active_seconds: 60 }]);
+    expect((await db.query("select active_seconds from user_page_visits")).rows).toEqual([
+      { active_seconds: 60 },
+    ]);
     expect((await db.query("select * from user_presence_history")).rows).toHaveLength(0);
-    expect((await db.query(`select visits from page_usage_summary('2026-10-08', '${owner}')`)).rows).toEqual([{ visits: 1 }]);
+    expect(
+      (await db.query(`select visits from page_usage_summary('2026-10-08', '${owner}')`)).rows,
+    ).toEqual([{ visits: 1 }]);
   });
 
   it("only creates another window after genuine input, not after background timer throttling", async () => {
@@ -74,7 +99,9 @@ describe("meaningful activity tracking", () => {
       update user_presence set last_seen_at='2026-10-08T12:03:50Z';
       insert into user_page_visits(user_id,session_id,page,started_at,last_report_at)
       values ('${user}', '${other}', 'applications', '2026-10-08T13:00:00Z', '2026-10-08T13:00:00Z');`);
-    expect((await db.query(`select visits from page_usage_summary('2026-10-08', '${owner}')`)).rows).toEqual([{ visits: 2 }]);
+    expect(
+      (await db.query(`select visits from page_usage_summary('2026-10-08', '${owner}')`)).rows,
+    ).toEqual([{ visits: 2 }]);
     expect((await db.query("select * from user_presence_history")).rows).toHaveLength(0);
   });
 
@@ -93,9 +120,15 @@ describe("meaningful activity tracking", () => {
       insert into download_activity(user_id,kind,file_name,created_at) values
       ('${user}','resume','Private filename.pdf','2026-10-08T16:20:00Z');
       set role service_role;`);
-    const rows = (await db.query<{ status: string }>(`select * from meaningful_activity('${owner}')`)).rows;
-    expect(rows.map(row => row.status)).toEqual([
-      "Application status changed", "Resume download requested", "Application parsed", "Application parsed", "Application added",
+    const rows = (
+      await db.query<{ status: string }>(`select * from meaningful_activity('${owner}')`)
+    ).rows;
+    expect(rows.map((row) => row.status)).toEqual([
+      "Application status changed",
+      "Resume download requested",
+      "Application parsed",
+      "Application parsed",
+      "Application added",
     ]);
     expect(JSON.stringify(rows)).not.toContain("Private filename");
   });
@@ -106,17 +139,29 @@ describe("meaningful activity tracking", () => {
         values ('${user}','applications','Application updated','2026-10-08T16:36:00Z')`);
     }
     await db.exec("set role service_role");
-    const first = (await db.query<{ id: string; recorded_at: string }>(`select * from meaningful_activity('${owner}', null, null, 10)`)).rows;
+    const first = (
+      await db.query<{ id: string; recorded_at: string }>(
+        `select * from meaningful_activity('${owner}', null, null, 10)`,
+      )
+    ).rows;
     const last = first.at(-1)!;
-    const second = (await db.query<{ id: string }>(`select * from meaningful_activity($1, $2, $3, 10)`, [owner, last.recorded_at, last.id])).rows;
+    const second = (
+      await db.query<{ id: string }>(`select * from meaningful_activity($1, $2, $3, 10)`, [
+        owner,
+        last.recorded_at,
+        last.id,
+      ])
+    ).rows;
     expect(first).toHaveLength(10);
     expect(second).toHaveLength(5);
-    expect(new Set([...first, ...second].map(row => row.id)).size).toBe(15);
+    expect(new Set([...first, ...second].map((row) => row.id)).size).toBe(15);
   });
 
   it.each(["anon", "authenticated"])("denies %s access to the combined feed", async (role) => {
     await db.exec(`set role ${role}`);
-    await expect(db.exec(`select * from meaningful_activity('${owner}')`)).rejects.toMatchObject({ code: "42501" });
+    await expect(db.exec(`select * from meaningful_activity('${owner}')`)).rejects.toMatchObject({
+      code: "42501",
+    });
     await db.exec("reset role");
   });
 });

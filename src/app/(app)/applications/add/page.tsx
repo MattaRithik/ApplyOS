@@ -24,7 +24,8 @@ export default async function AddApplicationPage() {
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Add Application</h1>
         <p className="text-sm text-muted-foreground">
-          Fill in the details manually, or open AI Parser to paste a job posting and fill them in faster.
+          Fill in the details manually, or open AI Parser to paste a job posting and fill them in
+          faster.
         </p>
       </div>
       <AddApplicationClient resumeOptions={resumes ?? []} aiParserEnabled={aiParserEnabled} />

@@ -35,7 +35,11 @@ export function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         <nav className="hidden items-center gap-6 md:flex">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
               {link.label}
             </a>
           ))}
@@ -55,7 +59,12 @@ export function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         <div className="flex items-center gap-1 md:hidden">
           <ThemeToggle />
-          <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open menu"
+            onClick={() => setMobileOpen(true)}
+          >
             <Menu className="h-5 w-5" />
           </Button>
         </div>

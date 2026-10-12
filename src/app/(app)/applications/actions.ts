@@ -3,18 +3,16 @@
 import { cleanApplicationNotes } from "@/lib/utils/application-notes";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { ApplicationStatus, VisaSponsorshipStatus, WorkMode, EmploymentType } from "@/lib/types/database";
+import type {
+  ApplicationStatus,
+  VisaSponsorshipStatus,
+  WorkMode,
+  EmploymentType,
+} from "@/lib/types/database";
 import type { AiParserApiResponse } from "@/lib/ai-parser/schema";
 import { assertOptionalOwnedEntity, assertOwnedEntity } from "@/lib/security/ownership";
-import { assertAllowedKeys, httpUrlSchema, uuidSchema } from "@/lib/validation/common";
-
-const APPLICATION_INPUT_KEYS = [
-  "company_name", "job_title", "job_url", "job_description", "location", "work_mode", "employment_type",
-  "salary_min", "salary_max", "salary_currency", "visa_sponsorship_notes", "visa_sponsorship_status", "date_applied",
-  "status", "priority_score", "resume_id", "cover_letter_used", "referral_person", "referral_email", "referral_phone",
-  "recruiter_name", "hr_email", "recruiter_linkedin_url", "hiring_manager_linkedin_url", "notes", "follow_up_date",
-  "source", "keywords", "required_skills", "preferred_skills", "resume_match_score",
-] as const;
+import { httpUrlSchema, uuidSchema } from "@/lib/validation/common";
+import { applicationInputSchema, parseActionInput } from "@/lib/validation/forms";
 
 export interface ApplicationInput {
   company_name: string;
@@ -70,19 +68,14 @@ async function findOrCreateCompany(userId: string, companyName: string) {
 }
 
 export async function createApplication(input: ApplicationInput) {
-  assertAllowedKeys(input, APPLICATION_INPUT_KEYS);
-  if (typeof input.notes === "string") input = { ...input, notes: cleanApplicationNotes(input.notes) };
+  input = parseActionInput(applicationInputSchema, input);
+  if (typeof input.notes === "string")
+    input = { ...input, notes: cleanApplicationNotes(input.notes) };
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
-  if (!input.company_name?.trim() || input.company_name.length > 200) throw new Error("Invalid company name.");
-  if (!input.job_title?.trim() || input.job_title.length > 200) throw new Error("Invalid job title.");
-  if (input.job_url) httpUrlSchema.parse(input.job_url);
-  if (input.recruiter_linkedin_url) httpUrlSchema.parse(input.recruiter_linkedin_url);
-  if (input.hiring_manager_linkedin_url) httpUrlSchema.parse(input.hiring_manager_linkedin_url);
-  if (input.job_description && input.job_description.length > 100_000) throw new Error("Job description is too long.");
   await assertOptionalOwnedEntity(supabase, user.id, "resume", input.resume_id);
 
   const companyId = await findOrCreateCompany(user.id, input.company_name);
@@ -102,8 +95,9 @@ export async function createApplication(input: ApplicationInput) {
 }
 
 export async function updateApplication(id: string, input: Partial<ApplicationInput>) {
-  assertAllowedKeys(input, APPLICATION_INPUT_KEYS);
-  if (typeof input.notes === "string") input = { ...input, notes: cleanApplicationNotes(input.notes) };
+  input = parseActionInput(applicationInputSchema.partial(), input);
+  if (typeof input.notes === "string")
+    input = { ...input, notes: cleanApplicationNotes(input.notes) };
   const supabase = await createClient();
   const {
     data: { user },
@@ -112,12 +106,6 @@ export async function updateApplication(id: string, input: Partial<ApplicationIn
   uuidSchema.parse(id);
   await assertOwnedEntity(supabase, user.id, "application", id);
   await assertOptionalOwnedEntity(supabase, user.id, "resume", input.resume_id);
-  if (input.company_name !== undefined && (!input.company_name.trim() || input.company_name.length > 200)) throw new Error("Invalid company name.");
-  if (input.job_title !== undefined && (!input.job_title.trim() || input.job_title.length > 200)) throw new Error("Invalid job title.");
-  if (input.job_url) httpUrlSchema.parse(input.job_url);
-  if (input.recruiter_linkedin_url) httpUrlSchema.parse(input.recruiter_linkedin_url);
-  if (input.hiring_manager_linkedin_url) httpUrlSchema.parse(input.hiring_manager_linkedin_url);
-  if (input.job_description && input.job_description.length > 100_000) throw new Error("Job description is too long.");
 
   let companyId: string | null | undefined = undefined;
   if (input.company_name) {
@@ -174,7 +162,7 @@ export async function saveParsedJobDetails(
   applicationId: string,
   sourceUrl: string | null,
   rawJobDescription: string,
-  apiResponse: AiParserApiResponse
+  apiResponse: AiParserApiResponse,
 ) {
   const supabase = await createClient();
   const {
@@ -187,22 +175,36 @@ export async function saveParsedJobDetails(
   if (sourceUrl) httpUrlSchema.parse(sourceUrl);
 
   const { result } = apiResponse;
-  const { identity, location, employment, compensation, skills, experienceEducation, roleContent, immigration, metadata } = result;
+  const {
+    identity,
+    location,
+    employment,
+    compensation,
+    skills,
+    experienceEducation,
+    roleContent,
+    immigration,
+    metadata,
+  } = result;
 
   const salaryRange =
     compensation.salaryMinimum != null || compensation.salaryMaximum != null
-      ? [compensation.salaryMinimum, compensation.salaryMaximum].filter((v) => v !== null).join(" - ")
+      ? [compensation.salaryMinimum, compensation.salaryMaximum]
+          .filter((v) => v !== null)
+          .join(" - ")
       : null;
 
   const yearsExperience =
     experienceEducation.experienceText ||
-    (experienceEducation.minimumYearsExperience !== null || experienceEducation.maximumYearsExperience !== null
+    (experienceEducation.minimumYearsExperience !== null ||
+    experienceEducation.maximumYearsExperience !== null
       ? [experienceEducation.minimumYearsExperience, experienceEducation.maximumYearsExperience]
           .filter((v) => v !== null)
           .join("-")
       : null);
 
-  const recruiterInfo = [identity.recruiterName, identity.recruiterEmail].filter(Boolean).join(" · ") || null;
+  const recruiterInfo =
+    [identity.recruiterName, identity.recruiterEmail].filter(Boolean).join(" · ") || null;
 
   const { error } = await supabase.from("parsed_job_details").insert({
     user_id: user.id,
@@ -239,7 +241,7 @@ export async function saveParsedJobDetails(
 /** Fills in a company's website/LinkedIn URL from parser output, but only if the field is still empty. */
 export async function updateCompanyMetaIfEmpty(
   companyId: string | null,
-  meta: { website?: string | null; linkedinUrl?: string | null }
+  meta: { website?: string | null; linkedinUrl?: string | null },
 ) {
   if (!companyId || (!meta.website && !meta.linkedinUrl)) return;
   const supabase = await createClient();
@@ -257,8 +259,14 @@ export async function updateCompanyMetaIfEmpty(
   if (!company) return;
 
   const patch: Record<string, string> = {};
-  if (!company.website && meta.website && httpUrlSchema.safeParse(meta.website).success) patch.website = meta.website;
-  if (!company.linkedin_url && meta.linkedinUrl && httpUrlSchema.safeParse(meta.linkedinUrl).success) patch.linkedin_url = meta.linkedinUrl;
+  if (!company.website && meta.website && httpUrlSchema.safeParse(meta.website).success)
+    patch.website = meta.website;
+  if (
+    !company.linkedin_url &&
+    meta.linkedinUrl &&
+    httpUrlSchema.safeParse(meta.linkedinUrl).success
+  )
+    patch.linkedin_url = meta.linkedinUrl;
   if (Object.keys(patch).length === 0) return;
 
   await supabase.from("companies").update(patch).eq("id", companyId).eq("user_id", user.id);
@@ -272,7 +280,11 @@ export async function deleteApplication(id: string) {
   if (!user) throw new Error("Not authenticated");
   uuidSchema.parse(id);
 
-  const { error } = await supabase.from("applications").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase
+    .from("applications")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/applications");

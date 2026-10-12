@@ -44,14 +44,27 @@ function sniffSourcePlatformFromUrl(jobUrl: string): string | null {
   try {
     const host = new URL(jobUrl).hostname.replace(/^www\./, "").toLowerCase();
     const platforms: [string, string[]][] = [
-      ["Greenhouse", ["greenhouse.io", "greenhouse.com"]], ["Lever", ["lever.co"]],
-      ["Workday", ["myworkdayjobs.com", "workday.com"]], ["Ashby", ["ashbyhq.com"]],
-      ["LinkedIn", ["linkedin.com"]], ["Indeed", ["indeed.com"]], ["Glassdoor", ["glassdoor.com"]],
-      ["Handshake", ["joinhandshake.com"]], ["RippleMatch", ["ripplematch.com"]], ["WayUp", ["wayup.com"]],
-      ["SmartRecruiters", ["smartrecruiters.com"]], ["iCIMS", ["icims.com"]], ["Jobvite", ["jobvite.com"]],
-      ["Taleo", ["taleo.net"]], ["SuccessFactors", ["successfactors.com", "successfactors.eu"]],
-      ["Eightfold", ["eightfold.ai"]], ["ZipRecruiter", ["ziprecruiter.com"]], ["Monster", ["monster.com"]],
-      ["Dice", ["dice.com"]], ["eFinancialCareers", ["efinancialcareers.com"]], ["Built In", ["builtin.com"]],
+      ["Greenhouse", ["greenhouse.io", "greenhouse.com"]],
+      ["Lever", ["lever.co"]],
+      ["Workday", ["myworkdayjobs.com", "workday.com"]],
+      ["Ashby", ["ashbyhq.com"]],
+      ["LinkedIn", ["linkedin.com"]],
+      ["Indeed", ["indeed.com"]],
+      ["Glassdoor", ["glassdoor.com"]],
+      ["Handshake", ["joinhandshake.com"]],
+      ["RippleMatch", ["ripplematch.com"]],
+      ["WayUp", ["wayup.com"]],
+      ["SmartRecruiters", ["smartrecruiters.com"]],
+      ["iCIMS", ["icims.com"]],
+      ["Jobvite", ["jobvite.com"]],
+      ["Taleo", ["taleo.net"]],
+      ["SuccessFactors", ["successfactors.com", "successfactors.eu"]],
+      ["Eightfold", ["eightfold.ai"]],
+      ["ZipRecruiter", ["ziprecruiter.com"]],
+      ["Monster", ["monster.com"]],
+      ["Dice", ["dice.com"]],
+      ["eFinancialCareers", ["efinancialcareers.com"]],
+      ["Built In", ["builtin.com"]],
       ["Oracle Cloud Careers", ["oraclecloud.com", "oracle.com"]],
     ];
     for (const [platform, domains] of platforms) {
@@ -82,7 +95,10 @@ const TEXT_SOURCE_PLATFORM_SIGNALS: { platform: string; pattern: RegExp }[] = [
   { platform: "Handshake", pattern: /joinhandshake|\bhandshake\b/i },
   { platform: "RippleMatch", pattern: /ripplematch/i },
   { platform: "WayUp", pattern: /\bwayup\b/i },
-  { platform: "Greenhouse", pattern: /greenhouse job board|powered by greenhouse|boards\.greenhouse/i },
+  {
+    platform: "Greenhouse",
+    pattern: /greenhouse job board|powered by greenhouse|boards\.greenhouse/i,
+  },
   { platform: "Lever", pattern: /jobs\.lever\.co|powered by lever/i },
   { platform: "Workday", pattern: /workday careers|myworkdayjobs/i },
   { platform: "Ashby", pattern: /jobs\.ashbyhq|ashby job board/i },
@@ -122,7 +138,8 @@ const URL_RE = /https?:\/\/[^\s<>"')]+/gi;
 const JOB_POSTING_HOST_RE =
   /(linkedin\.com|indeed\.com|glassdoor\.com|joinhandshake\.com|ripplematch\.com|wayup\.com|greenhouse\.io|lever\.co|myworkdayjobs\.com|ashbyhq\.com|smartrecruiters\.com|icims\.com|jobvite\.com|taleo\.net|successfactors\.com|eightfold\.ai|ziprecruiter\.com|monster\.com|dice\.com|efinancialcareers\.com|builtin\.com)/i;
 const JOB_POSTING_PATH_RE = /\/(jobs?|careers?|job-postings?|postings?|viewjob|opening)\b/i;
-const NON_JOB_HOST_RE = /(facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com|youtube\.com|eeoc\.gov)/i;
+const NON_JOB_HOST_RE =
+  /(facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com|youtube\.com|eeoc\.gov)/i;
 // LinkedIn people/company profile pages (not a job posting) so a pasted
 // "reach out to your network" section doesn't get mistaken for the job link.
 const LINKEDIN_NON_JOB_PATH_RE = /linkedin\.com\/(in|company|school)\//i;
@@ -154,7 +171,8 @@ export function extractLikelyJobPostingUrl(text: string): string | null {
   return null;
 }
 
-const REQ_ID_RE = /\b(?:req(?:uisition)?\s*(?:id|#|number)?|job\s*id)[:\s#]+([A-Za-z0-9-]{3,24})\b/i;
+const REQ_ID_RE =
+  /\b(?:req(?:uisition)?\s*(?:id|#|number)?|job\s*id)[:\s#]+([A-Za-z0-9-]{3,24})\b/i;
 // Matches every email in the text (global) so we can pick the one that's
 // actually a recruiting contact, rather than blindly taking whichever email
 // happens to appear first — postings often lead with a disability-
@@ -182,7 +200,8 @@ const NON_RECRUITING_LOCAL_PART_EXACT = new Set([
   "team",
   "people",
 ]);
-const RECRUITING_CONTEXT_RE = /(recruiter|talent partner|hiring manager|point of contact|reach out|apply by email|questions? about this role)/i;
+const RECRUITING_CONTEXT_RE =
+  /(recruiter|talent partner|hiring manager|point of contact|reach out|apply by email|questions? about this role)/i;
 
 function isNonRecruitingLocalPart(localPart: string): boolean {
   const lower = localPart.toLowerCase();
@@ -205,9 +224,17 @@ export function recruitingEmailEvidence(text: string, email: string): string | n
   const lines = text.split(/\n\s*\n|(?<=[.!?])\s+/);
   for (const paragraph of lines) {
     if (!paragraph.toLowerCase().includes(email.toLowerCase())) continue;
-    if (/accommodat|disabilit|reasonable adjustments|accessibility|technical (?:issues|assistance)|privacy|legal (?:notice|inquir)|help desk/i.test(paragraph)) continue;
-    if (RECRUITING_CONTEXT_RE.test(paragraph) ||
-      (RECRUITING_LOCAL_PART_RE.test(email.split("@")[0]) && /contact|questions|reach out|resume|apply/i.test(paragraph))) {
+    if (
+      /accommodat|disabilit|reasonable adjustments|accessibility|technical (?:issues|assistance)|privacy|legal (?:notice|inquir)|help desk/i.test(
+        paragraph,
+      )
+    )
+      continue;
+    if (
+      RECRUITING_CONTEXT_RE.test(paragraph) ||
+      (RECRUITING_LOCAL_PART_RE.test(email.split("@")[0]) &&
+        /contact|questions|reach out|resume|apply/i.test(paragraph))
+    ) {
       return paragraph.trim().slice(0, 300);
     }
   }
@@ -215,8 +242,9 @@ export function recruitingEmailEvidence(text: string, email: string): string | n
 }
 
 function findRecruitingEmail(text: string): string | null {
-  const candidates = [...new Set(text.match(EMAIL_RE_G) ?? [])]
-    .filter((email) => recruitingEmailEvidence(text, email));
+  const candidates = [...new Set(text.match(EMAIL_RE_G) ?? [])].filter((email) =>
+    recruitingEmailEvidence(text, email),
+  );
   return candidates.length === 1 ? candidates[0] : null;
 }
 
@@ -239,19 +267,28 @@ export function runDeterministicPass(jobDescription: string, jobUrl?: string): D
   const reqIdMatch = cleanedText.match(REQ_ID_RE);
   if (reqIdMatch) {
     partial.identity = { ...partial.identity, requisitionId: reqIdMatch[1] };
-    provenance["identity.requisitionId"] = { status: "explicit", evidence: reqIdMatch[0].slice(0, 200) };
+    provenance["identity.requisitionId"] = {
+      status: "explicit",
+      evidence: reqIdMatch[0].slice(0, 200),
+    };
   }
 
   const recruitingEmail = findRecruitingEmail(cleanedText);
   if (recruitingEmail) {
     partial.identity = { ...partial.identity, recruiterEmail: recruitingEmail };
-    provenance["identity.recruiterEmail"] = { status: "explicit", evidence: recruitingEmailEvidence(cleanedText, recruitingEmail)! };
+    provenance["identity.recruiterEmail"] = {
+      status: "explicit",
+      evidence: recruitingEmailEvidence(cleanedText, recruitingEmail)!,
+    };
   }
 
   const workplace = detectWorkplace(cleanedText);
   if (workplace) {
     partial.location = { workplaceType: workplace.value };
-    provenance["location.workplaceType"] = { status: workplace.value === "unknown" ? "uncertain" : "explicit", evidence: workplace.evidence };
+    provenance["location.workplaceType"] = {
+      status: workplace.value === "unknown" ? "uncertain" : "explicit",
+      evidence: workplace.evidence,
+    };
   }
 
   // A real posting URL (if one was supplied) is the most reliable signal;
@@ -261,7 +298,10 @@ export function runDeterministicPass(jobDescription: string, jobUrl?: string): D
     const platform = sniffSourcePlatformFromUrl(jobUrl);
     if (platform) {
       partial.identity = { ...partial.identity, sourcePlatform: platform };
-      provenance["identity.sourcePlatform"] = { status: "normalized", evidence: jobUrl.slice(0, 200) };
+      provenance["identity.sourcePlatform"] = {
+        status: "normalized",
+        evidence: jobUrl.slice(0, 200),
+      };
     }
   } else {
     const textSignal = detectSourcePlatformFromText(cleanedText);
@@ -274,13 +314,19 @@ export function runDeterministicPass(jobDescription: string, jobUrl?: string): D
   const deadlineMatch = cleanedText.match(DEADLINE_RE);
   if (deadlineMatch) {
     partial.roleContent = { ...partial.roleContent, applicationDeadline: deadlineMatch[1] };
-    provenance["roleContent.applicationDeadline"] = { status: "explicit", evidence: deadlineMatch[0].slice(0, 200) };
+    provenance["roleContent.applicationDeadline"] = {
+      status: "explicit",
+      evidence: deadlineMatch[0].slice(0, 200),
+    };
   }
 
   const postedMatch = cleanedText.match(POSTED_RE);
   if (postedMatch) {
     partial.roleContent = { ...partial.roleContent, postingDate: postedMatch[1] };
-    provenance["roleContent.postingDate"] = { status: "explicit", evidence: postedMatch[0].slice(0, 200) };
+    provenance["roleContent.postingDate"] = {
+      status: "explicit",
+      evidence: postedMatch[0].slice(0, 200),
+    };
   }
 
   return { partial, provenance, cleanedText };
@@ -298,7 +344,8 @@ export function runDeterministicPass(jobDescription: string, jobUrl?: string): D
 // should read like a normal job posting, not a scraped page dump.
 // ---------------------------------------------------------------------
 
-const CONTENT_HEADING_RE = /^(about (the )?(job|role|this role|position|team)|job description|the role|role overview|position summary|overview)\s*:?\s*$/i;
+const CONTENT_HEADING_RE =
+  /^(about (the )?(job|role|this role|position|team)|job description|the role|role overview|position summary|overview)\s*:?\s*$/i;
 
 // Full-line (after trim) junk patterns — page chrome, portal AI features,
 // social/network callouts, and applicant-count/promotion boilerplate. These

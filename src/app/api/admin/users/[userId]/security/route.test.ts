@@ -91,7 +91,11 @@ describe("POST /api/admin/users/[userId]/security", () => {
 
   it("never lets the browser substitute a different target email — the target's email is resolved server-side by getUserDetail/security lib, not from the request body", async () => {
     requireOwnerMock.mockResolvedValueOnce(OWNER);
-    const res = await callPost({ action: "send_password_reset", confirm: true, email: "attacker@example.com" });
+    const res = await callPost({
+      action: "send_password_reset",
+      confirm: true,
+      email: "attacker@example.com",
+    });
     // Extra "email" field is rejected by the strict schema — the body has no
     // legitimate way to influence which address receives the reset link.
     expect(res.status).toBe(400);
@@ -110,7 +114,9 @@ describe("POST /api/admin/users/[userId]/security", () => {
     requireOwnerMock.mockResolvedValueOnce(OWNER);
     const res = await callPost({ action: "send_password_reset", confirm: true });
     expect(res.status).toBe(200);
-    expect(sendPasswordResetForUserMock).toHaveBeenCalledWith(expect.objectContaining({ actorUserId: OWNER.id, targetUserId: TARGET_ID }));
+    expect(sendPasswordResetForUserMock).toHaveBeenCalledWith(
+      expect.objectContaining({ actorUserId: OWNER.id, targetUserId: TARGET_ID }),
+    );
   });
 
   it("never returns a reset token to the browser", async () => {

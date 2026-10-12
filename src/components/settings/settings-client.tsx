@@ -42,7 +42,11 @@ export function SettingsClient({
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await updateProfile({ full_name: fullName, target_role: targetRole, job_search_start_date: startDate || null });
+      await updateProfile({
+        full_name: fullName,
+        target_role: targetRole,
+        job_search_start_date: startDate || null,
+      });
       toast.success("Profile updated.");
       router.refresh();
     } catch (e) {
@@ -94,11 +98,22 @@ export function SettingsClient({
           </div>
           <div>
             <Label className="mb-1.5 block text-xs text-muted-foreground">Target roles</Label>
-            <Input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="Risk, Credit Risk, Market Risk, Model Validation" maxLength={1000} />
-            <p className="mt-2 text-xs text-muted-foreground">Enter short role names separated by commas (up to 15). Used only to suggest priority for future follow-ups when you parse a job. You can always adjust the score. Changes apply to future parses.</p>
+            <Input
+              value={targetRole}
+              onChange={(e) => setTargetRole(e.target.value)}
+              placeholder="Risk, Credit Risk, Market Risk, Model Validation"
+              maxLength={1000}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Enter short role names separated by commas (up to 15). Used only to suggest priority
+              for future follow-ups when you parse a job. You can always adjust the score. Changes
+              apply to future parses.
+            </p>
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Job search start date</Label>
+            <Label className="mb-1.5 block text-xs text-muted-foreground">
+              Job search start date
+            </Label>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <Button onClick={handleSaveProfile} disabled={saving} size="sm">
@@ -129,7 +144,9 @@ export function SettingsClient({
                 onClick={() => setTheme(opt.value)}
                 className={cn(
                   "flex flex-col items-center gap-2 rounded-xl border p-4 text-xs font-medium transition-colors",
-                  theme === opt.value ? "border-primary bg-primary/5 text-primary" : "border-border/50 text-muted-foreground hover:bg-accent/40"
+                  theme === opt.value
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border/50 text-muted-foreground hover:bg-accent/40",
                 )}
               >
                 <opt.icon className="h-5 w-5" />
@@ -160,7 +177,12 @@ export function SettingsClient({
               <p className="text-sm font-medium text-destructive">Sign out</p>
               <p className="text-xs text-muted-foreground">End your session on this device.</p>
             </div>
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive" onClick={handleSignOut}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive"
+              onClick={handleSignOut}
+            >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </Button>
           </div>

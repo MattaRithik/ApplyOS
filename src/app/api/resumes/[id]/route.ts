@@ -17,7 +17,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Cross-site request rejected." }, { status: 403 });
   }
   const { id } = await params;
-  if (!uuidSchema.safeParse(id).success) return NextResponse.json({ error: "Invalid resume id." }, { status: 400 });
+  if (!uuidSchema.safeParse(id).success)
+    return NextResponse.json({ error: "Invalid resume id." }, { status: 400 });
   const supabase = await createClient();
   const {
     data: { user },

@@ -41,7 +41,10 @@ export function SavedTimelinesList({ timelines }: { timelines: UserTimeline[] })
         {unpinned.map((t) => {
           const Icon = getTimelineIcon(t.icon, t.category);
           return (
-            <div key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 p-2.5">
+            <div
+              key={t.id}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border/50 p-2.5"
+            >
               <div className="flex min-w-0 items-center gap-2">
                 <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate text-sm">{t.title}</span>
@@ -60,7 +63,12 @@ export function SavedTimelinesList({ timelines }: { timelines: UserTimeline[] })
                     {slot}
                   </Button>
                 ))}
-                <Button variant="ghost" size="icon-xs" onClick={() => setDeletingId(t.id)} aria-label={`Delete ${t.title}`}>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => setDeletingId(t.id)}
+                  aria-label={`Delete ${t.title}`}
+                >
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
               </div>

@@ -34,7 +34,10 @@ function callGet() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  createResumeDownloadUrlMock.mockResolvedValue({ url: "https://signed.example/object", expiresIn: 300 });
+  createResumeDownloadUrlMock.mockResolvedValue({
+    url: "https://signed.example/object",
+    expiresIn: 300,
+  });
 });
 
 describe("GET /api/resumes/[id]/download-url", () => {
@@ -56,7 +59,13 @@ describe("GET /api/resumes/[id]/download-url", () => {
   it("signs only an uploaded row returned by the ownership-scoped query", async () => {
     getUserMock.mockResolvedValue({ data: { user: { id: "user-a" } } });
     singleMock.mockResolvedValue({
-      data: { id: RESUME_ID, storage_key: "users/user-a/resumes/id/file.pdf", display_name: "Resume", file_extension: "pdf", status: "uploaded" },
+      data: {
+        id: RESUME_ID,
+        storage_key: "users/user-a/resumes/id/file.pdf",
+        display_name: "Resume",
+        file_extension: "pdf",
+        status: "uploaded",
+      },
       error: null,
     });
     const response = await callGet();
@@ -65,9 +74,12 @@ describe("GET /api/resumes/[id]/download-url", () => {
   });
 
   it("rejects invalid UUIDs before querying storage", async () => {
-    const response = await GET(new Request("https://applyos.example/api/resumes/not-a-uuid/download-url"), {
-      params: Promise.resolve({ id: "not-a-uuid" }),
-    });
+    const response = await GET(
+      new Request("https://applyos.example/api/resumes/not-a-uuid/download-url"),
+      {
+        params: Promise.resolve({ id: "not-a-uuid" }),
+      },
+    );
     expect(response.status).toBe(400);
     expect(createResumeDownloadUrlMock).not.toHaveBeenCalled();
   });

@@ -18,8 +18,9 @@ export async function assertOwnedEntity(
   supabase: SupabaseClient,
   userId: string,
   entityType: OwnedEntityType,
-  entityId: string
+  entityId: string,
 ): Promise<void> {
+  if (!Object.hasOwn(OWNED_ENTITY_TABLES, entityType)) throw new Error("Invalid record type.");
   const parsedId = uuidSchema.safeParse(entityId);
   if (!parsedId.success) throw new Error("Invalid record id.");
 
@@ -37,7 +38,7 @@ export async function assertOptionalOwnedEntity(
   supabase: SupabaseClient,
   userId: string,
   entityType: OwnedEntityType,
-  entityId: string | null | undefined
+  entityId: string | null | undefined,
 ): Promise<void> {
   if (entityId) await assertOwnedEntity(supabase, userId, entityType, entityId);
 }

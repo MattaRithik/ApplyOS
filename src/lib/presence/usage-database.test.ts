@@ -14,10 +14,25 @@ beforeAll(async () => {
     grant usage on schema public, auth to service_role, authenticated;
     grant select on app_user_roles to service_role;
     alter default privileges in schema public grant all on tables to anon, authenticated;`);
-  for (const table of ["applications", "companies", "contacts", "outreach", "interview_rounds", "follow_ups", "email_templates", "exports"]) {
-    await db.exec(`create table public.${table}(user_id uuid references auth.users(id) on delete cascade, status text, notes text, updated_at timestamptz)`);
+  for (const table of [
+    "applications",
+    "companies",
+    "contacts",
+    "outreach",
+    "interview_rounds",
+    "follow_ups",
+    "email_templates",
+    "exports",
+  ]) {
+    await db.exec(
+      `create table public.${table}(user_id uuid references auth.users(id) on delete cascade, status text, notes text, updated_at timestamptz)`,
+    );
   }
-  for (const file of ["20260930090000_owner_presence.sql", "20261001090000_presence_history.sql", "20261002160000_page_usage.sql"]) {
+  for (const file of [
+    "20260930090000_owner_presence.sql",
+    "20261001090000_presence_history.sql",
+    "20261002160000_page_usage.sql",
+  ]) {
     await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
   }
 }, 30000);
@@ -30,7 +45,13 @@ describe("page usage and actions", () => {
       update user_presence set last_seen_at='2026-10-02T12:00:30Z';
       update user_presence set last_seen_at='2026-10-02T12:01:00Z';
       update user_presence set last_seen_at='2026-10-02T12:01:15Z', page='export';`);
-    expect((await db.query("select page, active_seconds, visible_seconds from user_page_visits order by id")).rows).toEqual([
+    expect(
+      (
+        await db.query(
+          "select page, active_seconds, visible_seconds from user_page_visits order by id",
+        )
+      ).rows,
+    ).toEqual([
       { page: "applications", active_seconds: 60, visible_seconds: 75 },
       { page: "export", active_seconds: 0, visible_seconds: 0 },
     ]);
@@ -39,10 +60,19 @@ describe("page usage and actions", () => {
       update user_presence set last_seen_at='2026-10-02T15:00:00Z',visible=true,last_active_at='2026-10-02T15:00:00Z';
       update user_presence set last_seen_at='2026-10-02T15:00:15Z',closed=true;
       update user_presence set last_seen_at='2026-10-02T15:00:30Z';`);
-    expect((await db.query("select active_seconds, visible_seconds from user_page_visits where page='export' order by id")).rows).toEqual([
-      { active_seconds: 0, visible_seconds: 15 }, { active_seconds: 15, visible_seconds: 15 },
+    expect(
+      (
+        await db.query(
+          "select active_seconds, visible_seconds from user_page_visits where page='export' order by id",
+        )
+      ).rows,
+    ).toEqual([
+      { active_seconds: 0, visible_seconds: 15 },
+      { active_seconds: 15, visible_seconds: 15 },
     ]);
-    const summary = await db.query(`select visits, active_seconds, visible_seconds from page_usage_summary('2026-10-01', '${admin}') where page='export'`);
+    const summary = await db.query(
+      `select visits, active_seconds, visible_seconds from page_usage_summary('2026-10-01', '${admin}') where page='export'`,
+    );
     expect(summary.rows).toEqual([{ visits: 2, active_seconds: 15, visible_seconds: 30 }]);
     await db.exec("reset role");
   });
@@ -54,7 +84,9 @@ describe("page usage and actions", () => {
       insert into exports(user_id) values('${user}');
       delete from applications;
       reset role;`);
-    const actions = await db.query("select page,status from user_presence_history where session_id is null order by id");
+    const actions = await db.query(
+      "select page,status from user_presence_history where session_id is null order by id",
+    );
     expect(actions.rows).toEqual([
       { page: "applications", status: "Application added" },
       { page: "applications", status: "Application status changed" },
@@ -66,18 +98,35 @@ describe("page usage and actions", () => {
       set role service_role;
       insert into user_presence(user_id,session_id,page,visible,last_seen_at,last_active_at)
       values('${admin}','${admin}','applications',true,now(),now()); reset role;`);
-    expect((await db.query(`select * from user_page_visits where user_id='${admin}'`)).rows).toHaveLength(0);
-    expect((await db.query(`select * from user_presence_history where user_id='${admin}' and session_id is null`)).rows).toHaveLength(0);
+    expect(
+      (await db.query(`select * from user_page_visits where user_id='${admin}'`)).rows,
+    ).toHaveLength(0);
+    expect(
+      (
+        await db.query(
+          `select * from user_presence_history where user_id='${admin}' and session_id is null`,
+        )
+      ).rows,
+    ).toHaveLength(0);
   });
-  it.each(["anon", "authenticated"])("denies %s direct usage reads, writes, and summary access", async (role) => {
-    await db.exec(`set role ${role}`);
-    for (const query of ["select * from user_page_visits", "delete from user_page_visits", `select * from page_usage_summary(now(),'${admin}')`]) {
-      await expect(db.exec(query)).rejects.toMatchObject({ code: "42501" });
-    }
-    await db.exec("reset role");
-  });
+  it.each(["anon", "authenticated"])(
+    "denies %s direct usage reads, writes, and summary access",
+    async (role) => {
+      await db.exec(`set role ${role}`);
+      for (const query of [
+        "select * from user_page_visits",
+        "delete from user_page_visits",
+        `select * from page_usage_summary(now(),'${admin}')`,
+      ]) {
+        await expect(db.exec(query)).rejects.toMatchObject({ code: "42501" });
+      }
+      await db.exec("reset role");
+    },
+  );
   it("removes usage when the account is deleted", async () => {
     await db.exec(`delete from auth.users where id='${user}'`);
-    expect((await db.query(`select * from user_page_visits where user_id='${user}'`)).rows).toHaveLength(0);
+    expect(
+      (await db.query(`select * from user_page_visits where user_id='${user}'`)).rows,
+    ).toHaveLength(0);
   });
 });

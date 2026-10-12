@@ -40,8 +40,8 @@ export function CategoryStep({
       <div>
         <h2 className="text-lg font-semibold tracking-tight">Welcome to ApplyOS</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          What best describes your current work-authorization situation? This helps ApplyOS show you relevant
-          features — you can change it anytime.
+          What best describes your current work-authorization situation? This helps ApplyOS show you
+          relevant features — you can change it anytime.
         </p>
       </div>
       <RadioGroup value={value ?? ""} onValueChange={(v) => v && onChange(v as UserCategory)}>
@@ -51,7 +51,9 @@ export function CategoryStep({
             htmlFor={`category-${opt.value}`}
             className={cn(
               "flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors",
-              value === opt.value ? "border-primary bg-primary/5" : "border-border/50 hover:bg-accent/40"
+              value === opt.value
+                ? "border-primary bg-primary/5"
+                : "border-border/50 hover:bg-accent/40",
             )}
           >
             <RadioGroupItem value={opt.value} id={`category-${opt.value}`} className="mt-0.5" />
