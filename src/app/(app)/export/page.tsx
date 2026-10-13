@@ -35,14 +35,18 @@ export default async function ExportPage() {
             <Archive className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Full backup export</p>
+            <p className="text-sm font-semibold">Workspace export</p>
             <p className="text-xs text-muted-foreground">
-              Every table, one multi-sheet .xlsx workbook.
+              Supported workspace tables in one .xlsx workbook. Resume files and security logs are
+              not included.
             </p>
           </div>
         </div>
-        <Button render={<a href="/api/export?entity=full_backup&format=xlsx" />} className="gap-2">
-          <Download className="h-4 w-4" /> Download full backup
+        <Button
+          render={<a href="/api/export?entity=full_backup&format=xlsx" download />}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" /> Download workspace export
         </Button>
       </GlassPanel>
 
@@ -55,7 +59,7 @@ export default async function ExportPage() {
                 variant="outline"
                 size="sm"
                 className="flex-1 gap-1.5"
-                render={<a href={`/api/export?entity=${e.value}&format=xlsx`} />}
+                render={<a href={`/api/export?entity=${e.value}&format=xlsx`} download />}
               >
                 <Download className="h-3.5 w-3.5" /> .xlsx
               </Button>
@@ -63,7 +67,7 @@ export default async function ExportPage() {
                 variant="outline"
                 size="sm"
                 className="flex-1 gap-1.5"
-                render={<a href={`/api/export?entity=${e.value}&format=csv`} />}
+                render={<a href={`/api/export?entity=${e.value}&format=csv`} download />}
               >
                 <Download className="h-3.5 w-3.5" /> .csv
               </Button>

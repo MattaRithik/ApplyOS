@@ -21,6 +21,7 @@ import { GlassPanel } from "@/components/shared/glass-panel";
 import { LogoMark } from "@/components/shared/logo-mark";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { DashboardPreview } from "@/components/landing/dashboard-preview";
+import { PolicyLinks } from "@/components/legal/policy-links";
 
 const FEATURES = [
   {
@@ -69,7 +70,7 @@ const FEATURES = [
     icon: BarChart3,
     title: "Analytics & Excel export",
     description:
-      "See interview conversion, reply rates, and resume performance at a glance, then export any table — or a full backup — to Excel or CSV.",
+      "See interview conversion, reply rates, and resume performance at a glance, then export supported workspace tables to Excel or CSV.",
   },
   {
     icon: Globe2,
@@ -84,7 +85,7 @@ const STEPS = [
     icon: ClipboardList,
     title: "Log the application",
     description:
-      "Add a role manually or paste the job post URL and let the AI parser fill in the company, title, salary range, and required skills for you.",
+      "Add a role manually or paste the job description and source URL, then review the fields extracted by the AI parser.",
   },
   {
     icon: Send,
@@ -244,21 +245,24 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
           <h2 className="mt-4 text-2xl font-semibold tracking-tight">You own your data</h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Everything you enter — applications, resumes, contacts, outreach, interviews, notes —
-            belongs to your account and is only visible to you. You can export any table, or a full
-            backup of your workspace, to Excel or CSV at any time from the Export Center.
-            There&apos;s no lock-in: if you leave, you take your data with you.
+            stays associated with your account and is not published to other users. You retain
+            ownership of your content and can export supported workspace tables to Excel or CSV from
+            the Export Center, and download your uploaded resumes.
           </p>
           <p className="mt-3 text-xs text-muted-foreground">
-            For account security, signed-in sessions report their current page section, tab
-            visibility, recent interaction time, IP address, approximate IP location, and browser
-            information. Only the site owner can view this activity. We keep the latest state per
-            tab; sessions inactive for more than 24 hours are removed when the activity service next
-            runs.
+            ApplyOS records signed-in page-section activity, interaction timing, and connection
+            information for service operation and security. The operator can access activity,
+            workspace content, and files through privileged systems. Optional AI parsing sends job
+            text and parsing context to OpenAI. Read our{" "}
+            <Link href="/privacy" className="text-primary underline underline-offset-4">
+              Privacy Policy
+            </Link>{" "}
+            for processing, retention, and data-request details.
           </p>
           <div className="mt-5 flex items-center justify-center gap-2">
             <Download className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              Export anytime, in your account settings
+              Export supported records from the Export Center
             </span>
           </div>
         </GlassPanel>
@@ -299,6 +303,7 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
             Sign in
           </Link>
         </div>
+        <PolicyLinks className="mx-auto mt-5 max-w-6xl justify-center sm:justify-start" />
       </footer>
     </div>
   );

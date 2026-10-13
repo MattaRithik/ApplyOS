@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LogoMark } from "@/components/shared/logo-mark";
+import { PolicyLinks } from "@/components/legal/policy-links";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </Link>
 
       <div className="w-full max-w-md">{children}</div>
+      <PolicyLinks className="mt-8 max-w-md justify-center text-center" />
     </div>
   );
 }

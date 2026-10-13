@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Monitor, Moon, Sun, LogOut } from "lucide-react";
@@ -18,6 +19,7 @@ import { AdministrationPanel } from "@/components/settings/admin/administration-
 import type { Profile } from "@/lib/types/database";
 import type { TimelinesContext } from "@/lib/data/timelines";
 import { cn } from "@/lib/utils";
+import { PolicyLinks } from "@/components/legal/policy-links";
 
 export function SettingsClient({
   profile,
@@ -168,7 +170,7 @@ export function SettingsClient({
               <p className="text-sm font-medium">Password</p>
               <p className="text-xs text-muted-foreground">Reset your password via email.</p>
             </div>
-            <Button variant="outline" size="sm" render={<a href="/forgot-password" />}>
+            <Button variant="outline" size="sm" render={<Link href="/forgot-password" />}>
               Reset password
             </Button>
           </div>
@@ -185,6 +187,21 @@ export function SettingsClient({
             >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </Button>
+          </div>
+          <div className="space-y-3 border-t border-border/50 pt-4">
+            <p className="text-sm font-medium">Privacy and account data</p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Export workspace records from the{" "}
+              <Link href="/export" className="text-primary underline underline-offset-4">
+                Export Center
+              </Link>
+              . For an account deletion or personal-data request, see{" "}
+              <Link href="/contact" className="text-primary underline underline-offset-4">
+                Contact &amp; Data Requests
+              </Link>
+              .
+            </p>
+            <PolicyLinks />
           </div>
         </GlassPanel>
       </TabsContent>

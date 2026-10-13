@@ -4,6 +4,8 @@ A private job-search workspace for applications, companies, contacts, outreach, 
 
 Built with Next.js 16, React 19, TypeScript, Tailwind CSS, Supabase, and Backblaze B2. Supabase handles authentication and application data with row-level security. Resume files live in a private B2 bucket; server routes validate ownership before issuing short-lived signed URLs. Deployment targets Vercel.
 
+Public privacy, terms, cookies, acceptable use, AI disclosures, and data request pages live in the Legal Center at `/legal`. See [legal policy operations](docs/legal-policies.md) for public contact configuration and release requirements.
+
 ## Local development
 
 Use Node.js 22 (`.nvmrc`) and npm:

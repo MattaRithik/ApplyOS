@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -200,6 +201,19 @@ export function AiParserPanel({
 
   return (
     <div className="flex flex-col gap-5">
+      <p className="text-xs leading-5 text-muted-foreground">
+        Parsing sends the job text, source URL, and target-role preferences to OpenAI. ApplyOS
+        stores the input and result, including unsaved attempts. Review extracted fields before
+        using them.{" "}
+        <Link
+          href="/ai-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline underline-offset-4"
+        >
+          AI Disclosure
+        </Link>
+      </p>
       <ol aria-label="Parser steps" className="flex items-center gap-3 text-xs sm:gap-5 sm:text-sm">
         <li
           className={cn(

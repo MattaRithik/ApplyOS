@@ -46,6 +46,28 @@ describe("authentication proxy", () => {
     ).toBe(307);
   });
 
+  it.each([
+    "/legal",
+    "/privacy",
+    "/terms",
+    "/cookies",
+    "/acceptable-use",
+    "/ai-policy",
+    "/contact",
+  ])("allows anonymous access to the legal document at %s", async (path) => {
+    const response = await proxy(new NextRequest(`https://applyos.example${path}`));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it.each(["/privacy/private", "/terms/api", "/contact/admin", "/api/privacy"])(
+    "does not broaden public legal access to %s",
+    async (path) => {
+      const response = await proxy(new NextRequest(`https://applyos.example${path}`));
+      expect(response.status).toBe(path.startsWith("/api/") ? 401 : 307);
+    },
+  );
+
   it("redirects protected pages and preserves refreshed session cookies", async () => {
     auth.refresh = true;
     const response = await proxy(new NextRequest("https://applyos.example/applications"));

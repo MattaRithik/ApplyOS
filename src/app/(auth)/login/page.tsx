@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 import { safeLocalPath } from "@/lib/utils/url";
+import { POLICY_VERSION } from "@/lib/legal/policies";
 
 function LoginForm() {
   const router = useRouter();
@@ -23,6 +24,7 @@ function LoginForm() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [fullName, setFullName] = React.useState("");
+  const [termsAccepted, setTermsAccepted] = React.useState(false);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,12 +43,22 @@ function LoginForm() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!termsAccepted) {
+      toast.error("Accept the Terms of Service and confirm you are at least 18 to continue.");
+      return;
+    }
     setLoading(true);
     const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: {
+          full_name: fullName,
+          terms_version: POLICY_VERSION,
+          terms_accepted_at: new Date().toISOString(),
+        },
+      },
     });
     setLoading(false);
     if (error) {
@@ -170,7 +182,47 @@ function LoginForm() {
                   />
                 </div>
               </div>
-              <Button type="submit" disabled={loading} className="w-full gap-2">
+              <div className="flex items-start gap-3 rounded-lg border border-border/50 p-3">
+                <input
+                  id="acceptTerms"
+                  type="checkbox"
+                  required
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]"
+                />
+                <label htmlFor="acceptTerms" className="text-xs leading-5 text-muted-foreground">
+                  I am at least 18 and agree to the{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4"
+                  >
+                    Terms of Service
+                  </Link>
+                  , including the{" "}
+                  <Link
+                    href="/acceptable-use"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4"
+                  >
+                    Acceptable Use Policy
+                  </Link>
+                  . I acknowledge the{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </label>
+              </div>
+              <Button type="submit" disabled={loading || !termsAccepted} className="w-full gap-2">
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -184,7 +236,11 @@ function LoginForm() {
       </GlassPanel>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        By continuing you agree this is your own private job-search workspace.
+        Your workspace is associated with your account. See our{" "}
+        <Link href="/privacy" className="text-primary hover:underline">
+          Privacy Policy
+        </Link>{" "}
+        for data processing and operator access details.
       </p>
     </motion.div>
   );
