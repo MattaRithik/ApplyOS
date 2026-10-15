@@ -10,6 +10,7 @@ import {
   revokeSessionsForUser,
   disableUser,
   enableUser,
+  setWorkspaceAccess,
 } from "@/lib/admin/security";
 import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
 import { consumeApiRateLimit } from "@/lib/security/rate-limit";
@@ -21,6 +22,8 @@ const bodySchema = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("revoke_sessions"), confirm: z.literal(true) }),
   z.strictObject({ action: z.literal("disable"), confirm: z.literal(true) }),
   z.strictObject({ action: z.literal("enable") }),
+  z.strictObject({ action: z.literal("block_workspace"), confirm: z.literal(true) }),
+  z.strictObject({ action: z.literal("restore_workspace"), confirm: z.literal(true) }),
 ]);
 
 export async function POST(request: Request, { params }: { params: Promise<{ userId: string }> }) {
@@ -58,7 +61,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
   }
   const body = parsedBody.data;
 
-  if (existing.role === "owner" && body.action === "disable") {
+  if (
+    (existing.role === "owner" || owner.id === targetUserId) &&
+    ["disable", "block_workspace", "restore_workspace"].includes(body.action)
+  ) {
     return NextResponse.json(
       { error: "The permanent owner account cannot be disabled." },
       { status: 400 },
@@ -95,6 +101,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
         break;
       case "enable":
         result = await enableUser(actorParams);
+        break;
+      case "block_workspace":
+        if (existing.banned)
+          return NextResponse.json(
+            {
+              error:
+                "Re-enable sign-in before restricting workspace access, so this user can download their data.",
+            },
+            { status: 409 },
+          );
+        result = await setWorkspaceAccess(actorParams, true);
+        break;
+      case "restore_workspace":
+        result = await setWorkspaceAccess(actorParams, false);
         break;
     }
   } catch {

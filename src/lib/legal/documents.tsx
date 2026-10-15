@@ -192,6 +192,14 @@ export function getPolicyDocument(slug: string): PolicyDocument | null {
                 those exports.
               </p>
               <p>
+                Accounts placed in download-only access can sign in to a restricted screen and
+                download an archive of their own account and workspace records, including stored
+                activity and parser records and original completed resume uploads. Failed or
+                unfinished uploads are identified in the archive manifest. This archive does not
+                include authentication secrets, internal administrative audit records, provider
+                logs, or retired shared-message content.
+              </p>
+              <p>
                 You may request access, correction, account deletion, or information about
                 processing through <ContactLink />. Depending on your location and applicable law,
                 you may also have rights to portability, restriction, objection, withdrawal of
@@ -403,6 +411,10 @@ export function getPolicyDocument(slug: string): PolicyDocument | null {
                 unlawful activity, material breaches, or service operation requirements. Where
                 appropriate, we will explain the restriction and provide an opportunity to contact
                 us; urgent security or legal circumstances may require immediate action.
+              </p>
+              <p>
+                A workspace restriction may leave sign-in available solely to download your own data
+                and sign out. This does not restore access to normal workspace features.
               </p>
               <p>
                 You may stop using the service at any time and request account deletion through{" "}

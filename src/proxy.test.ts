@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const auth = vi.hoisted(() => ({ user: null as null | { id: string }, refresh: false }));
+const auth = vi.hoisted(() => ({
+  user: null as null | {
+    id: string;
+    app_metadata?: Record<string, unknown>;
+    user_metadata?: Record<string, unknown>;
+  },
+  refresh: false,
+}));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (
     _url: string,
@@ -83,6 +90,51 @@ describe("authentication proxy", () => {
     const response = await proxy(new NextRequest("https://applyos.example/login"));
     expect(response.headers.get("location")).toBe("https://applyos.example/dashboard");
     expect(response.cookies.get("session")?.value).toBe("refreshed");
+  });
+
+  it.each(["/", "/login", "/dashboard", "/applications", "/resumes", "/settings"])(
+    "redirects a blocked account from %s to its data-download screen",
+    async (path) => {
+      auth.user = { id: "blocked", app_metadata: { workspace_access: "export_only" } };
+      const response = await proxy(new NextRequest(`https://applyos.example${path}`));
+      expect(response.headers.get("location")).toBe("https://applyos.example/blocked");
+    },
+  );
+
+  it.each(["/api/ai-parser", "/api/resumes/create-upload-url", "/api/admin/users", "/api/export"])(
+    "rejects a blocked account's ordinary API request at %s",
+    async (path) => {
+      auth.user = { id: "blocked", app_metadata: { workspace_access: "export_only" } };
+      const response = await proxy(
+        new NextRequest(`https://applyos.example${path}`, { method: "POST" }),
+      );
+      expect(response.status).toBe(403);
+      expect((await response.json()).code).toBe("WORKSPACE_BLOCKED");
+    },
+  );
+
+  it("permits only the blocked screen, exact export/sign-out endpoints, and legal reads", async () => {
+    auth.user = { id: "blocked", app_metadata: { workspace_access: "export_only" } };
+    for (const [path, method] of [
+      ["/blocked", "GET"],
+      ["/privacy", "GET"],
+      ["/api/account/export", "POST"],
+      ["/api/account/sign-out", "POST"],
+    ]) {
+      expect(
+        (await proxy(new NextRequest(`https://applyos.example${path}`, { method }))).status,
+      ).toBe(200);
+    }
+    for (const path of ["/blocked", "/privacy", "/api/account/export/other"]) {
+      expect(
+        (await proxy(new NextRequest(`https://applyos.example${path}`, { method: "POST" }))).status,
+      ).toBe(403);
+    }
+  });
+
+  it("does not trust user-editable metadata as an access restriction", async () => {
+    auth.user = { id: "active", user_metadata: { workspace_access: "export_only" } };
+    expect((await proxy(new NextRequest("https://applyos.example/dashboard"))).status).toBe(200);
   });
 
   it.each(["/auth/callback?code=test", "/reset-password", "/dashboard"])(

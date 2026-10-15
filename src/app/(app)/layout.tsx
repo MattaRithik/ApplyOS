@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/nav/app-shell";
 import { ActivityHeartbeat } from "@/components/presence/activity-heartbeat";
 import { isActivityExcluded } from "@/lib/presence/profiles";
+import { isWorkspaceBlocked } from "@/lib/access/workspace";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -16,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) {
     redirect("/login");
   }
+  if (isWorkspaceBlocked(user)) redirect("/blocked");
 
   const [{ data: profile }, { count: followUpsDueCount }] = await Promise.all([
     ensureProfile(supabase, user),

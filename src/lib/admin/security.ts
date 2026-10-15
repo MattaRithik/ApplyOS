@@ -103,3 +103,23 @@ export async function enableUser(params: SecurityActionParams): Promise<Security
   });
   return { ok: true };
 }
+
+export async function setWorkspaceAccess(
+  params: SecurityActionParams,
+  blocked: boolean,
+): Promise<SecurityActionResult> {
+  const supabase = createServiceRoleClient();
+  const { error } = await supabase.rpc("admin_set_workspace_access", {
+    p_actor_user_id: params.actorUserId,
+    p_target_user_id: params.targetUserId,
+    p_blocked: blocked,
+    p_request_id: params.requestId ?? null,
+  });
+  if (error)
+    return {
+      ok: false,
+      error:
+        "Unable to change workspace access. Confirm the export-only database migration is installed.",
+    };
+  return { ok: true };
+}

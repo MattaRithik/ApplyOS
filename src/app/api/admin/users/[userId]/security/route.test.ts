@@ -34,11 +34,13 @@ const sendPasswordResetForUserMock = vi.fn(async () => ({ ok: true }));
 const revokeSessionsForUserMock = vi.fn(async () => ({ ok: true }));
 const disableUserMock = vi.fn(async () => ({ ok: true }));
 const enableUserMock = vi.fn(async () => ({ ok: true }));
+const setWorkspaceAccessMock = vi.fn(async () => ({ ok: true }));
 vi.mock("@/lib/admin/security", () => ({
   sendPasswordResetForUser: sendPasswordResetForUserMock,
   revokeSessionsForUser: revokeSessionsForUserMock,
   disableUser: disableUserMock,
   enableUser: enableUserMock,
+  setWorkspaceAccess: setWorkspaceAccessMock,
 }));
 
 const { POST } = await import("@/app/api/admin/users/[userId]/security/route");
@@ -131,5 +133,25 @@ describe("POST /api/admin/users/[userId]/security", () => {
     const res = await callPost({ action: "enable" });
     expect(res.status).toBe(200);
     expect(enableUserMock).toHaveBeenCalled();
+  });
+
+  it("allows an owner to block workspace access while preserving sign-in", async () => {
+    requireOwnerMock.mockResolvedValueOnce(OWNER);
+    const res = await callPost({ action: "block_workspace", confirm: true });
+    expect(res.status).toBe(200);
+    expect(setWorkspaceAccessMock).toHaveBeenCalledWith(
+      expect.objectContaining({ targetUserId: TARGET_ID, actorUserId: OWNER.id }),
+      true,
+    );
+    expect(disableUserMock).not.toHaveBeenCalled();
+  });
+
+  it("does not restrict the owner or claim export access for an auth-banned account", async () => {
+    requireOwnerMock.mockResolvedValue(OWNER);
+    getUserDetailMock.mockResolvedValueOnce({ id: TARGET_ID, role: "owner" });
+    expect((await callPost({ action: "block_workspace", confirm: true })).status).toBe(400);
+    getUserDetailMock.mockResolvedValueOnce({ id: TARGET_ID, banned: true });
+    expect((await callPost({ action: "block_workspace", confirm: true })).status).toBe(409);
+    expect(setWorkspaceAccessMock).not.toHaveBeenCalled();
   });
 });

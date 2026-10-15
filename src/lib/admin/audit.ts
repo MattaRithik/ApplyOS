@@ -11,6 +11,8 @@ const ADMIN_ACTION_TYPES = [
   "sessions_revoked",
   "user_disabled",
   "user_enabled",
+  "workspace_blocked",
+  "workspace_restored",
   "user_deletion_requested",
   "user_deleted",
 ] as const;

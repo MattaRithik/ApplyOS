@@ -46,6 +46,16 @@ export function ActivityHeartbeat({ userId }: { userId: string }) {
             signal: AbortSignal.timeout(10_000),
             body,
           });
+          if (response.status === 403) {
+            const result = await response
+              .clone()
+              .json()
+              .catch(() => null);
+            if (result?.code === "WORKSPACE_BLOCKED") {
+              window.location.replace("/blocked");
+              return;
+            }
+          }
           if (!stopped && !closed)
             setHeartbeatError(response.ok ? null : heartbeatFailure(response.status));
         } catch {

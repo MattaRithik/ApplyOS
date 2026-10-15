@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { BLOCKED_MESSAGE, isWorkspaceBlocked } from "@/lib/access/workspace";
 
 export type AppRole = "owner" | "admin" | "user";
 
@@ -49,6 +50,7 @@ export async function requireAuthenticatedUser(supabase: SupabaseClient): Promis
   if (!user) {
     throw new AdminAuthError("Not authenticated.", 401);
   }
+  if (isWorkspaceBlocked(user)) throw new AdminAuthError(BLOCKED_MESSAGE, 403);
   return user;
 }
 

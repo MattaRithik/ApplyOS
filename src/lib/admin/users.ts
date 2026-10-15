@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getUserRole, type AppRole } from "@/lib/admin/roles";
 import { getEntitlement } from "@/lib/ai-parser/entitlement";
+import { isWorkspaceBlocked } from "@/lib/access/workspace";
 
 // Bounded fetch from Supabase's admin.listUsers — appropriate for a
 // personal app with a handful of accounts. A larger deployment would
@@ -28,6 +29,7 @@ export interface AdminUserSummary {
   createdAt: string;
   lastSignInAt: string | null;
   banned: boolean;
+  workspaceBlocked?: boolean;
   role: AppRole;
   aiAccess: AdminAiAccessSummary;
   usageThisMonth: { requests: number; estimatedCostUsd: number };
@@ -147,6 +149,7 @@ export async function listUsers(opts: {
       createdAt: u.created_at,
       lastSignInAt: u.last_sign_in_at ?? null,
       banned: isBanned(u),
+      workspaceBlocked: isWorkspaceBlocked(u),
       role,
       aiAccess: {
         enabled: ent?.enabled ?? false,
@@ -226,6 +229,7 @@ export async function getUserDetail(userId: string): Promise<AdminUserDetail | n
     createdAt: u.created_at,
     lastSignInAt: u.last_sign_in_at ?? null,
     banned: isBanned(u),
+    workspaceBlocked: isWorkspaceBlocked(u),
     role,
     aiAccess: {
       enabled: entitlement?.enabled ?? false,

@@ -8,6 +8,7 @@ export type ApiRateLimitAction =
   | "resume_delete"
   | "resume_rename"
   | "export"
+  | "account_export"
   | "admin_mutation"
   | "presence";
 

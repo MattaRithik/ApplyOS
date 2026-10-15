@@ -303,6 +303,26 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
             <div className="space-y-2">
               <p className="text-xs font-semibold">Account security</p>
               <GlassPanel className="flex flex-wrap gap-2 p-3">
+                <Badge variant={detail.workspaceBlocked ? "destructive" : "secondary"}>
+                  {detail.workspaceBlocked
+                    ? "Workspace blocked · downloads only"
+                    : "Workspace access enabled"}
+                </Badge>
+                <ConfirmButton
+                  label={detail.workspaceBlocked ? "Restore workspace" : "Block workspace"}
+                  description={
+                    detail.workspaceBlocked
+                      ? "Restores normal workspace access for this account."
+                      : "Blocks workspace pages, API actions, and database access. The user can still sign in to download their own data and original resume files."
+                  }
+                  disabled={busy || detail.role === "owner" || detail.banned}
+                  onConfirm={() =>
+                    callSecurity({
+                      action: detail.workspaceBlocked ? "restore_workspace" : "block_workspace",
+                      confirm: true,
+                    })
+                  }
+                />
                 <ConfirmButton
                   label="Send password reset"
                   description="Sends a standard Supabase password-recovery email to this account's verified, on-file address."

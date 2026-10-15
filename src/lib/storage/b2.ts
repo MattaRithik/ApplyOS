@@ -193,3 +193,13 @@ export async function deleteResumeObject(storageKey: string): Promise<void> {
   });
   await getB2Client().send(command);
 }
+
+/** Original bytes for an authenticated, ownership-checked account export. */
+export async function readResumeObject(storageKey: string, signal: AbortSignal) {
+  const result = await getB2Client().send(
+    new GetObjectCommand({ Bucket: getBucketName(), Key: storageKey }),
+    { abortSignal: signal },
+  );
+  if (!result.Body) throw new Error("Stored resume is unavailable.");
+  return result.Body as AsyncIterable<Uint8Array>;
+}

@@ -31,9 +31,10 @@ Read [database operations](docs/database.md) for upgrade order, rollback boundar
 - **Supabase:** Set the site URL and exact authentication callback redirect allowlist. Email/password login is implemented; Google/GitHub configuration is planned next. Verify confirmation, password policy, abuse controls, and email delivery before public signup.
 - **Backblaze B2:** Use a private bucket and a bucket-restricted application key with file read/write/delete capabilities. Set `B2_ENDPOINT`, `B2_REGION`, bucket name, and credentials. Configure CORS for the intended app origins.
 - **Administration:** The verified account matching `APP_OWNER_EMAIL` bootstraps the permanent owner role. Administration handles account support, AI access, cost estimates, and signed-in activity. Private application/resume admin endpoints remain retired.
+- **Restricted accounts:** [Download-only account blocking](docs/blocked-accounts.md) preserves sign-in for a private ZIP of the user's records and original resume files while blocking normal workspace access.
 - **AI parser:** Access is granted per account through entitlements. Defaults are `gpt-5-mini`, low reasoning, at most one retry, 100 requests/day, and the configured per-user budget. The global monthly reservation budget defaults to $50. Review [public-release notes](docs/public-release.md) before changing these limits.
 
-No service configuration or production database changes are performed by the local scripts.
+Validation and database bundle commands do not change hosted services. The explicit `scripts/workspace-access.mjs block|restore` commands change a selected live account through the audited administrative RPC; `--prepare-sql` only writes a local script.
 
 ## Verification and formatting
 

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { PUBLIC_LEGAL_PATHS } from "@/lib/legal/policies";
+import { BLOCKED_MESSAGE, isBlockedAccountRoute, isWorkspaceBlocked } from "@/lib/access/workspace";
 
 const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password", "/auth/callback"];
 
@@ -58,6 +59,18 @@ export async function proxy(request: NextRequest) {
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("next", pathname);
     return finish(NextResponse.redirect(redirectUrl));
+  }
+
+  if (user && isWorkspaceBlocked(user)) {
+    const legalRead = request.method === "GET" && PUBLIC_LEGAL_PATHS.includes(pathname);
+    if (!legalRead && !isBlockedAccountRoute(pathname, request.method)) {
+      if (request.method !== "GET" || pathname.startsWith("/api/")) {
+        return finish(
+          NextResponse.json({ error: BLOCKED_MESSAGE, code: "WORKSPACE_BLOCKED" }, { status: 403 }),
+        );
+      }
+      return finish(NextResponse.redirect(new URL("/blocked", request.url)));
+    }
   }
 
   if (user && pathname === "/login") {
