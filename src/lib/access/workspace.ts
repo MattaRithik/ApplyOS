@@ -8,6 +8,7 @@ export const BLOCKED_MESSAGE = "You have been blocked from using ApplyOS.";
 export function isBlockedAccountRoute(path: string, method: string): boolean {
   return (
     (path === "/blocked" && method === "GET") ||
+    (path === "/api/presence" && method === "POST") ||
     (path === "/api/account/export" && method === "POST") ||
     (path === "/api/account/sign-out" && method === "POST")
   );

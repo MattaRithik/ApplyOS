@@ -169,7 +169,7 @@ export function UserDetailDialog({ userId, open, onOpenChange, onChanged }: Prop
               <div>
                 <p className="text-muted-foreground">Last sign-in</p>
                 <p className="font-medium">
-                  {detail.lastSignInAt ? new Date(detail.lastSignInAt).toLocaleDateString() : "—"}
+                  {detail.lastSignInAt ? new Date(detail.lastSignInAt).toLocaleString() : "—"}
                 </p>
               </div>
             </GlassPanel>

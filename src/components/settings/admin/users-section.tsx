@@ -112,6 +112,7 @@ export function UsersSection() {
               <TableHead>Requests (mo)</TableHead>
               <TableHead>Cost (mo)</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Last sign-in</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -153,11 +154,18 @@ export function UsersSection() {
                     <span className="inline-flex items-center gap-1 text-xs text-destructive">
                       <ShieldAlert className="h-3 w-3" /> Disabled
                     </span>
+                  ) : u.workspaceBlocked ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-destructive">
+                      <ShieldAlert className="h-3 w-3" /> Workspace blocked
+                    </span>
                   ) : (
                     <span className="text-xs text-muted-foreground">
                       {u.emailVerified ? "Verified" : "Unverified"}
                     </span>
                   )}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-xs">
+                  {u.lastSignInAt ? new Date(u.lastSignInAt).toLocaleString() : "Never"}
                 </TableCell>
                 <TableCell onClick={(event) => event.stopPropagation()}>
                   <DeleteUserDialog
@@ -170,7 +178,7 @@ export function UsersSection() {
             ))}
             {(result?.users.length ?? 0) === 0 && !loading && (
               <TableRow>
-                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-6 text-center text-muted-foreground">
                   No users found.
                 </TableCell>
               </TableRow>

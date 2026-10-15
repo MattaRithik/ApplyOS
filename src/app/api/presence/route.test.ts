@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({
   prune: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({}),
+  createClient: async () => ({
+    auth: { getUser: async () => ({ data: { user: await mocks.auth() } }) },
+  }),
   createServiceRoleClient: () => ({ from: mocks.from }),
 }));
 vi.mock("@/lib/admin/roles", async (original) => ({
@@ -48,6 +50,30 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("authenticated heartbeat", () => {
+  it("records a restricted account opening the blocked screen without any interaction", async () => {
+    mocks.auth.mockResolvedValue({
+      id: "actual-user",
+      email: "actual@example.com",
+      app_metadata: { workspace_access: "export_only" },
+    });
+    expect((await POST(request({ ...body, page: "blocked", interactionAt: null }))).status).toBe(
+      204,
+    );
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: "actual-user", page: "blocked", last_active_at: null }),
+      { onConflict: "user_id,session_id" },
+    );
+  });
+  it("redirects existing restricted workspace tabs without recording workspace access", async () => {
+    mocks.auth.mockResolvedValue({
+      id: "actual-user",
+      app_metadata: { workspace_access: "export_only" },
+    });
+    const response = await POST(request());
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe("WORKSPACE_BLOCKED");
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
   it("does not invent an interaction when the page loads", async () => {
     expect((await POST(request({ ...body, interactionAt: null }))).status).toBe(204);
     expect(mocks.upsert).toHaveBeenCalledWith(
@@ -94,7 +120,7 @@ describe("authenticated heartbeat", () => {
     );
   });
   it("rejects anonymous callers without touching the database", async () => {
-    mocks.auth.mockRejectedValue(new AdminAuthError("Not authenticated.", 401));
+    mocks.auth.mockResolvedValue(null);
     expect((await POST(request())).status).toBe(401);
     expect(mocks.from).not.toHaveBeenCalled();
   });

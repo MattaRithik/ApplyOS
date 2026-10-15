@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { AdminAuthError, requireAuthenticatedUser } from "@/lib/admin/roles";
+import { AdminAuthError } from "@/lib/admin/roles";
+import { BLOCKED_MESSAGE, isWorkspaceBlocked } from "@/lib/access/workspace";
 import { isSameOriginMutation, readJsonBody } from "@/lib/security/request";
 import { consumeApiRateLimit } from "@/lib/security/rate-limit";
 import { connectionDetails, heartbeatSchema } from "@/lib/presence/server";
@@ -12,13 +13,24 @@ export async function recordHeartbeat(request: Request) {
   if (!isSameOriginMutation(request))
     return NextResponse.json({ error: "Invalid origin." }, { status: 403, headers });
   try {
-    const user = await requireAuthenticatedUser(await createClient());
+    // Presence is the sole workspace telemetry exception for restricted users.
+    // Keep ordinary API authentication helpers restricted to full workspace access.
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new AdminAuthError("Not authenticated.", 401);
     if (isActivityExcluded(user)) return new NextResponse(null, { status: 204, headers });
     const body = await readJsonBody(request, 2048);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status, headers });
     const parsed = heartbeatSchema.safeParse(body.value);
     if (!parsed.success)
       return NextResponse.json({ error: "Invalid heartbeat." }, { status: 400, headers });
+    if (isWorkspaceBlocked(user) && parsed.data.page !== "blocked")
+      return NextResponse.json(
+        { error: BLOCKED_MESSAGE, code: "WORKSPACE_BLOCKED" },
+        { status: 403, headers },
+      );
     if (!(await consumeApiRateLimit(user.id, "presence", 60, 60))) {
       return NextResponse.json({ error: "Too many heartbeats." }, { status: 429, headers });
     }

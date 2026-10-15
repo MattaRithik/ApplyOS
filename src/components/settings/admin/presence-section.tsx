@@ -60,7 +60,8 @@ export function PresenceSection() {
       <div>
         <h3 className="text-sm font-semibold">Live Activity · {online} online</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Online means interacting in a focused tab within the past minute.
+          Online means interacting in a focused tab within the past minute. Last seen includes
+          opening the blocked screen without interacting.
         </p>
       </div>
       {error ? (
@@ -78,6 +79,8 @@ export function PresenceSection() {
               <tr>
                 <th className="p-3 font-medium">User</th>
                 <th className="p-3 font-medium">Last online</th>
+                <th className="p-3 font-medium">Last seen</th>
+                <th className="p-3 font-medium">Screen</th>
               </tr>
             </thead>
             <tbody>
@@ -104,6 +107,10 @@ export function PresenceSection() {
                       </span>
                     )}
                   </td>
+                  <td className="whitespace-nowrap p-3">
+                    {new Date(user.last_seen_at).toLocaleString()}
+                  </td>
+                  <td className="p-3">{user.page === "blocked" ? "Blocked screen" : user.page}</td>
                 </tr>
               ))}
             </tbody>

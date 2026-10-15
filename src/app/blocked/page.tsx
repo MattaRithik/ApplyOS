@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/shared/glass-panel";
 import { LogoMark } from "@/components/shared/logo-mark";
 import { PolicyLinks } from "@/components/legal/policy-links";
+import { ActivityHeartbeat } from "@/components/presence/activity-heartbeat";
 
 export const metadata: Metadata = {
   title: "Account blocked | ApplyOS",
@@ -30,6 +31,7 @@ export default async function BlockedPage({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-12 sm:px-6">
+      <ActivityHeartbeat userId={user.id} />
       <div className="mb-6 flex items-center justify-center gap-2 text-sm font-semibold">
         <LogoMark className="h-6 w-6 text-primary" />
         ApplyOS

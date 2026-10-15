@@ -13,6 +13,7 @@ describe("presence data boundaries", () => {
   it("drops content IDs, query strings, fragments, and unknown paths", () => {
     expect(pageSection("/applications/private-id?secret=yes#notes")).toBe("applications");
     expect(pageSection("/unknown/private")).toBe("other");
+    expect(pageSection("/blocked?error=download")).toBe("blocked");
   });
   it("rejects forged identities and raw paths", () => {
     const body = {
@@ -165,6 +166,26 @@ describe("user online summary", () => {
       isOnline: true,
       last_active_at: session.last_active_at,
     });
+  });
+  it("shows the latest blocked screen report even without interaction", () => {
+    const blocked = {
+      ...session,
+      session_id: "blocked-tab",
+      page: "blocked",
+      last_seen_at: new Date(now + 1000).toISOString(),
+      last_active_at: null,
+    };
+    expect(summarizePresence([session, blocked], now)[0]).toMatchObject({
+      page: "blocked",
+      last_seen_at: blocked.last_seen_at,
+      last_active_at: session.last_active_at,
+    });
+    expect(summarizePresence([blocked], now)[0]).toMatchObject({
+      isOnline: false,
+      page: "blocked",
+      last_seen_at: blocked.last_seen_at,
+    });
+    expect(summarizePresence([blocked, session], now)[0].page).toBe("blocked");
   });
 });
 

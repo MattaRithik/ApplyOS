@@ -76,7 +76,7 @@ export function PresenceHistory() {
         </button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Saved changes, successful parses, and download requests.
+        Blocked screen visits, saved changes, successful parses, and download requests.
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">

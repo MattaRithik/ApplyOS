@@ -15,6 +15,7 @@ export const PAGE_SECTIONS = [
   "settings",
   "analytics",
   "job-drops",
+  "blocked",
   "other",
 ] as const;
 export function pageSection(path: string): (typeof PAGE_SECTIONS)[number] {
@@ -46,7 +47,14 @@ export function presenceStatus(session: PresenceSession, now: number) {
 export function summarizePresence(sessions: PresenceSession[], now: number) {
   const users = new Map<
     string,
-    { user_id: string; profile_name: string; isOnline: boolean; last_active_at: string | null }
+    {
+      user_id: string;
+      profile_name: string;
+      isOnline: boolean;
+      last_active_at: string | null;
+      last_seen_at: string;
+      page: string;
+    }
   >();
   for (const session of sessions) {
     const isOnline = presenceStatus(session, now) === "Active";
@@ -57,9 +65,15 @@ export function summarizePresence(sessions: PresenceSession[], now: number) {
         profile_name: session.profile_name,
         isOnline,
         last_active_at: session.last_active_at,
+        last_seen_at: session.last_seen_at,
+        page: session.page,
       });
     } else {
       previous.isOnline ||= isOnline;
+      if (Date.parse(session.last_seen_at) > Date.parse(previous.last_seen_at)) {
+        previous.last_seen_at = session.last_seen_at;
+        previous.page = session.page;
+      }
       if (
         session.last_active_at &&
         (!previous.last_active_at ||

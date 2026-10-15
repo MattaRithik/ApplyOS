@@ -113,23 +113,30 @@ describe("authentication proxy", () => {
     },
   );
 
-  it("permits only the blocked screen, exact export/sign-out endpoints, and legal reads", async () => {
+  it("permits only the blocked screen, exact telemetry/export/sign-out endpoints, and legal reads", async () => {
     auth.user = { id: "blocked", app_metadata: { workspace_access: "export_only" } };
     for (const [path, method] of [
       ["/blocked", "GET"],
       ["/privacy", "GET"],
       ["/api/account/export", "POST"],
       ["/api/account/sign-out", "POST"],
+      ["/api/presence", "POST"],
     ]) {
       expect(
         (await proxy(new NextRequest(`https://applyos.example${path}`, { method }))).status,
       ).toBe(200);
     }
-    for (const path of ["/blocked", "/privacy", "/api/account/export/other"]) {
+    for (const path of [
+      "/blocked",
+      "/privacy",
+      "/api/account/export/other",
+      "/api/presence/other",
+    ]) {
       expect(
         (await proxy(new NextRequest(`https://applyos.example${path}`, { method: "POST" }))).status,
       ).toBe(403);
     }
+    expect((await proxy(new NextRequest("https://applyos.example/api/presence"))).status).toBe(403);
   });
 
   it("does not trust user-editable metadata as an access restriction", async () => {

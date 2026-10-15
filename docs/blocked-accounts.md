@@ -27,11 +27,15 @@ This preparation command only reads account metadata and writes a local SQL file
 
 ## Enforcement
 
+Apply `supabase/migrations/20261015120000_blocked_screen_activity.sql` with the updated application to record blocked-screen visits. The blocked page sends authenticated heartbeats through the exact POST `/api/presence` endpoint. Restricted accounts may report only the `blocked` page; older workspace tabs still receive `WORKSPACE_BLOCKED` and redirect. This exception grants no workspace or direct database access.
+
+Settings → Administration → **Live Activity** shows the latest **Last seen** timestamp and **Blocked screen** label even when the user opens the page without interacting. **Recent activity** retains one **Opened blocked screen** event per page opening/tab, without adding events for recurring heartbeats. **Users & AI Access** also shows the authentication provider's **Last sign-in** date and time; reopening an existing signed-in session is recorded as a screen visit, not a new login. Live Activity refreshes every 15 seconds while visible.
+
 `workspace_access = export_only` lives in server-controlled `auth.users.raw_app_meta_data`. The proxy reads the validated current Auth user on each request. The app layout and privileged authentication helper provide additional checks. Active tabs move to the blocked screen when a heartbeat receives the restriction response.
 
 RLS uses `workspace_access_allowed()`, a security-definer function restricted to returning the current user's boolean access status. It reads the current auth row, so old JWT claims do not preserve access. Users cannot lift a restriction by editing their profile, user metadata, cached client state, or token claims. The account-access RPC rejects non-owner actors and changes to the owner/self; access and audit updates commit together. New public data tables must carry an equivalent restrictive policy; a database test checks coverage.
 
-Only exact POST endpoints `/api/account/export` and `/api/account/sign-out` bypass the workspace gate. `/blocked` and legal pages allow GET only. The download route verifies authentication independently, accepts no target ID or storage parameters, rejects cross-site requests, limits requests to three per ten minutes, and scopes all privileged data reads to that authenticated account. Service credentials and raw storage keys are never exported.
+Only exact POST endpoints `/api/presence`, `/api/account/export`, and `/api/account/sign-out` bypass the workspace gate. `/blocked` and legal pages allow GET only. The download route verifies authentication independently, accepts no target ID or storage parameters, rejects cross-site requests, limits requests to three per ten minutes, and scopes all privileged data reads to that authenticated account. Service credentials and raw storage keys are never exported.
 
 ## Archive contents
 
